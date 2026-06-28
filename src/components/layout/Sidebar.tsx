@@ -7,6 +7,7 @@ import {
   MessageSquare,
   BookOpen,
   FileText,
+  ClipboardList,
   Settings,
   LogOut,
   Wrench,
@@ -19,6 +20,7 @@ import { initials } from "@/lib/utils";
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "dashboard", roles: null },
   { label: "Customers",  icon: Users,           path: "customers", roles: null },
+  { label: "Jobs",       icon: ClipboardList,   path: "jobs",      roles: null },
   { label: "Book Job",   icon: CalendarPlus,    path: "jobs/new",  roles: null },
   { label: "Dispatch",   icon: Columns3,        path: "dispatch",  roles: null },
   { label: "Booking",    icon: MessageSquare,   path: "booking",   roles: null },

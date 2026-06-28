@@ -7,6 +7,7 @@ import DashboardPage from "@/features/dashboard/DashboardPage";
 import CustomerListPage from "@/features/crm/CustomerListPage";
 import CustomerDetailPage from "@/features/crm/CustomerDetailPage";
 import NewJobPage from "@/features/booking/NewJobPage";
+import JobListPage from "@/features/jobs/JobListPage";
 import DispatchBoardPage from "@/features/dispatch/DispatchBoardPage";
 import PricebookPage from "@/features/pricebook/PricebookPage";
 import InvoiceListPage from "@/features/invoicing/InvoiceListPage";
@@ -65,6 +66,7 @@ export default function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="customers" element={<CustomerListPage />} />
             <Route path="customers/:customerId" element={<CustomerDetailPage />} />
+            <Route path="jobs" element={<JobListPage />} />
             <Route path="jobs/new" element={<NewJobPage />} />
             <Route path="dispatch" element={<DispatchBoardPage />} />
             <Route path="booking" element={<BookingInboxPage />} />

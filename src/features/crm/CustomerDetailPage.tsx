@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Phone, Mail, MapPin, Wrench, ChevronLeft, Plus, ExternalLink } from "lucide-react";
+import { Phone, Mail, MapPin, Wrench, ChevronLeft, Plus, ExternalLink, Pencil } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -11,16 +11,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatPhone, jobStatusLabel, jobStatusColor, jobTypeLabel } from "@/lib/utils";
+import CustomerFormDialog from "./components/CustomerFormDialog";
 import type { Customer, ServiceLocation, Equipment, Job } from "@/types/database.types";
 
 export default function CustomerDetailPage() {
   const { customerId, tenantSlug } = useParams<{ customerId: string; tenantSlug: string }>();
   const { tenant } = useAuth();
-  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [customer, setCustomer]   = useState<Customer | null>(null);
   const [locations, setLocations] = useState<ServiceLocation[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [jobs, setJobs]           = useState<Job[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [editOpen, setEditOpen]   = useState(false);
 
   useEffect(() => {
     if (!tenant || !customerId) return;
@@ -104,12 +106,25 @@ export default function CustomerDetailPage() {
             )}
           </div>
         </div>
-        <Button asChild>
-          <Link to={`/${tenantSlug}/jobs/new?customerId=${customer.id}`}>
-            <Plus className="h-4 w-4" /> Book Job
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setEditOpen(true)}>
+            <Pencil className="h-4 w-4" /> Edit
+          </Button>
+          <Button asChild>
+            <Link to={`/${tenantSlug}/jobs/new?customerId=${customer.id}`}>
+              <Plus className="h-4 w-4" /> Book Job
+            </Link>
+          </Button>
+        </div>
       </div>
+
+      <CustomerFormDialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onSaved={() => { setEditOpen(false); void loadCustomer(); }}
+        editCustomer={customer}
+        editLocation={locations.find((l) => l.is_primary) ?? locations[0] ?? null}
+      />
 
       {customer.notes && (
         <div className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">

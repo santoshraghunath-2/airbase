@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -7,41 +7,42 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import type { Customer, ServiceLocation } from "@/types/database.types";
 
 const schema = z.object({
-  name: z.string().min(1, "Name is required"),
-  phone: z.string().min(7, "Enter a valid phone number"),
-  email: z.string().email("Enter a valid email").optional().or(z.literal("")),
+  name:      z.string().min(1, "Name is required"),
+  phone:     z.string().min(7, "Enter a valid phone number"),
+  email:     z.string().email("Enter a valid email").optional().or(z.literal("")),
   phone_alt: z.string().optional(),
-  notes: z.string().optional(),
-  // Primary service location
-  address: z.string().min(1, "Address is required"),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  zip: z.string().optional(),
+  notes:     z.string().optional(),
+  address:   z.string().min(1, "Address is required"),
+  city:      z.string().optional(),
+  state:     z.string().optional(),
+  zip:       z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
 
 interface Props {
-  open: boolean;
-  onClose: () => void;
-  onSaved: () => void;
+  open:             boolean;
+  onClose:          () => void;
+  onSaved:          () => void;
+  editCustomer?:    Customer;
+  editLocation?:    ServiceLocation | null;
 }
 
-export default function CustomerFormDialog({ open, onClose, onSaved }: Props) {
+export default function CustomerFormDialog({
+  open, onClose, onSaved, editCustomer, editLocation,
+}: Props) {
   const { tenant } = useAuth();
   const [saving, setSaving] = useState(false);
+  const isEdit = !!editCustomer;
 
   const {
     register,
@@ -50,45 +51,93 @@ export default function CustomerFormDialog({ open, onClose, onSaved }: Props) {
     formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
+  // Prefill form when opening in edit mode
+  useEffect(() => {
+    if (open && isEdit && editCustomer) {
+      reset({
+        name:      editCustomer.name,
+        phone:     editCustomer.phone,
+        email:     editCustomer.email ?? "",
+        phone_alt: editCustomer.phone_alt ?? "",
+        notes:     editCustomer.notes ?? "",
+        address:   editLocation?.address ?? "",
+        city:      editLocation?.city ?? "",
+        state:     editLocation?.state ?? "",
+        zip:       editLocation?.zip ?? "",
+      });
+    } else if (open && !isEdit) {
+      reset({});
+    }
+  }, [open, isEdit, editCustomer, editLocation, reset]);
+
   async function onSubmit(values: FormValues) {
     if (!tenant) return;
     setSaving(true);
     try {
-      // Create customer
-      const { data: customer, error: custError } = await supabase
-        .from("customers")
-        .insert({
-          tenant_id: tenant.id,
-          name: values.name,
-          phone: values.phone,
-          email: values.email || null,
-          phone_alt: values.phone_alt || null,
-          notes: values.notes || null,
-          source: "manual",
-        })
-        .select("id")
-        .single();
+      if (isEdit && editCustomer) {
+        // Update existing customer
+        const { error: custError } = await supabase
+          .from("customers")
+          .update({
+            name:      values.name,
+            phone:     values.phone,
+            email:     values.email || null,
+            phone_alt: values.phone_alt || null,
+            notes:     values.notes || null,
+          })
+          .eq("id", editCustomer.id);
+        if (custError) throw custError;
 
-      if (custError) throw custError;
+        // Update primary location if one exists
+        if (editLocation) {
+          const { error: locError } = await supabase
+            .from("service_locations")
+            .update({
+              address: values.address,
+              city:    values.city || null,
+              state:   values.state || null,
+              zip:     values.zip || null,
+            })
+            .eq("id", editLocation.id);
+          if (locError) throw locError;
+        }
 
-      // Create primary service location
-      const { error: locError } = await supabase.from("service_locations").insert({
-        tenant_id: tenant.id,
-        customer_id: customer.id,
-        address: values.address,
-        city: values.city || null,
-        state: values.state || null,
-        zip: values.zip || null,
-        is_primary: true,
-      });
+        toast.success(`${values.name} updated`);
+      } else {
+        // Create new customer
+        const { data: customer, error: custError } = await supabase
+          .from("customers")
+          .insert({
+            tenant_id: tenant.id,
+            name:      values.name,
+            phone:     values.phone,
+            email:     values.email || null,
+            phone_alt: values.phone_alt || null,
+            notes:     values.notes || null,
+            source:    "manual",
+          })
+          .select("id")
+          .single();
+        if (custError) throw custError;
 
-      if (locError) throw locError;
+        const { error: locError } = await supabase.from("service_locations").insert({
+          tenant_id:   tenant.id,
+          customer_id: customer.id,
+          address:     values.address,
+          city:        values.city || null,
+          state:       values.state || null,
+          zip:         values.zip || null,
+          is_primary:  true,
+        });
+        if (locError) throw locError;
 
-      toast.success(`${values.name} added`);
+        toast.success(`${values.name} added`);
+      }
+
       reset();
       onSaved();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create customer");
+      toast.error(err instanceof Error ? err.message : "Failed to save customer");
     } finally {
       setSaving(false);
     }
@@ -103,7 +152,7 @@ export default function CustomerFormDialog({ open, onClose, onSaved }: Props) {
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>New Customer</DialogTitle>
+          <DialogTitle>{isEdit ? "Edit Customer" : "New Customer"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -162,8 +211,8 @@ export default function CustomerFormDialog({ open, onClose, onSaved }: Props) {
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
             <Button type="submit" disabled={saving}>
-              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              Save Customer
+              {saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              {isEdit ? "Save Changes" : "Save Customer"}
             </Button>
           </DialogFooter>
         </form>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   DndContext, DragEndEvent, closestCenter,
   DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor,
@@ -31,9 +31,11 @@ export default function DispatchBoardPage() {
   const [jobs, setJobs]               = useState<JobWithRelations[]>([]);
   const [loading, setLoading]         = useState(true);
   const [activeJob, setActiveJob]     = useState<JobWithRelations | null>(null);
+  const initialLoadDone               = useRef(false);
 
   useEffect(() => {
     if (!tenant) return;
+    initialLoadDone.current = false; // show skeleton when date or tenant changes
     void loadBoard();
 
     const channel = realtimeClient
@@ -50,7 +52,7 @@ export default function DispatchBoardPage() {
 
   async function loadBoard() {
     if (!tenant) return;
-    setLoading(true);
+    if (!initialLoadDone.current) setLoading(true);
     try {
       const dayStart = startOfDay(date).toISOString();
       const dayEnd   = endOfDay(date).toISOString();
@@ -74,6 +76,7 @@ export default function DispatchBoardPage() {
 
       setTechnicians(techRes.data ?? []);
       setJobs((jobsRes.data ?? []) as JobWithRelations[]);
+      initialLoadDone.current = true;
     } finally {
       setLoading(false);
     }

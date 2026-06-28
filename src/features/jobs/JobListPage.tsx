@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  Search, Plus, ArrowRight, ArrowUpDown, ChevronLeft, ChevronRight, X,
+  Search, Plus, ArrowRight, ArrowUpDown, ChevronLeft, ChevronRight, X, Pencil,
 } from "lucide-react";
 import { format, startOfDay, endOfDay, subDays } from "date-fns";
 import { supabase } from "@/lib/supabase";
@@ -16,6 +16,7 @@ import {
 import {
   jobStatusLabel, jobStatusColor, jobTypeLabel,
 } from "@/lib/utils";
+import JobEditDialog from "./components/JobEditDialog";
 import type { JobWithRelations } from "@/types/database.types";
 import type { JobStatus } from "@/types/database.types";
 
@@ -64,10 +65,11 @@ export default function JobListPage() {
   const { tenant }     = useAuth();
   const { tenantSlug } = useParams<{ tenantSlug: string }>();
 
-  const [jobs, setJobs]         = useState<JobWithRelations[]>([]);
-  const [total, setTotal]       = useState(0);
-  const [page, setPage]         = useState(0);
-  const [loading, setLoading]   = useState(true);
+  const [jobs, setJobs]             = useState<JobWithRelations[]>([]);
+  const [total, setTotal]           = useState(0);
+  const [page, setPage]             = useState(0);
+  const [loading, setLoading]       = useState(true);
+  const [editingJob, setEditingJob] = useState<JobWithRelations | null>(null);
 
   // Filters
   const [search, setSearch]         = useState("");
@@ -261,7 +263,12 @@ export default function JobListPage() {
                   : () => 0
                 )
                 .map((job) => (
-                  <JobRow key={job.id} job={job} tenantSlug={tenantSlug!} />
+                  <JobRow
+                    key={job.id}
+                    job={job}
+                    tenantSlug={tenantSlug!}
+                    onEdit={() => setEditingJob(job)}
+                  />
                 ))
             )}
           </tbody>
@@ -297,13 +304,22 @@ export default function JobListPage() {
           </div>
         </div>
       )}
+
+      <JobEditDialog
+        open={!!editingJob}
+        job={editingJob}
+        onClose={() => setEditingJob(null)}
+        onSaved={() => { setEditingJob(null); void load(); }}
+      />
     </div>
   );
 }
 
 // ─── Row ──────────────────────────────────────────────────────────────────────
 
-function JobRow({ job, tenantSlug }: { job: JobWithRelations; tenantSlug: string }) {
+function JobRow({
+  job, tenantSlug, onEdit,
+}: { job: JobWithRelations; tenantSlug: string; onEdit: () => void }) {
   const isUnassigned = job.status === "unassigned";
 
   return (
@@ -360,24 +376,35 @@ function JobRow({ job, tenantSlug }: { job: JobWithRelations; tenantSlug: string
       </td>
 
       <td className="px-4 py-3 text-right">
-        {isUnassigned ? (
-          <Button size="sm" variant="default" className="h-7 text-xs gap-1" asChild>
-            <Link to={`/${tenantSlug}/dispatch`}>
-              Dispatch <ArrowRight className="h-3 w-3" />
-            </Link>
-          </Button>
-        ) : (
+        <div className="flex items-center justify-end gap-1">
           <Button
             size="sm"
             variant="ghost"
-            className="h-7 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-            asChild
+            className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={onEdit}
+            title="Edit job"
           >
-            <Link to={`/${tenantSlug}/customers/${job.customer_id}`}>
-              View customer
-            </Link>
+            <Pencil className="h-3.5 w-3.5" />
           </Button>
-        )}
+          {isUnassigned ? (
+            <Button size="sm" variant="default" className="h-7 text-xs gap-1" asChild>
+              <Link to={`/${tenantSlug}/dispatch`}>
+                Dispatch <ArrowRight className="h-3 w-3" />
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+              asChild
+            >
+              <Link to={`/${tenantSlug}/customers/${job.customer_id}`}>
+                View customer
+              </Link>
+            </Button>
+          )}
+        </div>
       </td>
     </tr>
   );

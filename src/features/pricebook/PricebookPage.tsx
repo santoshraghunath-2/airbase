@@ -130,8 +130,7 @@ export default function PricebookPage() {
     formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
-  const watchTrade    = watch("trade");
-  const watchItemType = watch("item_type");
+  const watchTrade = watch("trade");
 
   const loadItems = useCallback(async () => {
     if (!tenant) return;

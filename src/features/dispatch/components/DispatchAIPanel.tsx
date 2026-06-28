@@ -195,10 +195,10 @@ export default function DispatchAIPanel({ jobs, onAssigned }: DispatchAIPanelPro
   const handleAccept = async (proposal: AgentProposal) => {
     const { job_id, tech_id } = proposal.proposed_action;
     try {
-      // Assign the job via the existing dispatch Edge Function
-      const { error: dispatchErr } = await supabase.functions.invoke("dispatch-job", {
-        body: { job_id, tech_id },
-      });
+      const { error: dispatchErr } = await supabase
+        .from("jobs")
+        .update({ tech_id, status: "dispatched" })
+        .eq("id", job_id);
       if (dispatchErr) throw dispatchErr;
 
       // Mark agent_action approved

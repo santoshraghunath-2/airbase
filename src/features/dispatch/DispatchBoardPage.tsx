@@ -106,9 +106,10 @@ export default function DispatchBoardPage() {
     );
 
     try {
-      const { error } = await supabase.functions.invoke("dispatch-job", {
-        body: { job_id: jobId, tech_id: techId },
-      });
+      const { error } = await supabase
+        .from("jobs")
+        .update({ tech_id: techId, status: "dispatched" })
+        .eq("id", jobId);
       if (error) throw error;
       toast.success("Job dispatched");
     } catch (err) {

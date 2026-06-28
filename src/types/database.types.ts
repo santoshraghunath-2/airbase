@@ -189,12 +189,16 @@ export interface PricebookItemRow {
   name: string;
   description: string | null;
   item_type: PricebookItemType;
+  trade: string | null;
   category: string | null;
   unit_price: number;
   cost: number | null;
   sku: string | null;
   taxable: boolean;
   is_active: boolean;
+  estimated_hours: number | null;
+  unit_of_measure: string | null;
+  vendor: string | null;
   created_at: string;
   updated_at: string;
 }

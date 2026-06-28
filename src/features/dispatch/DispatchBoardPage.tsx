@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { DndContext, DragEndEvent, closestCenter, DragOverlay, DragStartEvent } from "@dnd-kit/core";
+import { DndContext, DragEndEvent, closestCenter, DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
 import { toast } from "sonner";
 import { format, startOfDay, endOfDay, addDays, subDays } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -15,6 +15,11 @@ import type { JobWithRelations, Technician } from "@/types/database.types";
 export default function DispatchBoardPage() {
   const { tenant } = useAuth();
   const [date, setDate] = useState(new Date());
+
+  // Require 8px of movement before a drag activates — prevents plain clicks from firing DragEnd.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [jobs, setJobs] = useState<JobWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,7 +86,8 @@ export default function DispatchBoardPage() {
   async function handleDragEnd(event: DragEndEvent) {
     setActiveJob(null);
     const { active, over } = event;
-    if (!over) return;
+    // No drop target, or dropped back onto the unassigned column — nothing to do.
+    if (!over || over.id === "unassigned") return;
 
     const jobId = active.id as string;
     const techId = over.id as string;
@@ -151,6 +157,7 @@ export default function DispatchBoardPage() {
         </div>
       ) : (
         <DndContext
+          sensors={sensors}
           collisionDetection={closestCenter}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}

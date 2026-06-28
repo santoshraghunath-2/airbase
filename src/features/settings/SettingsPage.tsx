@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Settings, Building2, Bell, ExternalLink, BookOpen, Upload, Loader2, Pencil, Trash2, CheckCircle2 } from "lucide-react";
+import { Settings, Building2, Bell, ExternalLink, BookOpen, Upload, Loader2, Trash2, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -273,8 +273,8 @@ export default function SettingsPage() {
       phone:             tenant.phone             ?? "",
       address:           tenant.address           ?? "",
       timezone:          tenant.timezone          ?? "America/Los_Angeles",
-      google_review_url: (tenant as Record<string, unknown>).google_review_url as string ?? "",
-      yelp_review_url:   (tenant as Record<string, unknown>).yelp_review_url   as string ?? "",
+      google_review_url: (tenant as unknown as Record<string, unknown>).google_review_url as string ?? "",
+      yelp_review_url:   (tenant as unknown as Record<string, unknown>).yelp_review_url   as string ?? "",
     });
     setLoading(false);
   }, [tenant]);

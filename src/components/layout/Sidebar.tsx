@@ -52,7 +52,7 @@ export default function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems
-          .filter((item) => !item.roles || item.roles.includes(user?.role as string))
+          .filter((item) => !item.roles || (item.roles as readonly string[]).includes(user?.role ?? ""))
           .map((item) => (
             <NavLink
               key={item.path}

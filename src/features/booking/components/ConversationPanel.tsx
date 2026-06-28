@@ -3,7 +3,6 @@ import { format } from "date-fns";
 import { Phone, Briefcase, CheckCircle, Send, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { BookingConversation } from "../BookingInboxPage";
@@ -29,7 +28,6 @@ function roleLabel(role: string) {
 }
 
 export default function ConversationPanel({ conversation, onStatusChange }: ConversationPanelProps) {
-  const { user } = useAuth();
   const [reply, setReply]     = useState("");
   const [sending, setSending] = useState(false);
   const [resolving, setResolving] = useState(false);
@@ -95,10 +93,10 @@ export default function ConversationPanel({ conversation, onStatusChange }: Conv
               </span>
             )}
           </div>
-          {conversation.context?.escalation_summary && (
+          {conversation.context?.escalation_summary != null && (
             <p className="text-xs text-muted-foreground mt-1 max-w-xl">
               <span className="font-medium">Escalation reason:</span>{" "}
-              {conversation.context.escalation_summary as string}
+              {String(conversation.context.escalation_summary)}
             </p>
           )}
         </div>

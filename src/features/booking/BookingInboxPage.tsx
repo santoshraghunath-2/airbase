@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { MessageSquare, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";

@@ -2,7 +2,7 @@
 // Drag unassigned jobs onto a tech row to assign + schedule simultaneously.
 // Drag existing job blocks to reschedule or reassign.
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   DndContext, DragEndEvent, DragOverEvent, DragStartEvent,
   DragOverlay, useSensor, useSensors, PointerSensor,

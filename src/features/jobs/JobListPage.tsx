@@ -14,7 +14,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  formatCurrency, jobStatusLabel, jobStatusColor, jobTypeLabel,
+  jobStatusLabel, jobStatusColor, jobTypeLabel,
 } from "@/lib/utils";
 import type { JobWithRelations } from "@/types/database.types";
 import type { JobStatus } from "@/types/database.types";

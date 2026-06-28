@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { DndContext, DragEndEvent, closestCenter, DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
+import {
+  DndContext, DragEndEvent, closestCenter,
+  DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor,
+} from "@dnd-kit/core";
 import { toast } from "sonner";
 import { format, startOfDay, endOfDay, addDays, subDays } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutGrid, GanttChartSquare } from "lucide-react";
 import { supabase, realtimeClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -10,36 +13,34 @@ import { Skeleton } from "@/components/ui/skeleton";
 import TechColumn from "./components/TechColumn";
 import JobCardOverlay from "./components/JobCardOverlay";
 import DispatchAIPanel from "./components/DispatchAIPanel";
+import DispatchGanttView from "./components/DispatchGanttView";
 import type { JobWithRelations, Technician } from "@/types/database.types";
+
+type ViewMode = "columns" | "gantt";
 
 export default function DispatchBoardPage() {
   const { tenant } = useAuth();
-  const [date, setDate] = useState(new Date());
+  const [date, setDate]   = useState(new Date());
+  const [view, setView]   = useState<ViewMode>("gantt");
 
   // Require 8px of movement before a drag activates — prevents plain clicks from firing DragEnd.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
   const [technicians, setTechnicians] = useState<Technician[]>([]);
-  const [jobs, setJobs] = useState<JobWithRelations[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeJob, setActiveJob] = useState<JobWithRelations | null>(null);
+  const [jobs, setJobs]               = useState<JobWithRelations[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [activeJob, setActiveJob]     = useState<JobWithRelations | null>(null);
 
   useEffect(() => {
     if (!tenant) return;
     void loadBoard();
 
-    // Real-time subscription for job updates
     const channel = realtimeClient
       .channel("dispatch-board")
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "jobs",
-          filter: `tenant_id=eq.${tenant.id}`,
-        },
+        { event: "*", schema: "public", table: "jobs", filter: `tenant_id=eq.${tenant.id}` },
         () => { void loadBoard(); }
       )
       .subscribe();
@@ -52,7 +53,7 @@ export default function DispatchBoardPage() {
     setLoading(true);
     try {
       const dayStart = startOfDay(date).toISOString();
-      const dayEnd = endOfDay(date).toISOString();
+      const dayEnd   = endOfDay(date).toISOString();
 
       const [techRes, jobsRes] = await Promise.all([
         supabase
@@ -86,22 +87,17 @@ export default function DispatchBoardPage() {
   async function handleDragEnd(event: DragEndEvent) {
     setActiveJob(null);
     const { active, over } = event;
-    // No drop target, or dropped back onto the unassigned column — nothing to do.
     if (!over || over.id === "unassigned") return;
 
-    const jobId = active.id as string;
+    const jobId  = active.id as string;
     const techId = over.id as string;
-
-    const job = jobs.find((j) => j.id === jobId);
+    const job    = jobs.find((j) => j.id === jobId);
     if (!job) return;
     if (job.tech_id === techId) return;
 
-    // Optimistic update
     setJobs((prev) =>
       prev.map((j) =>
-        j.id === jobId
-          ? { ...j, tech_id: techId, status: "dispatched" }
-          : j
+        j.id === jobId ? { ...j, tech_id: techId, status: "dispatched" } : j
       )
     );
 
@@ -112,7 +108,7 @@ export default function DispatchBoardPage() {
         .eq("id", jobId);
       if (error) throw error;
       toast.success("Job dispatched");
-    } catch (err) {
+    } catch {
       toast.error("Failed to dispatch job — reverting");
       void loadBoard();
     }
@@ -123,21 +119,49 @@ export default function DispatchBoardPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex items-center gap-4 px-6 py-4 border-b bg-background">
-        <h1 className="text-xl font-bold">Dispatch Board</h1>
-        <div className="flex items-center gap-2 ml-auto">
-          <Button variant="outline" size="icon" onClick={() => setDate((d) => subDays(d, 1))}>
+      <div className="flex items-center gap-3 px-6 py-3 border-b bg-background">
+        <h1 className="text-xl font-bold">Dispatch</h1>
+
+        {/* Date navigation */}
+        <div className="flex items-center gap-1 ml-4">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDate((d) => subDays(d, 1))}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-sm font-medium min-w-[140px] text-center">
+          <span className="text-sm font-medium min-w-[148px] text-center tabular-nums">
             {format(date, "EEE, MMM d, yyyy")}
           </span>
-          <Button variant="outline" size="icon" onClick={() => setDate((d) => addDays(d, 1))}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDate((d) => addDays(d, 1))}>
             <ChevronRight className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setDate(new Date())}>
+          <Button variant="outline" size="sm" className="h-8 text-xs ml-1" onClick={() => setDate(new Date())}>
             Today
           </Button>
+        </div>
+
+        {/* View toggle */}
+        <div className="ml-auto flex items-center gap-0.5 rounded-lg border bg-muted p-0.5">
+          <button
+            onClick={() => setView("columns")}
+            className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
+              view === "columns"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+            Columns
+          </button>
+          <button
+            onClick={() => setView("gantt")}
+            className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
+              view === "gantt"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <GanttChartSquare className="h-3.5 w-3.5" />
+            Gantt
+          </button>
         </div>
       </div>
 
@@ -146,6 +170,7 @@ export default function DispatchBoardPage() {
         <DispatchAIPanel jobs={jobs} onAssigned={() => void loadBoard()} />
       )}
 
+      {/* Board content */}
       {loading ? (
         <div className="flex gap-4 p-6 overflow-x-auto flex-1">
           {[...Array(4)].map((_, i) => (
@@ -156,6 +181,13 @@ export default function DispatchBoardPage() {
             </div>
           ))}
         </div>
+      ) : view === "gantt" ? (
+        <DispatchGanttView
+          date={date}
+          jobs={jobs}
+          technicians={technicians}
+          onRefresh={() => void loadBoard()}
+        />
       ) : (
         <DndContext
           sensors={sensors}
@@ -164,15 +196,12 @@ export default function DispatchBoardPage() {
           onDragEnd={handleDragEnd}
         >
           <div className="flex gap-0 flex-1 overflow-x-auto">
-            {/* Unassigned column */}
             <TechColumn
               techId="unassigned"
               techName="Unassigned"
               jobs={unassignedJobs}
               isUnassigned
             />
-
-            {/* Tech columns */}
             {technicians.map((tech) => (
               <TechColumn
                 key={tech.id}
@@ -182,7 +211,6 @@ export default function DispatchBoardPage() {
               />
             ))}
           </div>
-
           <DragOverlay>
             {activeJob && <JobCardOverlay job={activeJob} />}
           </DragOverlay>

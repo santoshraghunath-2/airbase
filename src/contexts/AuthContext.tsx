@@ -10,6 +10,7 @@ interface AuthContextValue {
   tenant: Tenant | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  refreshTenant: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -76,12 +77,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  async function refreshTenant() {
+    if (!user) return;
+    const { data } = await supabase
+      .from("tenants")
+      .select("*")
+      .eq("id", user.tenant_id)
+      .single();
+    if (data) setTenant(data);
+  }
+
   async function signOut() {
     await supabase.auth.signOut();
   }
 
   return (
-    <AuthContext.Provider value={{ session, supabaseUser, user, tenant, loading, signOut }}>
+    <AuthContext.Provider value={{ session, supabaseUser, user, tenant, loading, signOut, refreshTenant }}>
       {children}
     </AuthContext.Provider>
   );

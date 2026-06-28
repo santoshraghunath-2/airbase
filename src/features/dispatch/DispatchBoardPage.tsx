@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import TechColumn from "./components/TechColumn";
 import JobCardOverlay from "./components/JobCardOverlay";
+import DispatchAIPanel from "./components/DispatchAIPanel";
 import type { JobWithRelations, Technician } from "@/types/database.types";
 
 export default function DispatchBoardPage() {
@@ -61,7 +62,8 @@ export default function DispatchBoardPage() {
           .eq("tenant_id", tenant.id)
           .is("deleted_at", null)
           .not("status", "in", "(cancelled,no_show)")
-          .or(`scheduled_start.is.null,and(scheduled_start.gte.${dayStart},scheduled_start.lte.${dayEnd})`),
+          // Always show unassigned jobs regardless of date; show assigned jobs for the selected date only.
+          .or(`status.eq.unassigned,and(scheduled_start.gte.${dayStart},scheduled_start.lte.${dayEnd})`),
       ]);
 
       setTechnicians(techRes.data ?? []);
@@ -131,6 +133,11 @@ export default function DispatchBoardPage() {
           </Button>
         </div>
       </div>
+
+      {/* AI suggestions panel — only shown when proposals exist */}
+      {!loading && (
+        <DispatchAIPanel jobs={jobs} onAssigned={() => void loadBoard()} />
+      )}
 
       {loading ? (
         <div className="flex gap-4 p-6 overflow-x-auto flex-1">

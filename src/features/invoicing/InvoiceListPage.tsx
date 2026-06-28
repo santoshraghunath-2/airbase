@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
 import { format } from "date-fns";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Sparkles, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,8 @@ export default function InvoiceListPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  const reviewCount = invoices.filter((inv) => inv.status === "review_required").length;
 
   const loadInvoices = useCallback(async () => {
     if (!tenant) return;
@@ -82,6 +84,21 @@ export default function InvoiceListPage() {
           </Link>
         </Button>
       </div>
+
+      {reviewCount > 0 && (
+        <button
+          onClick={() => setStatusFilter("review_required")}
+          className="flex items-center gap-3 w-full rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-left hover:bg-amber-100 transition-colors"
+        >
+          <div className="flex items-center gap-2 flex-1">
+            <Sparkles className="h-4 w-4 text-amber-600 flex-shrink-0" />
+            <span className="text-sm font-medium text-amber-900">
+              {reviewCount} invoice{reviewCount > 1 ? "s" : ""} flagged by AI — review before sending
+            </span>
+          </div>
+          <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+        </button>
+      )}
 
       <div className="flex gap-3">
         <div className="relative max-w-xs flex-1">

@@ -1,11 +1,17 @@
+import { useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import TechJobList from "./TechJobList";
 import TechJobDetail from "./TechJobDetail";
-import { Wrench } from "lucide-react";
+import TechChatTab from "./TechChatTab";
+import { Wrench, List, Bot } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+type Tab = "jobs" | "help";
 
 export default function TechApp() {
   const { user } = useAuth();
+  const [tab, setTab] = useState<Tab>("jobs");
 
   if (user?.role !== "technician" && user?.role !== "owner") {
     return (
@@ -28,13 +34,39 @@ export default function TechApp() {
         )}
       </header>
 
-      <div className="flex-1">
-        <Routes>
-          <Route index element={<TechJobList />} />
-          <Route path="jobs/:jobId" element={<TechJobDetail />} />
-          <Route path="*" element={<Navigate to="/tech" replace />} />
-        </Routes>
+      {/* Content area — jobs tab uses nested router, help tab is flat */}
+      <div className="flex-1 overflow-hidden flex flex-col">
+        {tab === "jobs" ? (
+          <div className="flex-1 overflow-y-auto">
+            <Routes>
+              <Route index element={<TechJobList />} />
+              <Route path="jobs/:jobId" element={<TechJobDetail />} />
+              <Route path="*" element={<Navigate to="/tech" replace />} />
+            </Routes>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-hidden flex flex-col">
+            <TechChatTab />
+          </div>
+        )}
       </div>
+
+      {/* Bottom tab bar */}
+      <nav className="border-t bg-white flex sticky bottom-0">
+        {(["jobs", "help"] as Tab[]).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={cn(
+              "flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors",
+              tab === t ? "text-blue-600" : "text-slate-500 hover:text-slate-700",
+            )}
+          >
+            {t === "jobs" ? <List className="h-5 w-5" /> : <Bot className="h-5 w-5" />}
+            {t === "jobs" ? "Jobs" : "Help"}
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }

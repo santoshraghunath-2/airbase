@@ -4,8 +4,10 @@ import {
   Users,
   CalendarPlus,
   Columns3,
+  MessageSquare,
   BookOpen,
   FileText,
+  Settings,
   LogOut,
   Wrench,
 } from "lucide-react";
@@ -15,13 +17,15 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { initials } from "@/lib/utils";
 
 const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "dashboard" },
-  { label: "Customers", icon: Users, path: "customers" },
-  { label: "Book Job", icon: CalendarPlus, path: "jobs/new" },
-  { label: "Dispatch", icon: Columns3, path: "dispatch" },
-  { label: "Pricebook", icon: BookOpen, path: "pricebook" },
-  { label: "Invoices", icon: FileText, path: "invoices" },
-];
+  { label: "Dashboard", icon: LayoutDashboard, path: "dashboard", roles: null },
+  { label: "Customers",  icon: Users,           path: "customers", roles: null },
+  { label: "Book Job",   icon: CalendarPlus,    path: "jobs/new",  roles: null },
+  { label: "Dispatch",   icon: Columns3,        path: "dispatch",  roles: null },
+  { label: "Booking",    icon: MessageSquare,   path: "booking",   roles: null },
+  { label: "Pricebook",  icon: BookOpen,        path: "pricebook", roles: null },
+  { label: "Invoices",   icon: FileText,        path: "invoices",  roles: null },
+  { label: "Settings",   icon: Settings,        path: "settings",  roles: ["owner"] },
+] as const;
 
 export default function Sidebar() {
   const { tenantSlug } = useParams<{ tenantSlug: string }>();
@@ -47,23 +51,25 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={`/${tenantSlug}/${item.path}`}
-            className={({ isActive }) =>
-              cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-blue-600 text-white"
-                  : "text-slate-400 hover:text-slate-100 hover:bg-slate-800"
-              )
-            }
-          >
-            <item.icon className="h-4 w-4 flex-shrink-0" />
-            {item.label}
-          </NavLink>
-        ))}
+        {navItems
+          .filter((item) => !item.roles || item.roles.includes(user?.role as string))
+          .map((item) => (
+            <NavLink
+              key={item.path}
+              to={`/${tenantSlug}/${item.path}`}
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-400 hover:text-slate-100 hover:bg-slate-800"
+                )
+              }
+            >
+              <item.icon className="h-4 w-4 flex-shrink-0" />
+              {item.label}
+            </NavLink>
+          ))}
       </nav>
 
       {/* User footer */}

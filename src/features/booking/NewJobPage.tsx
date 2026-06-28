@@ -129,17 +129,17 @@ export default function NewJobPage() {
     if (!tenant) return;
     setSaving(true);
     try {
-      const { error } = await supabase.functions.invoke("create-job", {
-        body: {
-          customer_id: values.customer_id,
-          location_id: values.location_id,
-          job_type: values.job_type,
-          priority: values.priority,
-          description: values.description || null,
-          scheduled_start: values.scheduled_start || null,
-          scheduled_end: values.scheduled_end || null,
-          estimated_duration_minutes: values.estimated_duration_minutes || null,
-        },
+      const { error } = await supabase.from("jobs").insert({
+        tenant_id:                    tenant.id,
+        customer_id:                  values.customer_id,
+        location_id:                  values.location_id,
+        job_type:                     values.job_type,
+        priority:                     values.priority,
+        status:                       "unassigned",
+        description:                  values.description || null,
+        scheduled_start:              values.scheduled_start || null,
+        scheduled_end:                values.scheduled_end || null,
+        estimated_duration_minutes:   values.estimated_duration_minutes || null,
       });
 
       if (error) throw error;

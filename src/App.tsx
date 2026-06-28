@@ -12,6 +12,8 @@ import PricebookPage from "@/features/pricebook/PricebookPage";
 import InvoiceListPage from "@/features/invoicing/InvoiceListPage";
 import InvoiceBuilderPage from "@/features/invoicing/InvoiceBuilderPage";
 import TechApp from "@/features/tech-pwa/TechApp";
+import BookingInboxPage from "@/features/booking/BookingInboxPage";
+import SettingsPage from "@/features/settings/SettingsPage";
 
 function RouteGuard({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
@@ -65,10 +67,12 @@ export default function App() {
             <Route path="customers/:customerId" element={<CustomerDetailPage />} />
             <Route path="jobs/new" element={<NewJobPage />} />
             <Route path="dispatch" element={<DispatchBoardPage />} />
+            <Route path="booking" element={<BookingInboxPage />} />
             <Route path="pricebook" element={<PricebookPage />} />
             <Route path="invoices" element={<InvoiceListPage />} />
             <Route path="invoices/new" element={<InvoiceBuilderPage />} />
             <Route path="invoices/:invoiceId" element={<InvoiceBuilderPage />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
 
           <Route

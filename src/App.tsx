@@ -15,13 +15,15 @@ import InvoiceBuilderPage from "@/features/invoicing/InvoiceBuilderPage";
 import TechApp from "@/features/tech-pwa/TechApp";
 import BookingInboxPage from "@/features/booking/BookingInboxPage";
 import SettingsPage from "@/features/settings/SettingsPage";
+import AISettingsPage from "@/features/settings/AISettingsPage";
+import OnboardingPage from "@/features/onboarding/OnboardingPage";
 
 function RouteGuard({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-bone">
+        <div className="h-6 w-6 rounded-full border-2 border-ink border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -53,6 +55,16 @@ export default function App() {
             }
           />
 
+          {/* Onboarding — standalone (no AppLayout sidebar) */}
+          <Route
+            path="/:tenantSlug/onboarding"
+            element={
+              <RouteGuard>
+                <OnboardingPage />
+              </RouteGuard>
+            }
+          />
+
           {/* Operator / dispatcher routes */}
           <Route
             path="/:tenantSlug"
@@ -63,18 +75,19 @@ export default function App() {
             }
           >
             <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="customers" element={<CustomerListPage />} />
+            <Route path="dashboard"    element={<DashboardPage />} />
+            <Route path="customers"    element={<CustomerListPage />} />
             <Route path="customers/:customerId" element={<CustomerDetailPage />} />
-            <Route path="jobs" element={<JobListPage />} />
-            <Route path="jobs/new" element={<NewJobPage />} />
-            <Route path="dispatch" element={<DispatchBoardPage />} />
-            <Route path="booking" element={<BookingInboxPage />} />
-            <Route path="pricebook" element={<PricebookPage />} />
-            <Route path="invoices" element={<InvoiceListPage />} />
+            <Route path="jobs"         element={<JobListPage />} />
+            <Route path="jobs/new"     element={<NewJobPage />} />
+            <Route path="dispatch"     element={<DispatchBoardPage />} />
+            <Route path="booking"      element={<BookingInboxPage />} />
+            <Route path="pricebook"    element={<PricebookPage />} />
+            <Route path="invoices"     element={<InvoiceListPage />} />
             <Route path="invoices/new" element={<InvoiceBuilderPage />} />
             <Route path="invoices/:invoiceId" element={<InvoiceBuilderPage />} />
-            <Route path="settings" element={<SettingsPage />} />
+            <Route path="settings"     element={<SettingsPage />} />
+            <Route path="ai-settings"  element={<AISettingsPage />} />
           </Route>
 
           <Route

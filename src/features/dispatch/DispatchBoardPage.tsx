@@ -8,7 +8,6 @@ import { format, startOfDay, endOfDay, addDays, subDays } from "date-fns";
 import { ChevronLeft, ChevronRight, LayoutGrid, GanttChartSquare } from "lucide-react";
 import { supabase, realtimeClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import TechColumn from "./components/TechColumn";
 import JobCardOverlay from "./components/JobCardOverlay";
@@ -23,7 +22,6 @@ export default function DispatchBoardPage() {
   const [date, setDate]   = useState(new Date());
   const [view, setView]   = useState<ViewMode>("gantt");
 
-  // Require 8px of movement before a drag activates — prevents plain clicks from firing DragEnd.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
@@ -31,11 +29,12 @@ export default function DispatchBoardPage() {
   const [jobs, setJobs]               = useState<JobWithRelations[]>([]);
   const [loading, setLoading]         = useState(true);
   const [activeJob, setActiveJob]     = useState<JobWithRelations | null>(null);
+  const [aiPlacedCount, setAiPlacedCount] = useState(0);
   const initialLoadDone               = useRef(false);
 
   useEffect(() => {
     if (!tenant) return;
-    initialLoadDone.current = false; // show skeleton when date or tenant changes
+    initialLoadDone.current = false;
     void loadBoard();
 
     const channel = realtimeClient
@@ -57,7 +56,7 @@ export default function DispatchBoardPage() {
       const dayStart = startOfDay(date).toISOString();
       const dayEnd   = endOfDay(date).toISOString();
 
-      const [techRes, jobsRes] = await Promise.all([
+      const [techRes, jobsRes, aiRes] = await Promise.all([
         supabase
           .from("technicians")
           .select("*")
@@ -66,16 +65,24 @@ export default function DispatchBoardPage() {
           .order("name"),
         supabase
           .from("jobs")
-          .select("*, customers(id, name, phone), service_locations(id, address, city, state), technicians(id, name, phone)")
+          .select("*, customers(id,name,phone), service_locations(id,address,city,state), technicians(id,name,phone)")
           .eq("tenant_id", tenant.id)
           .is("deleted_at", null)
           .not("status", "in", "(cancelled,no_show)")
-          // Always show unassigned jobs regardless of date; show assigned jobs for the selected date only.
           .or(`status.eq.unassigned,and(scheduled_start.gte.${dayStart},scheduled_start.lte.${dayEnd})`),
+        supabase
+          .from("agent_actions")
+          .select("id")
+          .eq("tenant_id", tenant.id)
+          .eq("action_type", "dispatch_job")
+          .eq("status", "auto_executed")
+          .gte("created_at", dayStart)
+          .lte("created_at", dayEnd),
       ]);
 
       setTechnicians(techRes.data ?? []);
       setJobs((jobsRes.data ?? []) as JobWithRelations[]);
+      setAiPlacedCount(aiRes.data?.length ?? 0);
       initialLoadDone.current = true;
     } finally {
       setLoading(false);
@@ -83,8 +90,7 @@ export default function DispatchBoardPage() {
   }
 
   function handleDragStart(event: DragStartEvent) {
-    const job = jobs.find((j) => j.id === event.active.id);
-    setActiveJob(job ?? null);
+    setActiveJob(jobs.find((j) => j.id === event.active.id) ?? null);
   }
 
   async function handleDragEnd(event: DragEndEvent) {
@@ -95,20 +101,15 @@ export default function DispatchBoardPage() {
     const jobId  = active.id as string;
     const techId = over.id as string;
     const job    = jobs.find((j) => j.id === jobId);
-    if (!job) return;
-    if (job.tech_id === techId) return;
+    if (!job || job.tech_id === techId) return;
 
     setJobs((prev) =>
-      prev.map((j) =>
-        j.id === jobId ? { ...j, tech_id: techId, status: "dispatched" } : j
-      )
+      prev.map((j) => j.id === jobId ? { ...j, tech_id: techId, status: "dispatched" } : j)
     );
 
     try {
       const { error } = await supabase
-        .from("jobs")
-        .update({ tech_id: techId, status: "dispatched" })
-        .eq("id", jobId);
+        .from("jobs").update({ tech_id: techId, status: "dispatched" }).eq("id", jobId);
       if (error) throw error;
       toast.success("Job dispatched");
     } catch {
@@ -118,62 +119,72 @@ export default function DispatchBoardPage() {
   }
 
   const unassignedJobs = jobs.filter((j) => !j.tech_id || j.status === "unassigned");
+  const assignedJobCount = jobs.filter((j) => j.tech_id && j.status !== "unassigned").length;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-bone">
       {/* Toolbar */}
-      <div className="flex items-center gap-3 px-6 py-3 border-b bg-background">
-        <h1 className="text-xl font-bold">Dispatch</h1>
+      <div className="flex items-center gap-3 px-6 py-3 border-b border-line bg-paper flex-shrink-0">
+        <h1 className="text-[15px] font-semibold text-ink">Dispatch</h1>
 
         {/* Date navigation */}
-        <div className="flex items-center gap-1 ml-4">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDate((d) => subDays(d, 1))}>
+        <div className="flex items-center gap-1 ml-3">
+          <button
+            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-panel-warm text-ink-muted hover:text-ink transition-colors"
+            onClick={() => setDate((d) => subDays(d, 1))}
+          >
             <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="text-sm font-medium min-w-[148px] text-center tabular-nums">
+          </button>
+          <span className="text-sm font-medium min-w-[148px] text-center tabular-nums text-ink">
             {format(date, "EEE, MMM d, yyyy")}
           </span>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDate((d) => addDays(d, 1))}>
+          <button
+            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-panel-warm text-ink-muted hover:text-ink transition-colors"
+            onClick={() => setDate((d) => addDays(d, 1))}
+          >
             <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="sm" className="h-8 text-xs ml-1" onClick={() => setDate(new Date())}>
+          </button>
+          <button
+            className="h-8 px-3 rounded-lg border border-line bg-raised text-xs font-medium text-ink-2 hover:bg-panel-warm transition-colors ml-1"
+            onClick={() => setDate(new Date())}
+          >
             Today
-          </Button>
+          </button>
         </div>
 
-        {/* View toggle */}
-        <div className="ml-auto flex items-center gap-0.5 rounded-lg border bg-muted p-0.5">
-          <button
-            onClick={() => setView("columns")}
-            className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-              view === "columns"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <LayoutGrid className="h-3.5 w-3.5" />
-            Columns
-          </button>
-          <button
-            onClick={() => setView("gantt")}
-            className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-              view === "gantt"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <GanttChartSquare className="h-3.5 w-3.5" />
-            Gantt
-          </button>
+        {/* AI placed pill */}
+        {!loading && aiPlacedCount > 0 && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-pill bg-ai-chip-bg border border-ai-tint-border text-ai-ink text-xs font-medium">
+            <span className="text-[10px]">✦</span>
+            AI placed {aiPlacedCount} of {assignedJobCount + aiPlacedCount} today
+          </div>
+        )}
+
+        {/* View segmented control */}
+        <div className="ml-auto flex items-center gap-0.5 rounded-lg border border-line bg-bone p-0.5">
+          {(["columns", "gantt"] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                view === v
+                  ? "bg-paper text-ink shadow-sm border border-line"
+                  : "text-ink-muted hover:text-ink"
+              }`}
+            >
+              {v === "columns" ? <LayoutGrid className="h-3.5 w-3.5" /> : <GanttChartSquare className="h-3.5 w-3.5" />}
+              {v.charAt(0).toUpperCase() + v.slice(1)}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* AI suggestions panel — only shown when proposals exist */}
+      {/* AI suggestions panel */}
       {!loading && (
         <DispatchAIPanel jobs={jobs} onAssigned={() => void loadBoard()} />
       )}
 
-      {/* Board content */}
+      {/* Board */}
       {loading ? (
         <div className="flex gap-4 p-6 overflow-x-auto flex-1">
           {[...Array(4)].map((_, i) => (
@@ -199,12 +210,7 @@ export default function DispatchBoardPage() {
           onDragEnd={handleDragEnd}
         >
           <div className="flex gap-0 flex-1 overflow-x-auto">
-            <TechColumn
-              techId="unassigned"
-              techName="Unassigned"
-              jobs={unassignedJobs}
-              isUnassigned
-            />
+            <TechColumn techId="unassigned" techName="Unassigned" jobs={unassignedJobs} isUnassigned />
             {technicians.map((tech) => (
               <TechColumn
                 key={tech.id}

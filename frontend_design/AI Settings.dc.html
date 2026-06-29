@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:#EDE6DA;font-family:'Hanken Grotesk',system-ui,sans-serif;color:#292420;-webkit-font-smoothing:antialiased}
+  ::selection{background:#D9D3E6}
+  input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer}
+  input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:99px;background:#E3D9C7}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;margin-top:-7px;width:20px;height:20px;border-radius:99px;background:#292420;border:3px solid #FBF8F3;box-shadow:0 1px 3px rgba(41,36,32,.3)}
+  *::-webkit-scrollbar{width:10px;height:10px}
+  *::-webkit-scrollbar-thumb{background:#D8CEBC;border-radius:99px;border:3px solid transparent;background-clip:padding-box}
+</style>
+</helmet>
+
+<div style="min-height:100vh;padding:40px 24px 80px;display:flex;justify-content:center">
+  <div style="width:100%;max-width:880px">
+
+    <!-- header -->
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:8px">
+      <span style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#8A7F9E">Settings</span>
+      <span style="color:#C3B9A6">/</span>
+      <span style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9A9082">AI agents</span>
+    </div>
+    <h1 style="font-size:28px;font-weight:600;letter-spacing:-.015em;margin:0 0 8px">How much should each agent do on its own?</h1>
+    <p style="font-size:15px;color:#6F6658;margin:0 0 26px;line-height:1.55;max-width:64ch">Each agent can simply suggest and wait for you, or act on its own when it's confident. You stay in control — everything an agent does is logged and reversible, and money never moves without a person.</p>
+
+    <!-- agents -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <sc-for list="{{ agents }}" as="a" hint-placeholder-count="4">
+        <div style="background:#FBF8F3;border:1px solid #E6DECF;border-radius:16px;padding:22px 24px;box-shadow:0 1px 2px rgba(41,36,32,.04)">
+          <!-- agent header -->
+          <div style="display:flex;align-items:center;gap:13px;margin-bottom:18px">
+            <span style="{{ a.iconStyle }}">{{ a.glyph }}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:16.5px;font-weight:600;color:#292420">{{ a.name }}</div>
+              <div style="font-size:13px;color:#9A9082">{{ a.role }}</div>
+            </div>
+            <span style="{{ a.autonomyBadgeStyle }}">{{ a.autonomyLabel }}</span>
+          </div>
+
+          <!-- autonomy slider -->
+          <div style="background:#FEFCF9;border:1px solid #EFE9DE;border-radius:12px;padding:18px 20px 20px;margin-bottom:13px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:12.5px;font-weight:600;color:#6F6658">Autonomy</span>
+              <span style="font-size:12.5px;color:#9A9082">{{ a.thresholdHint }}</span>
+            </div>
+            <div style="font-size:15px;font-weight:600;color:#292420;margin-bottom:14px">{{ a.autonomyDesc }}</div>
+            <input type="range" min="0" max="3" step="1" value="{{ a.level }}" onInput="{{ a.onLevel }}" style="width:100%" />
+            <div style="display:flex;justify-content:space-between;margin-top:9px;font-size:11.5px;color:#9A9082">
+              <span>Suggest only</span><span>When sure</span><span>When fairly sure</span><span>Almost always</span>
+            </div>
+          </div>
+
+          <!-- secondary row: model + financial note -->
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:9px">
+              <span style="font-size:12.5px;color:#9A9082">Thinking style</span>
+              <div style="display:inline-flex;gap:2px;background:#F1EBE1;border-radius:8px;padding:3px">
+                <sc-for list="{{ a.modelOptions }}" as="m" hint-placeholder-count="3">
+                  <button onClick="{{ m.set }}" style="{{ m.style }}">{{ m.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+            <sc-if value="{{ a.touchesMoney }}" hint-placeholder-val="{{ false }}">
+              <span style="margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:12px;color:#A85A40;background:#F7ECE6;border:1px solid #E8CFC2;padding:5px 11px;border-radius:8px">🔒 Always asks you before moving money</span>
+            </sc-if>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- footer note -->
+    <div style="display:flex;align-items:center;gap:11px;margin-top:22px;padding:15px 18px;background:#F3F1F8;border:1px solid #D3D9EC;border-radius:12px">
+      <span style="color:#5B6B9E;font-size:14px">✦</span>
+      <p style="margin:0;font-size:13px;color:#3F4664;line-height:1.5">Not sure where to set these? Most companies start every agent at <strong style="color:#292420">"When sure"</strong> for a week, watch the activity feed, then loosen the ones they trust. You can change any of this anytime.</p>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    levels: { booking: 2, dispatch: 1, invoice: 2, followup: 3 },
+    models: { booking: 'Balanced', dispatch: 'Most capable', invoice: 'Balanced', followup: 'Fastest' },
+  };
+  renderVals() {
+    const s = this.state;
+    // level 0..3 → plain language + quiet % threshold
+    const ladder = [
+      { label: 'Suggests only', desc: 'Drafts everything and waits for your go-ahead.', badge: 'Suggests only', hint: '', tone: 'neutral' },
+      { label: 'Acts when sure', desc: 'Handles it alone only when it\u2019s very confident — otherwise asks you.', badge: 'Acts when sure', hint: 'auto above ~95%', tone: 'cool' },
+      { label: 'Acts when fairly sure', desc: 'Handles most things alone; brings you the genuinely uncertain calls.', badge: 'Acts when fairly sure', hint: 'auto above ~85%', tone: 'cool' },
+      { label: 'Acts almost always', desc: 'Runs end-to-end; only flags the rare exception.', badge: 'High autonomy', hint: 'auto above ~70%', tone: 'green' },
+    ];
+
+    const badgeStyle = (tone) => {
+      const base = 'font-size:11.5px;font-weight:600;padding:5px 12px;border-radius:99px;border:1px solid ;white-space:nowrap;';
+      if (tone === 'neutral') return base.replace('border:1px solid ;', 'border:1px solid #E6DECF;') + 'background:#F4EFE6;color:#6F6658';
+      if (tone === 'green') return base.replace('border:1px solid ;', 'border:1px solid #CFE0CD;') + 'background:#ECF1EC;color:#4C6749';
+      return base.replace('border:1px solid ;', 'border:1px solid #D3D9EC;') + 'background:#EEF0F7;color:#46537F';
+    };
+
+    const defs = [
+      { key: 'booking', name: 'Booking agent', role: 'Answers calls & texts, schedules jobs', glyph: '✦', bg: '#5B6B9E', money: false },
+      { key: 'dispatch', name: 'Dispatch agent', role: 'Assigns the right tech to each job', glyph: '◹', bg: '#7C8A66', money: false },
+      { key: 'invoice', name: 'Invoice agent', role: 'Builds & sends invoices, chases payment', glyph: '$', bg: '#B0822F', money: true },
+      { key: 'followup', name: 'Follow-up agent', role: 'Review requests & re-booking nudges', glyph: '↻', bg: '#9B7B86', money: false },
+    ];
+
+    const modelLabels = ['Balanced', 'Most capable', 'Fastest'];
+
+    const agents = defs.map((d) => {
+      const lvl = s.levels[d.key];
+      const rung = ladder[lvl];
+      const iconStyle = 'width:40px;height:40px;border-radius:11px;color:#fff;font-size:18px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none;background:' + d.bg;
+      const modelOptions = modelLabels.map((label) => {
+        const on = s.models[d.key] === label;
+        const style = 'padding:6px 12px;border:none;border-radius:6px;font:600 12px \'Hanken Grotesk\';cursor:pointer;'
+          + (on ? 'background:#FEFCF9;color:#292420;box-shadow:0 1px 2px rgba(41,36,32,.07)' : 'background:transparent;color:#9A9082');
+        return { label, style, set: () => this.setState({ models: { ...this.state.models, [d.key]: label } }) };
+      });
+      return {
+        name: d.name, role: d.role, glyph: d.glyph, iconStyle,
+        level: lvl,
+        autonomyLabel: rung.badge,
+        autonomyDesc: rung.desc,
+        thresholdHint: rung.hint,
+        autonomyBadgeStyle: badgeStyle(rung.tone),
+        touchesMoney: d.money,
+        modelOptions,
+        onLevel: (e) => this.setState({ levels: { ...this.state.levels, [d.key]: parseInt(e.target.value, 10) } }),
+      };
+    });
+
+    return { agents };
+  }
+}
+</script>
+</body>
+</html>

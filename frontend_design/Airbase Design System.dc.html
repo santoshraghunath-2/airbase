@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:#F1EBE1;font-family:'Hanken Grotesk',system-ui,sans-serif;color:#292420;-webkit-font-smoothing:antialiased}
+  ::selection{background:#D9D3E6}
+  a{color:inherit;text-decoration:none}
+  ::-webkit-scrollbar{width:11px;height:11px}
+  ::-webkit-scrollbar-thumb{background:#D8CEBC;border-radius:99px;border:3px solid #F1EBE1}
+  @keyframes abpulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(2.1);opacity:0}}
+</style>
+</helmet>
+<div style="display:flex;min-height:100vh;align-items:flex-start">
+
+  <aside style="position:sticky;top:0;height:100vh;width:248px;flex:none;background:#FBF8F3;border-right:1px solid #E6DECF;padding:28px 20px;display:flex;flex-direction:column;gap:26px;overflow-y:auto">
+    <div style="display:flex;align-items:center;gap:11px">
+      <div style="width:34px;height:34px;border-radius:9px;background:#292420;display:flex;align-items:center;justify-content:center;color:#F1EBE1;font-weight:600;font-size:15px;letter-spacing:-.02em">A</div>
+      <div style="line-height:1.15">
+        <div style="font-weight:600;font-size:15px;letter-spacing:-.01em">Airbase</div>
+        <div style="font-size:12px;color:#9A9082">Design System</div>
+      </div>
+    </div>
+
+    <nav style="display:flex;flex-direction:column;gap:2px;font-size:13.5px">
+      <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#B0A691;padding:8px 10px 4px">Foundations</div>
+      <a href="#intro" style="padding:7px 10px;border-radius:7px;color:#6F6658" style-hover="background:#F1EBE1;color:#292420">Overview</a>
+      <a href="#color" style="padding:7px 10px;border-radius:7px;color:#6F6658" style-hover="background:#F1EBE1;color:#292420">Color</a>
+      <a href="#type" style="padding:7px 10px;border-radius:7px;color:#6F6658" style-hover="background:#F1EBE1;color:#292420">Typography</a>
+      <a href="#space" style="padding:7px 10px;border-radius:7px;color:#6F6658" style-hover="background:#F1EBE1;color:#292420">Space &amp; Elevation</a>
+      <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#B0A691;padding:14px 10px 4px">Components</div>
+      <a href="#controls" style="padding:7px 10px;border-radius:7px;color:#6F6658" style-hover="background:#F1EBE1;color:#292420">Controls</a>
+      <a href="#status" style="padding:7px 10px;border-radius:7px;color:#6F6658" style-hover="background:#F1EBE1;color:#292420">Status &amp; Provenance</a>
+      <a href="#aifield" style="padding:7px 10px;border-radius:7px;color:#6F6658" style-hover="background:#F1EBE1;color:#292420">AI Confidence Pattern</a>
+      <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#B0A691;padding:14px 10px 4px">Screens</div>
+      <a href="#dashboard" style="padding:7px 10px;border-radius:7px;color:#6F6658" style-hover="background:#F1EBE1;color:#292420">Operator Dashboard</a>
+      <a href="#dispatch" style="padding:7px 10px;border-radius:7px;color:#6F6658" style-hover="background:#F1EBE1;color:#292420">Dispatch Board</a>
+      <a href="#tech" style="padding:7px 10px;border-radius:7px;color:#6F6658" style-hover="background:#F1EBE1;color:#292420">Technician App</a>
+    </nav>
+
+    <div style="margin-top:auto;font-size:11.5px;color:#B0A691;line-height:1.5;border-top:1px solid #EFE9DE;padding-top:16px">For Claude Code — build reference.<br>Warm · calm · AI-supervised.</div>
+  </aside>
+
+  <main style="flex:1;min-width:0;padding:0 0 120px">
+
+    <!-- ===== INTRO ===== -->
+    <section id="intro" style="padding:72px 64px 0;max-width:1120px">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#8A7F9E;margin-bottom:18px">Airbase — The AI Operating System for the Trades</div>
+      <h1 style="font-weight:600;font-size:50px;line-height:1.04;letter-spacing:-.022em;margin:0 0 22px;max-width:17ch">A calm control room for a company that runs itself.</h1>
+      <p style="font-size:18px;line-height:1.6;color:#6F6658;max-width:64ch;margin:0 0 40px">AI agents book, dispatch, invoice, and follow up. The operator <strong style="color:#292420;font-weight:600">supervises</strong> — approving the few decisions that need a second set of eyes and handling the exceptions that are genuinely human. Most screens are <strong style="color:#292420;font-weight:600">monitoring surfaces</strong>, not to-do lists. This document defines the visual language and the screens to build against.</p>
+      <div style="display:flex;gap:14px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:9px;padding:10px 16px;background:#FBF8F3;border:1px solid #E6DECF;border-radius:99px;font-size:13.5px;color:#6F6658"><span style="width:8px;height:8px;border-radius:99px;background:#5E7A5A"></span>Monitoring before action</div>
+        <div style="display:flex;align-items:center;gap:9px;padding:10px 16px;background:#FBF8F3;border:1px solid #E6DECF;border-radius:99px;font-size:13.5px;color:#6F6658"><span style="width:8px;height:8px;border-radius:99px;background:#5B6B9E"></span>AI proposes, the human supervises</div>
+        <div style="display:flex;align-items:center;gap:9px;padding:10px 16px;background:#FBF8F3;border:1px solid #E6DECF;border-radius:99px;font-size:13.5px;color:#6F6658"><span style="width:8px;height:8px;border-radius:99px;background:#292420"></span>Auto-execute when confident</div>
+      </div>
+    </section>
+
+    <div style="height:1px;background:#E6DECF;margin:64px 64px 0;max-width:1120px"></div>
+
+    <!-- ===== COLOR ===== -->
+    <section id="color" style="padding:56px 64px 0;max-width:1120px">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#B0A691;margin-bottom:8px">Foundations</div>
+      <h2 style="font-size:30px;font-weight:600;letter-spacing:-.01em;margin:0 0 10px">Color</h2>
+      <p style="font-size:16px;line-height:1.6;color:#6F6658;max-width:62ch;margin:0 0 32px">Warm neutrals carry the entire interface; there is no competing brand accent. Identity and primary actions are <strong style="color:#292420;font-weight:600">ink</strong>. Semantic colors are low-chroma so nothing shouts. The <strong style="color:#46537F;font-weight:600">AI accent is the one deliberately cool note</strong> — it always means "machine-proposed, not yet human-confirmed."</p>
+
+      <div style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#9A9082;margin-bottom:14px">Surfaces &amp; Ink</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-bottom:36px">
+        <div style="border:1px solid #E6DECF;border-radius:12px;overflow:hidden;background:#FBF8F3"><div style="height:74px;background:#F1EBE1"></div><div style="padding:11px 13px"><div style="font-size:13px;font-weight:600">Bone</div><div style="font-size:12px;color:#9A9082;font-variant-numeric:tabular-nums">#F1EBE1 · page</div></div></div>
+        <div style="border:1px solid #E6DECF;border-radius:12px;overflow:hidden;background:#FBF8F3"><div style="height:74px;background:#FBF8F3;box-shadow:inset 0 0 0 1px #E6DECF"></div><div style="padding:11px 13px"><div style="font-size:13px;font-weight:600">Paper</div><div style="font-size:12px;color:#9A9082;font-variant-numeric:tabular-nums">#FBF8F3 · card</div></div></div>
+        <div style="border:1px solid #E6DECF;border-radius:12px;overflow:hidden;background:#FBF8F3"><div style="height:74px;background:#FEFCF9;box-shadow:inset 0 0 0 1px #E6DECF"></div><div style="padding:11px 13px"><div style="font-size:13px;font-weight:600">Raised</div><div style="font-size:12px;color:#9A9082;font-variant-numeric:tabular-nums">#FEFCF9</div></div></div>
+        <div style="border:1px solid #E6DECF;border-radius:12px;overflow:hidden;background:#FBF8F3"><div style="height:74px;background:#292420"></div><div style="padding:11px 13px"><div style="font-size:13px;font-weight:600">Ink</div><div style="font-size:12px;color:#9A9082;font-variant-numeric:tabular-nums">#292420 · text</div></div></div>
+        <div style="border:1px solid #E6DECF;border-radius:12px;overflow:hidden;background:#FBF8F3"><div style="height:74px;background:#6F6658"></div><div style="padding:11px 13px"><div style="font-size:13px;font-weight:600">Ink-2</div><div style="font-size:12px;color:#9A9082;font-variant-numeric:tabular-nums">#6F6658 · muted</div></div></div>
+        <div style="border:1px solid #E6DECF;border-radius:12px;overflow:hidden;background:#FBF8F3"><div style="height:74px;background:#E6DECF"></div><div style="padding:11px 13px"><div style="font-size:13px;font-weight:600">Line</div><div style="font-size:12px;color:#9A9082;font-variant-numeric:tabular-nums">#E6DECF · border</div></div></div>
+      </div>
+
+      <div style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#9A9082;margin-bottom:14px">AI &amp; Semantic</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px">
+        <div style="border:1px solid #E6DECF;border-radius:12px;overflow:hidden;background:#FBF8F3"><div style="height:74px;background:#5B6B9E;display:flex;align-items:flex-end;padding:9px"><span style="font-size:11px;font-weight:600;color:#fff;background:rgba(0,0,0,.18);padding:2px 7px;border-radius:99px">✦ AI accent</span></div><div style="padding:11px 13px"><div style="font-size:13px;font-weight:600">AI · proposed</div><div style="font-size:12px;color:#9A9082;font-variant-numeric:tabular-nums">#5B6B9E</div></div></div>
+        <div style="border:1px solid #E6DECF;border-radius:12px;overflow:hidden;background:#FBF8F3"><div style="height:74px;background:#5E7A5A"></div><div style="padding:11px 13px"><div style="font-size:13px;font-weight:600">Confirmed / done</div><div style="font-size:12px;color:#9A9082;font-variant-numeric:tabular-nums">#5E7A5A</div></div></div>
+        <div style="border:1px solid #E6DECF;border-radius:12px;overflow:hidden;background:#FBF8F3"><div style="height:74px;background:#B0822F"></div><div style="padding:11px 13px"><div style="font-size:13px;font-weight:600">Waiting / flagged</div><div style="font-size:12px;color:#9A9082;font-variant-numeric:tabular-nums">#B0822F</div></div></div>
+        <div style="border:1px solid #E6DECF;border-radius:12px;overflow:hidden;background:#FBF8F3"><div style="height:74px;background:#A85A40"></div><div style="padding:11px 13px"><div style="font-size:13px;font-weight:600">Blocked / emergency</div><div style="font-size:12px;color:#9A9082;font-variant-numeric:tabular-nums">#A85A40</div></div></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:18px;padding:14px 16px;background:#F3F1F8;border:1px solid #D3D9EC;border-radius:11px;max-width:760px">
+        <span style="color:#5B6B9E;font-size:14px;line-height:1.5">✦</span>
+        <p style="margin:0;font-size:13.5px;line-height:1.55;color:#3F4664">The cool periwinkle never decorates. If something is periwinkle, the AI proposed it and a human has not yet confirmed it. The moment a human confirms, it turns warm — ink text on paper, or the green "confirmed" pill. This single rule is the backbone of the whole product.</p>
+      </div>
+    </section>
+
+    <!-- ===== TYPE ===== -->
+    <section id="type" style="padding:56px 64px 0;max-width:1120px">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#B0A691;margin-bottom:8px">Foundations</div>
+      <h2 style="font-size:30px;font-weight:600;letter-spacing:-.01em;margin:0 0 10px">Typography</h2>
+      <p style="font-size:16px;line-height:1.6;color:#6F6658;max-width:62ch;margin:0 0 32px"><strong style="color:#292420;font-weight:600">Hanken Grotesk</strong> is the single workhorse — dense data tables and natural-language AI output share one humanist grotesk. Numbers are always tabular. No display serif: this is an operations tool, not a memorial.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+        <div style="background:#FBF8F3;border:1px solid #E6DECF;border-radius:14px;padding:28px 30px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#B0A691;margin-bottom:18px">Scale — Hanken Grotesk</div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div><div style="font-size:30px;font-weight:600;letter-spacing:-.01em;line-height:1.1">Display / 30 · 600</div><div style="font-size:11.5px;color:#9A9082;margin-top:3px">Page titles, big KPI numbers</div></div>
+            <div><div style="font-size:22px;font-weight:600;letter-spacing:-.005em">Heading / 22 · 600</div><div style="font-size:11.5px;color:#9A9082;margin-top:3px">Section &amp; card titles</div></div>
+            <div><div style="font-size:15px;font-weight:400;line-height:1.55">Body / 15 · 400 — the resting size for forms, lists, and reading inside any workspace.</div></div>
+            <div><div style="font-size:13px;color:#6F6658">Small / 13 · 400 — captions, helper text, metadata</div></div>
+            <div><div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#9A9082">Label / 11 · 600 · uppercase</div></div>
+          </div>
+        </div>
+        <div style="background:#FBF8F3;border:1px solid #E6DECF;border-radius:14px;padding:28px 30px;display:flex;flex-direction:column;gap:18px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#B0A691">AI text vs. human text</div>
+          <div style="background:#F3F1F8;border:1px solid #D3D9EC;border-left:3px solid #5B6B9E;border-radius:10px;padding:13px 15px">
+            <div style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#5B6B9E;margin-bottom:6px;display:flex;align-items:center;gap:6px"><span>✦</span>AI · drafted</div>
+            <p style="margin:0;font-size:14px;line-height:1.55;color:#3F4664">Carlos is the best match — 12 min away, drain-cleaning certified, opens at 2:00 PM.</p>
+          </div>
+          <div style="background:#FEFCF9;border:1px solid #E6DECF;border-radius:10px;padding:13px 15px">
+            <div style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#9A9082;margin-bottom:6px">✎ Dispatcher note</div>
+            <p style="margin:0;font-size:14px;line-height:1.55;color:#292420">Customer says the gate code changed — use #4417, dog is friendly.</p>
+          </div>
+          <div style="font-size:11.5px;color:#9A9082;line-height:1.5">AI-generated copy lives on the cool tinted surface with the ✦ glyph; human-entered copy is ink on paper. Same typeface, different ground.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SPACE & ELEVATION ===== -->
+    <section id="space" style="padding:56px 64px 0;max-width:1120px">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#B0A691;margin-bottom:8px">Foundations</div>
+      <h2 style="font-size:30px;font-weight:600;letter-spacing:-.01em;margin:0 0 10px">Space &amp; Elevation</h2>
+      <p style="font-size:16px;line-height:1.6;color:#6F6658;max-width:62ch;margin:0 0 32px">A 4px base grid. Breathing room is the default in the operator app; the dispatch board earns density because it is a monitoring surface. Elevation is soft and warm-tinted — shadows suggest paper, not glass.</p>
+      <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:18px">
+        <div style="background:#FBF8F3;border:1px solid #E6DECF;border-radius:14px;padding:28px 30px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#B0A691;margin-bottom:18px">Spacing scale (px)</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:14px"><div style="width:4px;height:18px;background:#8A7F9E;border-radius:2px"></div><span style="font-size:13px;color:#6F6658;font-variant-numeric:tabular-nums">4 · hairline gaps</span></div>
+            <div style="display:flex;align-items:center;gap:14px"><div style="width:8px;height:18px;background:#8A7F9E;border-radius:2px"></div><span style="font-size:13px;color:#6F6658;font-variant-numeric:tabular-nums">8 · within a control</span></div>
+            <div style="display:flex;align-items:center;gap:14px"><div style="width:16px;height:18px;background:#8A7F9E;border-radius:2px"></div><span style="font-size:13px;color:#6F6658;font-variant-numeric:tabular-nums">16 · field &amp; card rows</span></div>
+            <div style="display:flex;align-items:center;gap:14px"><div style="width:24px;height:18px;background:#8A7F9E;border-radius:2px"></div><span style="font-size:13px;color:#6F6658;font-variant-numeric:tabular-nums">24 · card padding</span></div>
+            <div style="display:flex;align-items:center;gap:14px"><div style="width:40px;height:18px;background:#8A7F9E;border-radius:2px"></div><span style="font-size:13px;color:#6F6658;font-variant-numeric:tabular-nums">40 · between sections</span></div>
+            <div style="display:flex;align-items:center;gap:14px"><div style="width:64px;height:18px;background:#8A7F9E;border-radius:2px"></div><span style="font-size:13px;color:#6F6658;font-variant-numeric:tabular-nums">64 · page gutters</span></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="background:#FEFCF9;border:1px solid #EFE9DE;border-radius:12px;padding:18px 20px;box-shadow:0 1px 2px rgba(41,36,32,.04)"><div style="font-size:13.5px;font-weight:600">Resting · radius 12</div><div style="font-size:12px;color:#9A9082">0 1px 2px / .04 — cards &amp; job tiles at rest</div></div>
+          <div style="background:#FEFCF9;border:1px solid #EFE9DE;border-radius:14px;padding:18px 20px;box-shadow:0 1px 2px rgba(41,36,32,.04),0 10px 28px -14px rgba(41,36,32,.16)"><div style="font-size:13.5px;font-weight:600">Raised · radius 14</div><div style="font-size:12px;color:#9A9082">popovers, dragged cards, dialogs</div></div>
+          <div style="background:#FEFCF9;border:1px solid #E6DECF;border-radius:18px;padding:18px 20px;box-shadow:0 2px 4px rgba(41,36,32,.05),0 24px 60px -22px rgba(41,36,32,.30)"><div style="font-size:13.5px;font-weight:600">Overlay · radius 18</div><div style="font-size:12px;color:#9A9082">command bar, modals, AI panel</div></div>
+        </div>
+      </div>
+    </section>
+
+    <div style="height:1px;background:#E6DECF;margin:64px 64px 0;max-width:1120px"></div>
+
+    <!-- ===== CONTROLS ===== -->
+    <section id="controls" style="padding:56px 64px 0;max-width:1120px">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#B0A691;margin-bottom:8px">Components</div>
+      <h2 style="font-size:30px;font-weight:600;letter-spacing:-.01em;margin:0 0 10px">Controls</h2>
+      <p style="font-size:16px;line-height:1.6;color:#6F6658;max-width:62ch;margin:0 0 32px">Quiet by default. The primary action is the only filled <strong style="color:#292420;font-weight:600">ink</strong> button on a screen — green is never an action fill, only a confirmed state. Hit targets never below 40px; 44px on touch, 56px in the field app.</p>
+
+      <div style="background:#FBF8F3;border:1px solid #E6DECF;border-radius:14px;padding:30px">
+        <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#B0A691;margin-bottom:16px">Buttons</div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:14px">
+          <button style="height:42px;padding:0 20px;border:none;border-radius:9px;background:#292420;color:#F1EBE1;font:600 14px 'Hanken Grotesk';cursor:pointer" style-hover="background:#3a342d">New job</button>
+          <button style="height:42px;padding:0 20px;border:1px solid #D8CEBC;border-radius:9px;background:#FEFCF9;color:#292420;font:600 14px 'Hanken Grotesk';cursor:pointer" style-hover="border-color:#B9AD96;background:#fff">Secondary</button>
+          <button style="height:42px;padding:0 16px;border:none;border-radius:9px;background:transparent;color:#6F6658;font:600 14px 'Hanken Grotesk';cursor:pointer" style-hover="background:#F1EBE1;color:#292420">Ghost</button>
+          <button style="height:42px;padding:0 18px;border:1px solid #E3C9BD;border-radius:9px;background:#F7ECE6;color:#A85A40;font:600 14px 'Hanken Grotesk';cursor:pointer" style-hover="background:#f2e1d8">Cancel job</button>
+        </div>
+        <div style="font-size:12.5px;color:#9A9082;line-height:1.5;max-width:60ch;margin-bottom:28px">Confirming an AI proposal uses the ink primary too — the <em>result</em> becomes a green "Confirmed" pill (see AI Confidence Pattern). The button itself is never green.</div>
+
+        <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#B0A691;margin-bottom:16px">Inputs &amp; selection</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:720px;margin-bottom:26px">
+          <div>
+            <label style="display:block;font-size:12.5px;font-weight:600;color:#6F6658;margin-bottom:7px">Customer</label>
+            <input value="Sarah Whitman" style="width:100%;height:44px;padding:0 14px;border:1px solid #D8CEBC;border-radius:9px;background:#FEFCF9;font:400 15px 'Hanken Grotesk';color:#292420" style-focus="border-color:#5B6B9E;outline:none;box-shadow:0 0 0 3px rgba(91,107,158,.14)" />
+          </div>
+          <div>
+            <label style="display:block;font-size:12.5px;font-weight:600;color:#6F6658;margin-bottom:7px">Service address</label>
+            <input placeholder="Search address…" style="width:100%;height:44px;padding:0 14px;border:1px solid #D8CEBC;border-radius:9px;background:#FEFCF9;font:400 15px 'Hanken Grotesk';color:#9A9082" />
+          </div>
+        </div>
+
+        <div style="display:flex;gap:30px;flex-wrap:wrap;align-items:flex-start">
+          <div>
+            <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#B0A691;margin-bottom:12px">Segmented</div>
+            <div style="display:inline-flex;gap:2px;background:#F1EBE1;border-radius:8px;padding:3px">
+              <button style="padding:7px 15px;border:none;border-radius:6px;background:#FEFCF9;font:600 12.5px 'Hanken Grotesk';color:#292420;cursor:pointer;box-shadow:0 1px 2px rgba(41,36,32,.06)">Board</button>
+              <button style="padding:7px 15px;border:none;border-radius:6px;background:transparent;font:600 12.5px 'Hanken Grotesk';color:#9A9082;cursor:pointer">List</button>
+              <button style="padding:7px 15px;border:none;border-radius:6px;background:transparent;font:600 12.5px 'Hanken Grotesk';color:#9A9082;cursor:pointer">Map</button>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#B0A691;margin-bottom:12px">Auto-execute toggle</div>
+            <div style="display:flex;align-items:center;gap:11px">
+              <div style="width:42px;height:24px;border-radius:99px;background:#5B6B9E;position:relative;flex:none"><div style="position:absolute;top:2px;left:20px;width:20px;height:20px;border-radius:99px;background:#fff;box-shadow:0 1px 2px rgba(41,36,32,.25)"></div></div>
+              <span style="font-size:13.5px;color:#292420;font-weight:500">Let AI assign when very confident</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== STATUS & PROVENANCE ===== -->
+    <section id="status" style="padding:56px 64px 0;max-width:1120px">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#B0A691;margin-bottom:8px">Components</div>
+      <h2 style="font-size:30px;font-weight:600;letter-spacing:-.01em;margin:0 0 10px">Status &amp; Provenance</h2>
+      <p style="font-size:16px;line-height:1.6;color:#6F6658;max-width:62ch;margin:0 0 32px">Every job, every AI decision, and every field carries a calm, legible state. Operational status uses a pill with a single colored dot. AI decisions carry their own lifecycle. Provenance answers one question at a glance: did a human or a machine put this here?</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+        <div style="background:#FBF8F3;border:1px solid #E6DECF;border-radius:14px;padding:28px 30px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#B0A691;margin-bottom:16px">Job status</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <span style="display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:99px;background:#F8F1E1;border:1px solid #ECDDBF;font-size:13px;color:#8A6A22"><span style="width:7px;height:7px;border-radius:99px;background:#B0822F"></span>Unassigned</span>
+            <span style="display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:99px;background:#FEFCF9;border:1px solid #E6DECF;font-size:13px;color:#6F6658"><span style="width:7px;height:7px;border-radius:99px;background:#8A7F9E"></span>Scheduled</span>
+            <span style="display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:99px;background:#FEFCF9;border:1px solid #E6DECF;font-size:13px;color:#6F6658"><span style="width:7px;height:7px;border-radius:99px;background:#7C8A66"></span>En route</span>
+            <span style="display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:99px;background:#ECF1EC;border:1px solid #CFE0CD;font-size:13px;color:#4C6749"><span style="width:7px;height:7px;border-radius:99px;background:#5E7A5A;animation:abpulse 2.4s ease-in-out infinite"></span>On site</span>
+            <span style="display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:99px;background:#FEFCF9;border:1px solid #E6DECF;font-size:13px;color:#292420"><span style="width:7px;height:7px;border-radius:99px;background:#292420"></span>Completed</span>
+            <span style="display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:99px;background:#FEFCF9;border:1px solid #E6DECF;font-size:13px;color:#9A9082"><span style="width:7px;height:7px;border-radius:99px;background:#9A9082"></span>Invoiced</span>
+          </div>
+          <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#B0A691;margin:24px 0 14px">Priority</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:7px;background:#A85A40;font-size:12px;font-weight:600;color:#fff">Emergency</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:7px;background:#F8F1E1;border:1px solid #ECDDBF;font-size:12px;font-weight:600;color:#8A6A22">High</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:7px;background:#F4F1EB;border:1px solid #E2D9C8;font-size:12px;font-weight:600;color:#6F6658">Normal</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:7px;background:transparent;border:1px solid #E6DECF;font-size:12px;font-weight:600;color:#9A9082">Low</span>
+          </div>
+        </div>
+
+        <div style="background:#FBF8F3;border:1px solid #E6DECF;border-radius:14px;padding:28px 30px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8A7F9E;margin-bottom:16px">AI decision lifecycle</div>
+          <div style="display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-bottom:10px">
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:7px;background:#FEFCF9;border:1px solid #D3D9EC;font-size:12px;font-weight:600;color:#46537F"><span style="font-size:10px">✦</span>Proposed</span>
+            <span style="color:#C3B9A6;font-size:12px">→</span>
+            <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:7px;background:#ECF1EC;border:1px solid #CFE0CD;font-size:12px;font-weight:600;color:#4C6749">✓ Approved</span>
+            <span style="color:#C3B9A6;font-size:12px">→</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:7px;background:#5B6B9E;border:1px solid #5B6B9E;font-size:12px;font-weight:600;color:#fff"><span style="font-size:10px">✦</span>Auto-executed</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:9px;align-items:center">
+            <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:7px;background:#F8F1E1;border:1px solid #ECDDBF;font-size:12px;font-weight:600;color:#8A6A22">⚠ Flagged</span>
+            <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:7px;background:transparent;border:1px solid #E6DECF;font-size:12px;font-weight:500;color:#9A9082;text-decoration:line-through">Reversed</span>
+          </div>
+          <div style="font-size:12.5px;color:#9A9082;line-height:1.55;margin-top:16px"><strong style="color:#5B6B9E">Auto-executed</strong> is the one state Passage never had: when confidence clears the tenant's threshold, the AI acts without asking — shown solid, always reversible, always logged.</div>
+
+          <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#B0A691;margin:22px 0 14px">Field provenance</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:7px;background:#EEF0F7;border:1px solid #D3D9EC;font-size:12px;font-weight:600;color:#46537F"><span style="font-size:10px">✦</span>AI suggested · 92%</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:7px;background:#ECF1EC;border:1px solid #CFE0CD;font-size:12px;font-weight:600;color:#4C6749">✓ Confirmed</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:7px;background:#F4F1EB;border:1px solid #E2D9C8;font-size:12px;font-weight:600;color:#6F6658">✎ Entered manually</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== AI CONFIDENCE PATTERN ===== -->
+    <section id="aifield" style="padding:56px 64px 0;max-width:1120px">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#8A7F9E;margin-bottom:8px">Components · the trust pattern</div>
+      <h2 style="font-size:30px;font-weight:600;letter-spacing:-.01em;margin:0 0 10px">AI Confidence Pattern</h2>
+      <p style="font-size:16px;line-height:1.6;color:#6F6658;max-width:64ch;margin:0 0 32px">The most important component in the product. Every AI decision shows its <strong style="color:#292420;font-weight:600">confidence</strong>, its <strong style="color:#292420;font-weight:600">reasoning in plain English</strong>, and a link back to where it came from. Below threshold it waits for a human; above, it acts and tells you what it did. Confirming turns it warm — the visual language of trust earned.</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+        <!-- proposed -->
+        <div style="background:#FEFCF9;border:1px solid #D3D9EC;border-left:3px solid #5B6B9E;border-radius:12px;padding:18px 20px;box-shadow:0 1px 2px rgba(41,36,32,.04)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+            <span style="font-size:12.5px;font-weight:600;color:#6F6658">Dispatch · Job #2261 drain cleaning</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:7px;background:#EEF0F7;font-size:11.5px;font-weight:600;color:#46537F"><span style="font-size:9px">✦</span>94%</span>
+          </div>
+          <div style="font-size:16px;color:#46537F;font-weight:600;margin-bottom:6px">Assign to Marcus Reyes</div>
+          <div style="font-size:13px;color:#6F6658;line-height:1.5;margin-bottom:14px">12 min away, drain-cleaning certified, opens at 2:00 PM. Next best: David at 28 min.</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button style="flex:1;height:38px;border:none;border-radius:8px;background:#292420;color:#F1EBE1;font:600 13.5px 'Hanken Grotesk';cursor:pointer" style-hover="background:#3a342d">Confirm</button>
+            <button style="height:38px;padding:0 14px;border:1px solid #D8CEBC;border-radius:8px;background:#FEFCF9;color:#292420;font:600 13.5px 'Hanken Grotesk';cursor:pointer">Reassign</button>
+          </div>
+          <a href="#" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#8A7F9E;margin-top:12px" style-hover="color:#46537F">↩ From booking call · 9:48 AM — "the kitchen sink is totally backed up"</a>
+        </div>
+
+        <!-- auto-executed (NEW) -->
+        <div style="background:#F3F1F8;border:1px solid #C7CFE6;border-left:3px solid #5B6B9E;border-radius:12px;padding:18px 20px;box-shadow:0 1px 2px rgba(41,36,32,.04)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+            <span style="font-size:12.5px;font-weight:600;color:#6F6658">Dispatch · Job #2258 water heater</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:7px;background:#5B6B9E;font-size:11.5px;font-weight:600;color:#fff"><span style="font-size:9px">✦</span>Auto · 96%</span>
+          </div>
+          <div style="font-size:16px;color:#3F4664;font-weight:600;margin-bottom:6px">Assigned to Dani Cho</div>
+          <div style="font-size:13px;color:#6F6658;line-height:1.5;margin-bottom:14px">AI assigned automatically — confidence cleared your 85% threshold. Customer notified of 2:15 PM arrival.</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button style="height:38px;padding:0 16px;border:1px solid #C7CFE6;border-radius:8px;background:#FEFCF9;color:#46537F;font:600 13.5px 'Hanken Grotesk';cursor:pointer">Review</button>
+            <button style="height:38px;padding:0 14px;border:1px solid #D8CEBC;border-radius:8px;background:#FEFCF9;color:#6F6658;font:600 13.5px 'Hanken Grotesk';cursor:pointer">↩ Undo</button>
+          </div>
+          <div style="font-size:12px;color:#8A7F9E;margin-top:12px">Logged to agent activity · reversible for 24h</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+        <!-- flagged invoice -->
+        <div style="background:#FEFCF9;border:1px solid #ECDDBF;border-left:3px solid #B0822F;border-radius:12px;padding:18px 20px;box-shadow:0 1px 2px rgba(41,36,32,.04)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+            <span style="font-size:12.5px;font-weight:600;color:#6F6658">Invoice · #INV-0912</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:7px;background:#F8F1E1;font-size:11.5px;font-weight:600;color:#8A6A22">⚠ Review required</span>
+          </div>
+          <div style="font-size:16px;color:#292420;font-weight:600;margin-bottom:6px">$875.00 <span style="font-size:13px;font-weight:500;color:#9A9082">· held, not sent</span></div>
+          <div style="font-size:13px;color:#6F6658;line-height:1.5;margin-bottom:14px">2.4× the average for a drain-cleaning job ($365). An unusual part was logged. Review before it goes to the customer.</div>
+          <button style="width:100%;height:38px;border:none;border-radius:8px;background:#292420;color:#F1EBE1;font:600 13.5px 'Hanken Grotesk';cursor:pointer" style-hover="background:#3a342d">Review &amp; send</button>
+        </div>
+
+        <!-- high stakes financial -->
+        <div style="background:#FEFCF9;border:1px solid #E8CFC2;border-left:3px solid #A85A40;border-radius:12px;padding:18px 20px;box-shadow:0 1px 2px rgba(41,36,32,.04)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+            <span style="font-size:12.5px;font-weight:600;color:#6F6658">Operator agent · refund request</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:7px;background:#FBF4F1;font-size:11.5px;font-weight:600;color:#A85A40">🔒 Confirm required</span>
+          </div>
+          <div style="font-size:16px;color:#46537F;font-weight:600;margin-bottom:6px">Refund $420 to Sarah Whitman</div>
+          <div style="font-size:13px;color:#6F6658;line-height:1.5;margin-bottom:14px">The AI drafts the action but never moves money on its own. A named operator confirms every financial operation.</div>
+          <button style="width:100%;height:38px;border:none;border-radius:8px;background:#292420;color:#F1EBE1;font:600 13.5px 'Hanken Grotesk';cursor:pointer" style-hover="background:#3a342d">Confirm refund</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SCREEN: OPERATOR DASHBOARD ===== -->
+    <section id="dashboard" style="padding:64px 40px 0;max-width:1200px;overflow-x:auto">
+      <div style="padding:0 24px">
+        <div style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#8A7F9E;margin-bottom:8px">Hero screen — Operator app</div>
+        <h2 style="font-size:30px;font-weight:600;letter-spacing:-.01em;margin:0 0 10px">Operator Dashboard</h2>
+        <p style="font-size:16px;line-height:1.6;color:#6F6658;max-width:64ch;margin:0 0 28px">Not a report — a morning briefing from a co-pilot. The first thing Maria sees is what needs her, written in plain English. KPIs and a live agent feed sit below, so the room reads as "running" at a glance. <strong style="color:#292420">Try the proposal</strong> — confirming turns it warm and logs to the feed.</p>
+      </div>
+
+      <div style="background:#FEFCF9;border:1px solid #E6DECF;border-radius:16px;overflow:hidden;min-width:1060px;box-shadow:0 2px 4px rgba(41,36,32,.05),0 30px 70px -30px rgba(41,36,32,.28)">
+        <!-- chrome -->
+        <div style="height:38px;background:#F4EFE6;border-bottom:1px solid #E6DECF;display:flex;align-items:center;gap:7px;padding:0 16px">
+          <span style="width:11px;height:11px;border-radius:99px;background:#E0D5C3"></span>
+          <span style="width:11px;height:11px;border-radius:99px;background:#E0D5C3"></span>
+          <span style="width:11px;height:11px;border-radius:99px;background:#E0D5C3"></span>
+          <span style="margin-left:14px;font-size:12px;color:#A89C88;font-variant-numeric:tabular-nums">app.airbase.com / steward / dashboard</span>
+        </div>
+        <!-- top bar -->
+        <div style="display:flex;align-items:center;gap:18px;padding:14px 22px;border-bottom:1px solid #EFE9DE;background:#FBF8F3">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:30px;height:30px;border-radius:8px;background:#292420;display:flex;align-items:center;justify-content:center;color:#F1EBE1;font-weight:600;font-size:14px">A</div>
+            <button style="display:flex;align-items:center;gap:9px;padding:6px 11px;border:1px solid #E6DECF;border-radius:9px;background:#FEFCF9;cursor:pointer">
+              <span style="width:18px;height:18px;border-radius:5px;background:#7C8A66;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">S</span>
+              <span style="font-size:13.5px;font-weight:600;color:#292420">Steward Home Services</span>
+              <span style="color:#B0A691;font-size:11px">▾</span>
+            </button>
+          </div>
+          <div style="flex:1;max-width:420px;display:flex;align-items:center;gap:9px;height:38px;padding:0 14px;border:1px solid #E6DECF;border-radius:9px;background:#FEFCF9;color:#9A9082;font-size:13.5px"><span>⌕</span>Ask anything, or search jobs &amp; customers…<span style="margin-left:auto;font-size:11px;color:#C3B9A6;border:1px solid #E6DECF;border-radius:5px;padding:1px 6px">⌘K</span></div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:14px">
+            <button style="height:38px;padding:0 16px;border:none;border-radius:9px;background:#292420;color:#F1EBE1;font:600 13.5px 'Hanken Grotesk';cursor:pointer">+ New job</button>
+            <div style="width:34px;height:34px;border-radius:99px;background:#E3D9C7;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#6F6658">MR</div>
+          </div>
+        </div>
+
+        <div style="padding:24px 24px 28px">
+          <!-- BRIEFING -->
+          <div style="background:#F3F1F8;border:1px solid #D3D9EC;border-radius:14px;padding:20px 22px;box-shadow:0 1px 2px rgba(41,36,32,.04)">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:4px">
+              <div style="width:26px;height:26px;border-radius:8px;background:#5B6B9E;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px">✦</div>
+              <div style="font-size:15px;font-weight:600;color:#292420">Morning briefing</div>
+              <span style="margin-left:auto;font-size:12.5px;color:#8A7F9E;font-variant-numeric:tabular-nums">Tue, June 28 · 8:02 AM</span>
+            </div>
+            <p style="margin:0 0 16px 35px;font-size:14.5px;line-height:1.55;color:#3F4664;max-width:78ch">Good morning, Maria. Two things need you; everything else is running. Carlos called in sick, so I've re-balanced his route and drafted coverage for his 1:00 PM emergency.</p>
+
+            <div style="margin-left:35px;display:flex;flex-direction:column;gap:10px">
+              <!-- interactive proposal -->
+              <sc-if value="{{ dashProposed }}" hint-placeholder-val="{{ true }}">
+                <div style="background:#FEFCF9;border:1px solid #C7CFE6;border-radius:11px;padding:14px 16px;display:flex;align-items:center;gap:16px">
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:14px;font-weight:600;color:#292420;margin-bottom:2px">Cover Carlos's 1:00 PM — Job #2261, emergency drain cleaning</div>
+                    <div style="font-size:13px;color:#46537F"><span style="font-size:10px">✦</span> Assign <strong>Marcus</strong> — 12 min away, certified, opens at 2:00 PM · <span style="font-weight:600">94% confident</span></div>
+                  </div>
+                  <button onClick="{{ confirmDash }}" style="height:38px;padding:0 18px;border:none;border-radius:8px;background:#292420;color:#F1EBE1;font:600 13.5px 'Hanken Grotesk';cursor:pointer" style-hover="background:#3a342d">Confirm</button>
+                  <button style="height:38px;padding:0 14px;border:1px solid #D8CEBC;border-radius:8px;background:#FEFCF9;color:#292420;font:600 13.5px 'Hanken Grotesk';cursor:pointer">Reassign</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ dashApproved }}" hint-placeholder-val="{{ false }}">
+                <div style="background:#ECF1EC;border:1px solid #CFE0CD;border-radius:11px;padding:14px 16px;display:flex;align-items:center;gap:14px">
+                  <span style="width:26px;height:26px;border-radius:99px;background:#5E7A5A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex:none">✓</span>
+                  <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#3A4F38">Marcus assigned to Job #2261</div><div style="font-size:12.5px;color:#4C6749">Customer notified · ETA 2:15 PM · logged to activity</div></div>
+                  <button onClick="{{ undoDash }}" style="height:34px;padding:0 13px;border:1px solid #CFE0CD;border-radius:8px;background:transparent;color:#4C6749;font:600 12.5px 'Hanken Grotesk';cursor:pointer">↩ Undo</button>
+                </div>
+              </sc-if>
+
+              <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;background:#FEFCF9;border:1px solid #ECDDBF;border-radius:11px">
+                <span style="font-size:14px">⚠</span>
+                <div style="flex:1;font-size:13.5px;color:#6F6658"><strong style="color:#292420">Invoice #INV-0912 held</strong> — $875 is 2.4× the average for a drain cleaning. Flagged for your review.</div>
+                <button style="height:34px;padding:0 14px;border:1px solid #D8CEBC;border-radius:8px;background:#FEFCF9;color:#292420;font:600 12.5px 'Hanken Grotesk';cursor:pointer">Review</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI strip -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:20px">
+            <div style="background:#FBF8F3;border:1px solid #E6DECF;border-radius:12px;padding:16px 18px">
+              <div style="font-size:12px;color:#9A9082;margin-bottom:7px">Revenue today</div>
+              <div style="font-size:26px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums">$4,820</div>
+              <div style="font-size:12px;color:#5E7A5A;margin-top:3px">▲ 18% vs. avg Tue</div>
+            </div>
+            <div style="background:#FBF8F3;border:1px solid #E6DECF;border-radius:12px;padding:16px 18px">
+              <div style="font-size:12px;color:#9A9082;margin-bottom:7px">Open jobs</div>
+              <div style="font-size:26px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums">11</div>
+              <div style="font-size:12px;color:#9A9082;margin-top:3px">5 in progress · 6 scheduled</div>
+            </div>
+            <div style="background:#F8F1E1;border:1px solid #ECDDBF;border-radius:12px;padding:16px 18px">
+              <div style="font-size:12px;color:#8A6A22;margin-bottom:7px">Unassigned</div>
+              <div style="font-size:26px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:#8A6A22">2</div>
+              <div style="font-size:12px;color:#8A6A22;margin-top:3px">both emergency</div>
+            </div>
+            <div style="background:#F3F1F8;border:1px solid #D3D9EC;border-radius:12px;padding:16px 18px">
+              <div style="font-size:12px;color:#6A6488;margin-bottom:7px;display:flex;align-items:center;gap:6px"><span style="font-size:10px">✦</span>AI-handled today</div>
+              <div style="font-size:26px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:#46537F">71%</div>
+              <div style="font-size:12px;color:#8A7F9E;margin-top:3px">17 of 24 decisions</div>
+            </div>
+          </div>
+
+          <!-- feed + schedule -->
+          <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-top:20px">
+            <div style="background:#FBF8F3;border:1px solid #E6DECF;border-radius:14px;padding:20px 22px">
+              <div style="display:flex;align-items:center;margin-bottom:16px"><h3 style="font-size:16px;font-weight:600;margin:0">Agent activity</h3><span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#5E7A5A;font-weight:600"><span style="width:7px;height:7px;border-radius:99px;background:#5E7A5A;animation:abpulse 2.4s ease-in-out infinite"></span>Live</span></div>
+              <div style="display:flex;flex-direction:column;gap:0">
+                <div style="display:flex;gap:12px;padding:11px 0;border-bottom:1px solid #EFE9DE"><span style="width:24px;height:24px;border-radius:7px;background:#EEF0F7;color:#46537F;display:flex;align-items:center;justify-content:center;font-size:11px;flex:none">✦</span><div style="flex:1"><div style="font-size:13.5px;color:#292420"><strong style="font-weight:600">Booking agent</strong> booked Job #2263 for Lena Park <span style="color:#9A9082">· via SMS</span></div></div><span style="font-size:12px;color:#B0A691;font-variant-numeric:tabular-nums">7:51 AM</span></div>
+                <div style="display:flex;gap:12px;padding:11px 0;border-bottom:1px solid #EFE9DE"><span style="width:24px;height:24px;border-radius:7px;background:#ECF1EC;color:#4C6749;display:flex;align-items:center;justify-content:center;font-size:11px;flex:none">✦</span><div style="flex:1"><div style="font-size:13.5px;color:#292420"><strong style="font-weight:600">Invoice agent</strong> auto-sent $365 to R. Alvarez <span style="color:#5E7A5A;font-weight:600">· paid</span></div></div><span style="font-size:12px;color:#B0A691;font-variant-numeric:tabular-nums">7:32 AM</span></div>
+                <div style="display:flex;gap:12px;padding:11px 0;border-bottom:1px solid #EFE9DE"><span style="width:24px;height:24px;border-radius:7px;background:#EEF0F7;color:#46537F;display:flex;align-items:center;justify-content:center;font-size:11px;flex:none">✦</span><div style="flex:1"><div style="font-size:13.5px;color:#292420"><strong style="font-weight:600">ETA agent</strong> notified customer — Dani 15 min out</div></div><span style="font-size:12px;color:#B0A691;font-variant-numeric:tabular-nums">8:00 AM</span></div>
+                <div style="display:flex;gap:12px;padding:11px 0"><span style="width:24px;height:24px;border-radius:7px;background:#F8F1E1;color:#8A6A22;display:flex;align-items:center;justify-content:center;font-size:11px;flex:none">⚠</span><div style="flex:1"><div style="font-size:13.5px;color:#292420"><strong style="font-weight:600">Invoice agent</strong> flagged #INV-0912 for review</div></div><span style="font-size:12px;color:#B0A691;font-variant-numeric:tabular-nums">7:20 AM</span></div>
+              </div>
+            </div>
+
+            <div style="background:#FBF8F3;border:1px solid #E6DECF;border-radius:14px;padding:20px 22px">
+              <h3 style="font-size:16px;font-weight:600;margin:0 0 16px">Next services</h3>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;gap:12px"><div style="font-size:12.5px;font-weight:600;color:#6F6658;font-variant-numeric:tabular-nums;width:62px;flex:none">9:30 AM</div><div style="width:7px;height:7px;border-radius:99px;background:#7C8A66;flex:none"></div><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:#292420">Water heater · Alvarez</div><div style="font-size:12px;color:#9A9082">Dani · en route</div></div></div>
+                <div style="display:flex;align-items:center;gap:12px"><div style="font-size:12.5px;font-weight:600;color:#6F6658;font-variant-numeric:tabular-nums;width:62px;flex:none">11:00</div><div style="width:7px;height:7px;border-radius:99px;background:#8A7F9E;flex:none"></div><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:#292420">HVAC maintenance · Bellamy</div><div style="font-size:12px;color:#9A9082">Marcus · scheduled</div></div></div>
+                <div style="display:flex;align-items:center;gap:12px"><div style="font-size:12.5px;font-weight:600;color:#6F6658;font-variant-numeric:tabular-nums;width:62px;flex:none">1:00 PM</div><div style="width:7px;height:7px;border-radius:99px;background:#B0822F;flex:none"></div><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:#292420">Drain cleaning · Whitman</div><div style="font-size:12px;color:#8A6A22">awaiting assignment</div></div></div>
+                <div style="display:flex;align-items:center;gap:12px"><div style="font-size:12.5px;font-weight:600;color:#6F6658;font-variant-numeric:tabular-nums;width:62px;flex:none">3:30</div><div style="width:7px;height:7px;border-radius:99px;background:#8A7F9E;flex:none"></div><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:#292420">Estimate · Okafor</div><div style="font-size:12px;color:#9A9082">David · scheduled</div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SCREEN: DISPATCH BOARD ===== -->
+    <section id="dispatch" style="padding:64px 40px 0;max-width:1200px;overflow-x:auto">
+      <div style="padding:0 24px">
+        <div style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#8A7F9E;margin-bottom:8px">Hero screen — Operator app</div>
+        <h2 style="font-size:30px;font-weight:600;letter-spacing:-.01em;margin:0 0 10px">Dispatch Board</h2>
+        <p style="font-size:16px;line-height:1.6;color:#6F6658;max-width:64ch;margin:0 0 28px">A timeline: technician rows against the hours of the day, so the whole crew's load reads at a glance. Assigned blocks carry an ambient <span style="color:#46537F;font-weight:600">✦ AI</span> mark and confidence, so reasoning is visible without a click. The one thing pulling the eye is the <strong style="color:#8A6A22">Unassigned</strong> band on top, where a proposal waits. <strong style="color:#292420">Accept it</strong> — the job drops onto Marcus's lane.</p>
+      </div>
+
+      <div style="background:#FEFCF9;border:1px solid #E6DECF;border-radius:16px;overflow:hidden;min-width:1060px;box-shadow:0 2px 4px rgba(41,36,32,.05),0 30px 70px -30px rgba(41,36,32,.28)">
+        <div style="height:38px;background:#F4EFE6;border-bottom:1px solid #E6DECF;display:flex;align-items:center;gap:7px;padding:0 16px">
+          <span style="width:11px;height:11px;border-radius:99px;background:#E0D5C3"></span>
+          <span style="width:11px;height:11px;border-radius:99px;background:#E0D5C3"></span>
+          <span style="width:11px;height:11px;border-radius:99px;background:#E0D5C3"></span>
+          <span style="margin-left:14px;font-size:12px;color:#A89C88;font-variant-numeric:tabular-nums">app.airbase.com / steward / dispatch</span>
+        </div>
+
+        <!-- toolbar -->
+        <div style="display:flex;align-items:center;gap:16px;padding:16px 22px;border-bottom:1px solid #EFE9DE;background:#FBF8F3">
+          <h3 style="font-size:18px;font-weight:600;margin:0">Dispatch</h3>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button style="width:30px;height:30px;border:1px solid #E6DECF;border-radius:8px;background:#FEFCF9;color:#6F6658;font-size:14px;cursor:pointer">‹</button>
+            <span style="font-size:13.5px;font-weight:600;color:#292420;min-width:140px;text-align:center;font-variant-numeric:tabular-nums">Sun, Jun 28, 2026</span>
+            <button style="width:30px;height:30px;border:1px solid #E6DECF;border-radius:8px;background:#FEFCF9;color:#6F6658;font-size:14px;cursor:pointer">›</button>
+            <button style="height:30px;padding:0 12px;margin-left:4px;border:1px solid #D8CEBC;border-radius:8px;background:#FEFCF9;font:600 12.5px 'Hanken Grotesk';color:#292420;cursor:pointer">Today</button>
+          </div>
+          <div style="display:inline-flex;gap:2px;background:#F1EBE1;border-radius:8px;padding:3px">
+            <button style="padding:6px 13px;border:none;border-radius:6px;background:#FEFCF9;font:600 12.5px 'Hanken Grotesk';color:#292420;cursor:pointer;box-shadow:0 1px 2px rgba(41,36,32,.06)">Timeline</button>
+            <button style="padding:6px 13px;border:none;border-radius:6px;background:transparent;font:600 12.5px 'Hanken Grotesk';color:#9A9082;cursor:pointer">List</button>
+            <button style="padding:6px 13px;border:none;border-radius:6px;background:transparent;font:600 12.5px 'Hanken Grotesk';color:#9A9082;cursor:pointer">Map</button>
+          </div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+            <span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:#46537F;background:#F3F1F8;border:1px solid #D3D9EC;padding:6px 12px;border-radius:99px"><span style="font-size:10px">✦</span>AI placed 17 of 24</span>
+            <button style="height:34px;padding:0 13px;border:1px solid #E6DECF;border-radius:8px;background:#FEFCF9;font:600 12.5px 'Hanken Grotesk';color:#6F6658;cursor:pointer">Filter</button>
+          </div>
+        </div>
+
+        <!-- ============ GANTT TIMELINE ============ -->
+        <div style="background:#FEFCF9">
+
+          <!-- UNASSIGNED BAND -->
+          <div style="display:flex;align-items:stretch;border-bottom:1px solid #E6DECF;background:#FBF7EC">
+            <div style="width:200px;flex:none;padding:14px 16px;border-right:1px solid #EFE9DE;display:flex;align-items:center;gap:8px">
+              <span style="width:8px;height:8px;border-radius:99px;background:#B0822F"></span>
+              <span style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8A6A22">Unassigned</span>
+              <sc-if value="{{ dispatchP1Proposed }}" hint-placeholder-val="{{ true }}"><span style="font-size:11px;font-weight:700;color:#B0822F;font-variant-numeric:tabular-nums">(1)</span></sc-if>
+              <sc-if value="{{ dispatchP1Done }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;font-weight:700;color:#5E7A5A;font-variant-numeric:tabular-nums">(0)</span></sc-if>
+            </div>
+            <div style="flex:1;padding:11px 16px;display:flex;align-items:center;gap:12px;min-height:54px">
+              <sc-if value="{{ dispatchP1Proposed }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;align-items:center;gap:14px;background:#FEFCF9;border:1px solid #C7CFE6;border-left:3px solid #5B6B9E;border-radius:11px;padding:9px 13px;box-shadow:0 1px 2px rgba(41,36,32,.04)">
+                  <div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:1px"><span style="font-size:13.5px;font-weight:600;color:#292420">Sarah Whitman · Drain cleaning</span><span style="font-size:10px;font-weight:600;color:#A85A40;background:#FBF4F1;padding:1px 6px;border-radius:5px">Emergency</span></div>
+                    <div style="font-size:12px;color:#46537F"><span style="font-size:9px">✦</span> Best match <strong>Marcus</strong> · 1:00 PM · <span style="font-weight:600">94%</span></div>
+                  </div>
+                  <button onClick="{{ acceptP1 }}" style="height:34px;padding:0 16px;border:none;border-radius:8px;background:#292420;color:#F1EBE1;font:600 12.5px 'Hanken Grotesk';cursor:pointer" style-hover="background:#3a342d">Accept</button>
+                  <button style="height:34px;padding:0 12px;border:1px solid #D8CEBC;border-radius:8px;background:#FEFCF9;color:#292420;font:600 12.5px 'Hanken Grotesk';cursor:pointer">Other tech</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ dispatchP1Done }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;gap:9px;font-size:13px;color:#4C6749;font-weight:600"><span style="width:22px;height:22px;border-radius:99px;background:#5E7A5A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px">✓</span>All jobs assigned — Whitman placed on Marcus's lane at 1:00 PM.</div>
+              </sc-if>
+            </div>
+          </div>
+
+          <!-- TIME HEADER -->
+          <div style="display:flex;border-bottom:1px solid #E6DECF;background:#FBF8F3">
+            <div style="width:200px;flex:none;padding:9px 16px;border-right:1px solid #EFE9DE;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#9A9082">Tech</div>
+            <div style="flex:1;display:grid;grid-template-columns:repeat(10,1fr)">
+              <div style="padding:9px 0 9px 8px;font-size:11.5px;color:#9A9082;border-left:1px solid #EFE9DE;font-variant-numeric:tabular-nums">7 AM</div>
+              <div style="padding:9px 0 9px 8px;font-size:11.5px;color:#9A9082;border-left:1px solid #EFE9DE;font-variant-numeric:tabular-nums">8 AM</div>
+              <div style="padding:9px 0 9px 8px;font-size:11.5px;color:#9A9082;border-left:1px solid #EFE9DE;font-variant-numeric:tabular-nums">9 AM</div>
+              <div style="padding:9px 0 9px 8px;font-size:11.5px;color:#9A9082;border-left:1px solid #EFE9DE;font-variant-numeric:tabular-nums">10 AM</div>
+              <div style="padding:9px 0 9px 8px;font-size:11.5px;color:#9A9082;border-left:1px solid #EFE9DE;font-variant-numeric:tabular-nums">11 AM</div>
+              <div style="padding:9px 0 9px 8px;font-size:11.5px;color:#9A9082;border-left:1px solid #EFE9DE;font-variant-numeric:tabular-nums">12 PM</div>
+              <div style="padding:9px 0 9px 8px;font-size:11.5px;color:#9A9082;border-left:1px solid #EFE9DE;font-variant-numeric:tabular-nums">1 PM</div>
+              <div style="padding:9px 0 9px 8px;font-size:11.5px;color:#9A9082;border-left:1px solid #EFE9DE;font-variant-numeric:tabular-nums">2 PM</div>
+              <div style="padding:9px 0 9px 8px;font-size:11.5px;color:#9A9082;border-left:1px solid #EFE9DE;font-variant-numeric:tabular-nums">3 PM</div>
+              <div style="padding:9px 0 9px 8px;font-size:11.5px;color:#9A9082;border-left:1px solid #EFE9DE;font-variant-numeric:tabular-nums">4 PM</div>
+            </div>
+          </div>
+
+          <!-- LANE: Marcus -->
+          <div style="display:flex;align-items:stretch;border-bottom:1px solid #EFE9DE">
+            <div style="width:200px;flex:none;padding:14px 16px;border-right:1px solid #EFE9DE;display:flex;align-items:center;gap:11px">
+              <span style="width:30px;height:30px;border-radius:8px;background:#7C8A66;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">MR</span>
+              <div><div style="font-size:13.5px;font-weight:600;color:#292420">Marcus Reyes</div><sc-if value="{{ dispatchP1Done }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#9A9082">3 jobs</div></sc-if><sc-if value="{{ dispatchP1Proposed }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px;color:#9A9082">2 jobs</div></sc-if></div>
+            </div>
+            <div style="flex:1;position:relative;display:grid;grid-template-columns:repeat(10,1fr);align-items:center;min-height:72px;padding:10px 0;background-image:repeating-linear-gradient(to right,#EFE9DE 0,#EFE9DE 1px,transparent 1px,transparent 10%)">
+              <div style="position:absolute;left:10%;top:0;bottom:0;width:2px;background:#A85A40;opacity:.35"></div>
+              <div style="grid-column:2 / 4;margin:0 6px;background:#ECF1EC;border:1px solid #CFE0CD;border-left:3px solid #5E7A5A;border-radius:9px;padding:8px 11px">
+                <div style="display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:99px;background:#5E7A5A;flex:none;animation:abpulse 2.4s ease-in-out infinite"></span><span style="font-size:13px;font-weight:600;color:#292420">Hayes · HVAC repair</span></div>
+                <div style="font-size:11.5px;color:#4C6749;margin-top:2px;margin-left:14px">8:00–10:00 · on site</div>
+              </div>
+              <div style="grid-column:5 / 7;margin:0 6px;background:#FEFCF9;border:1px solid #E6DECF;border-radius:9px;padding:8px 11px;box-shadow:0 1px 2px rgba(41,36,32,.04)">
+                <div style="display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:99px;background:#8A7F9E;flex:none"></span><span style="font-size:13px;font-weight:600;color:#292420">Bellamy · Maintenance</span></div>
+                <div style="font-size:11.5px;color:#46537F;margin-top:2px;margin-left:14px"><span style="font-size:9px">✦</span> AI · 91%</div>
+              </div>
+              <sc-if value="{{ dispatchP1Done }}" hint-placeholder-val="{{ false }}">
+                <div style="grid-column:7 / 9;margin:0 6px;background:#FEFCF9;border:1px solid #E6DECF;border-left:3px solid #A85A40;border-radius:9px;padding:8px 11px;box-shadow:0 1px 2px rgba(41,36,32,.04)">
+                  <div style="display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:99px;background:#A85A40;flex:none"></span><span style="font-size:13px;font-weight:600;color:#292420">Whitman · Drain cleaning</span></div>
+                  <div style="font-size:11.5px;color:#9A9082;margin-top:2px;margin-left:14px">1:00 PM · just assigned</div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+
+          <!-- LANE: Dani -->
+          <div style="display:flex;align-items:stretch;border-bottom:1px solid #EFE9DE">
+            <div style="width:200px;flex:none;padding:14px 16px;border-right:1px solid #EFE9DE;display:flex;align-items:center;gap:11px">
+              <span style="width:30px;height:30px;border-radius:8px;background:#9B7B86;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">DC</span>
+              <div><div style="font-size:13.5px;font-weight:600;color:#292420">Dani Cho</div><div style="font-size:12px;color:#9A9082">1 job</div></div>
+            </div>
+            <div style="flex:1;position:relative;display:grid;grid-template-columns:repeat(10,1fr);align-items:center;min-height:72px;padding:10px 0;background-image:repeating-linear-gradient(to right,#EFE9DE 0,#EFE9DE 1px,transparent 1px,transparent 10%)">
+              <div style="position:absolute;left:10%;top:0;bottom:0;width:2px;background:#A85A40;opacity:.35"></div>
+              <div style="grid-column:3 / 5;margin:0 6px;background:#F3F1F8;border:1px solid #C7CFE6;border-left:3px solid #5B6B9E;border-radius:9px;padding:8px 11px">
+                <div style="display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:99px;background:#7C8A66;flex:none"></span><span style="font-size:13px;font-weight:600;color:#292420">Alvarez · Water heater</span></div>
+                <div style="font-size:11.5px;color:#46537F;margin-top:2px;margin-left:14px"><span style="font-size:9px">✦</span> Auto-assigned · 96% · en route</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- LANE: David -->
+          <div style="display:flex;align-items:stretch">
+            <div style="width:200px;flex:none;padding:14px 16px;border-right:1px solid #EFE9DE;display:flex;align-items:center;gap:11px">
+              <span style="width:30px;height:30px;border-radius:8px;background:#5B6B9E;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">DO</span>
+              <div><div style="font-size:13.5px;font-weight:600;color:#292420">David Okonkwo</div><div style="font-size:12px;color:#9A9082">2 jobs</div></div>
+            </div>
+            <div style="flex:1;position:relative;display:grid;grid-template-columns:repeat(10,1fr);align-items:center;min-height:72px;padding:10px 0;background-image:repeating-linear-gradient(to right,#EFE9DE 0,#EFE9DE 1px,transparent 1px,transparent 10%)">
+              <div style="position:absolute;left:10%;top:0;bottom:0;width:2px;background:#A85A40;opacity:.35"></div>
+              <div style="grid-column:4 / 5;margin:0 6px;background:#FBF8F3;border:1px solid #E6DECF;border-radius:9px;padding:8px 11px;opacity:.65">
+                <div style="display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:99px;background:#292420;flex:none"></span><span style="font-size:13px;font-weight:600;color:#292420;text-decoration:line-through">Reyes · Drain</span></div>
+                <div style="font-size:11.5px;color:#9A9082;margin-top:2px;margin-left:14px">done</div>
+              </div>
+              <div style="grid-column:9 / 11;margin:0 6px;background:#FEFCF9;border:1px solid #E6DECF;border-radius:9px;padding:8px 11px;box-shadow:0 1px 2px rgba(41,36,32,.04)">
+                <div style="display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:99px;background:#8A7F9E;flex:none"></span><span style="font-size:13px;font-weight:600;color:#292420">Okafor · Estimate</span></div>
+                <div style="font-size:11.5px;color:#9A9082;margin-top:2px;margin-left:14px">3:30 PM · scheduled</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SCREEN: TECHNICIAN PWA ===== -->
+    <section id="tech" style="padding:64px 40px 0;max-width:1200px">
+      <div style="padding:0 24px">
+        <div style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#8A7F9E;margin-bottom:8px">Hero screen — Technician app (PWA)</div>
+        <h2 style="font-size:30px;font-weight:600;letter-spacing:-.01em;margin:0 0 10px">Technician App</h2>
+        <p style="font-size:16px;line-height:1.6;color:#6F6658;max-width:64ch;margin:0 0 28px">Same palette, a <strong style="color:#292420">field variant</strong>: bigger type, stronger contrast for sunlight, and 56px targets for wet or gloved hands. One job at a time. <strong style="color:#292420">Tap through the stages</strong> on the right — closing the job hands off to the invoice agent automatically.</p>
+      </div>
+
+      <div style="display:flex;justify-content:center;gap:40px;flex-wrap:wrap;background:#EDE6DA;border:1px solid #E6DECF;border-radius:16px;padding:40px 30px;box-shadow:inset 0 1px 3px rgba(41,36,32,.05)">
+
+        <!-- PHONE 1 — TODAY -->
+        <div style="width:330px;background:#1C1813;border-radius:40px;padding:11px;box-shadow:0 20px 50px -18px rgba(41,36,32,.5)">
+          <div style="background:#F1EBE1;border-radius:30px;overflow:hidden;height:660px;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 22px 8px;font-size:13px;font-weight:600;color:#292420"><span style="font-variant-numeric:tabular-nums">7:48</span><span style="display:flex;gap:5px;align-items:center;font-size:11px">●●● ▮▮▮ <span style="font-weight:700">87%</span></span></div>
+            <div style="padding:10px 22px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #E6DECF">
+              <div>
+                <div style="font-size:13px;color:#9A9082">Tuesday, June 28</div>
+                <div style="font-size:23px;font-weight:600;letter-spacing:-.01em">Your day · 4 jobs</div>
+              </div>
+              <div style="margin-left:auto;width:42px;height:42px;border-radius:99px;background:#7C8A66;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">AL</div>
+            </div>
+
+            <div style="flex:1;overflow:hidden;padding:16px 18px;display:flex;flex-direction:column;gap:12px">
+              <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#9A9082">Up next</div>
+              <div style="background:#292420;border-radius:16px;padding:18px;color:#F1EBE1">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;font-weight:600;color:#E0D5C3;font-variant-numeric:tabular-nums">8:00 AM</span><span style="font-size:11px;font-weight:700;color:#1C1813;background:#D98B6A;padding:3px 9px;border-radius:6px">EMERGENCY</span></div>
+                <div style="font-size:20px;font-weight:600;letter-spacing:-.01em;margin-bottom:3px">Robert Hayes</div>
+                <div style="font-size:14px;color:#C9BFAD;margin-bottom:14px">HVAC repair · 1421 Oak St</div>
+                <button style="width:100%;height:52px;border:none;border-radius:12px;background:#F1EBE1;color:#292420;font:700 15px 'Hanken Grotesk';cursor:pointer">Open job →</button>
+              </div>
+              <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#9A9082;margin-top:4px">Later today</div>
+              <div style="background:#FEFCF9;border:1px solid #E6DECF;border-radius:14px;padding:15px 16px">
+                <div style="display:flex;align-items:center;gap:10px"><span style="font-size:13.5px;font-weight:600;color:#6F6658;font-variant-numeric:tabular-nums">11:00</span><div style="flex:1"><div style="font-size:15.5px;font-weight:600">Maintenance · Bellamy</div><div style="font-size:13px;color:#9A9082">88 Linden Ave</div></div><span style="color:#C3B9A6">›</span></div>
+              </div>
+              <div style="background:#FEFCF9;border:1px solid #E6DECF;border-radius:14px;padding:15px 16px">
+                <div style="display:flex;align-items:center;gap:10px"><span style="font-size:13.5px;font-weight:600;color:#6F6658;font-variant-numeric:tabular-nums">2:00</span><div style="flex:1"><div style="font-size:15.5px;font-weight:600">Water heater · Reyes</div><div style="font-size:13px;color:#9A9082">77 Birch Ln</div></div><span style="color:#C3B9A6">›</span></div>
+              </div>
+            </div>
+
+            <div style="display:flex;border-top:1px solid #E6DECF;background:#FBF8F3;padding:10px 0 16px">
+              <div style="flex:1;text-align:center;font-size:11px;font-weight:600;color:#292420"><div style="font-size:18px">▦</div>Today</div>
+              <div style="flex:1;text-align:center;font-size:11px;font-weight:600;color:#9A9082"><div style="font-size:18px">◷</div>History</div>
+              <div style="flex:1;text-align:center;font-size:11px;font-weight:600;color:#46537F"><div style="font-size:18px">✦</div>Assistant</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PHONE 2 — JOB DETAIL -->
+        <div style="width:330px;background:#1C1813;border-radius:40px;padding:11px;box-shadow:0 20px 50px -18px rgba(41,36,32,.5)">
+          <div style="background:#F1EBE1;border-radius:30px;overflow:hidden;height:660px;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 22px 8px;font-size:13px;font-weight:600;color:#292420"><span style="font-variant-numeric:tabular-nums">8:02</span><span style="display:flex;gap:5px;align-items:center;font-size:11px">●●● ▮▮▮ <span style="font-weight:700">87%</span></span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 18px 14px;border-bottom:1px solid #E6DECF"><span style="font-size:20px;color:#6F6658">‹</span><span style="font-size:13px;color:#9A9082;font-variant-numeric:tabular-nums">Job #2261</span><span style="margin-left:auto;font-size:11px;font-weight:700;color:#1C1813;background:#D98B6A;padding:3px 9px;border-radius:6px">EMERGENCY</span></div>
+
+            <div style="flex:1;overflow:hidden;padding:18px;display:flex;flex-direction:column;gap:14px">
+              <div>
+                <div style="font-size:24px;font-weight:600;letter-spacing:-.01em;line-height:1.1">Robert Hayes</div>
+                <div style="font-size:15px;color:#6F6658;margin-top:2px">HVAC repair · no cooling</div>
+              </div>
+
+              <button style="display:flex;align-items:center;gap:12px;width:100%;padding:15px 16px;border:1px solid #C7CFE6;border-radius:14px;background:#FEFCF9;cursor:pointer;text-align:left">
+                <span style="width:40px;height:40px;border-radius:11px;background:#EEF0F7;color:#46537F;display:flex;align-items:center;justify-content:center;font-size:19px;flex:none">➤</span>
+                <span style="flex:1"><span style="display:block;font-size:15.5px;font-weight:600;color:#292420">1421 Oak St, Belton</span><span style="display:block;font-size:13px;color:#46537F;font-weight:600">Tap to navigate · 12 min</span></span>
+              </button>
+
+              <div style="background:#F3F1F8;border:1px solid #D3D9EC;border-left:3px solid #5B6B9E;border-radius:13px;padding:14px 15px">
+                <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#5B6B9E;margin-bottom:6px">✦ Equipment on site</div>
+                <div style="font-size:15px;font-weight:600;color:#292420">Carrier 24ACC6 · installed 2019</div>
+                <div style="font-size:13.5px;color:#3F4664;line-height:1.45;margin-top:4px">Last serviced 8 months ago (capacitor). Out of parts warranty.</div>
+              </div>
+
+              <div style="background:#FEFCF9;border:1px solid #E6DECF;border-radius:13px;padding:14px 15px">
+                <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#9A9082;margin-bottom:6px">✎ Dispatcher note</div>
+                <div style="font-size:14.5px;color:#292420;line-height:1.45">Gate code #4417. Dog is friendly. Customer works from home.</div>
+              </div>
+
+              <!-- STAGE STEPPER (interactive) -->
+              <div style="margin-top:auto">
+                <div style="display:flex;gap:6px;margin-bottom:14px">
+                  <div style="{{ pill0 }}">On my way</div>
+                  <div style="{{ pill1 }}">Arrived</div>
+                  <div style="{{ pill2 }}">Working</div>
+                  <div style="{{ pill3 }}">Done</div>
+                </div>
+                <sc-if value="{{ notLastStage }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ advanceStage }}" style="width:100%;height:56px;border:none;border-radius:14px;background:#292420;color:#F1EBE1;font:700 16px 'Hanken Grotesk';cursor:pointer" style-hover="background:#3a342d">{{ nextActionLabel }} →</button>
+                </sc-if>
+                <sc-if value="{{ isLastStage }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:#ECF1EC;border:1px solid #CFE0CD;border-radius:14px">
+                    <span style="width:34px;height:34px;border-radius:99px;background:#5E7A5A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;flex:none">✓</span>
+                    <div style="flex:1"><div style="font-size:15px;font-weight:600;color:#3A4F38">Job complete</div><div style="font-size:13px;color:#4C6749"><span style="font-size:10px">✦</span> Invoice agent is drafting from your notes</div></div>
+                    <button onClick="{{ resetStage }}" style="height:34px;padding:0 12px;border:1px solid #CFE0CD;border-radius:8px;background:transparent;color:#4C6749;font:600 12.5px 'Hanken Grotesk';cursor:pointer">Reset</button>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    // operator dashboard top proposal
+    dashProposal: 'proposed',   // proposed -> approved
+    // dispatch board proposals
+    dispatch: { p1: 'proposed', p2: 'proposed' },
+    // tech PWA job stage
+    stageIdx: 0,                 // 0 On my way, 1 Arrived, 2 Working, 3 Done
+  };
+  renderVals() {
+    const s = this.state;
+    const stages = ['On my way', 'Arrived', 'Working', 'Done'];
+    const pillStyle = (i, idx) => {
+      const base = { flex: 1, textAlign: 'center', padding: '9px 4px', borderRadius: '8px', fontSize: '13px', fontWeight: 600 };
+      if (i < idx) return { ...base, background: '#ECF1EC', border: '1px solid #CFE0CD', color: '#4C6749' };
+      if (i === idx) return { ...base, background: '#292420', color: '#F1EBE1' };
+      return { ...base, background: 'transparent', border: '1px solid #E6DECF', color: '#B0A691' };
+    };
+    return {
+      dashProposal: s.dashProposal,
+      dashProposed: s.dashProposal === 'proposed',
+      dashApproved: s.dashProposal === 'approved',
+      confirmDash: () => this.setState({ dashProposal: 'approved' }),
+      undoDash: () => this.setState({ dashProposal: 'proposed' }),
+
+      dispatch: s.dispatch,
+      dispatchP1Proposed: s.dispatch.p1 === 'proposed',
+      dispatchP1Done: s.dispatch.p1 === 'approved',
+      dispatchP2Proposed: s.dispatch.p2 === 'proposed',
+      dispatchP2Done: s.dispatch.p2 === 'approved',
+      acceptP1: () => this.setState({ dispatch: { ...this.state.dispatch, p1: 'approved' } }),
+      acceptP2: () => this.setState({ dispatch: { ...this.state.dispatch, p2: 'approved' } }),
+
+      stageIdx: s.stageIdx,
+      stageLabel: stages[s.stageIdx],
+      isWorking: s.stageIdx === 2,
+      isLastStage: s.stageIdx >= stages.length - 1,
+      notLastStage: s.stageIdx < stages.length - 1,
+      nextActionLabel: ['I\u2019m on my way', 'I\u2019ve arrived', 'Start work', 'Mark complete'][s.stageIdx],
+      advanceStage: () => this.setState({ stageIdx: Math.min(this.state.stageIdx + 1, stages.length - 1) }),
+      resetStage: () => this.setState({ stageIdx: 0 }),
+      pill0: pillStyle(0, s.stageIdx),
+      pill1: pillStyle(1, s.stageIdx),
+      pill2: pillStyle(2, s.stageIdx),
+      pill3: pillStyle(3, s.stageIdx),
+    };
+  }
+}
+</script>
+</body>
+</html>

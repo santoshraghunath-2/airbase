@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:#EDE6DA;font-family:'Hanken Grotesk',system-ui,sans-serif;color:#292420;-webkit-font-smoothing:antialiased}
+  ::selection{background:#D9D3E6}
+  a{color:inherit;text-decoration:none}
+  *::-webkit-scrollbar{width:10px;height:10px}
+  *::-webkit-scrollbar-thumb{background:#D8CEBC;border-radius:99px;border:3px solid transparent;background-clip:padding-box}
+  @keyframes abpulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(2.2);opacity:0}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;padding:26px;overflow-x:auto">
+  <div style="width:1240px;margin:0 auto;height:884px;background:#FBF8F3;border:1px solid #E6DECF;border-radius:18px;overflow:hidden;box-shadow:0 2px 4px rgba(41,36,32,.05),0 40px 90px -40px rgba(41,36,32,.35);display:flex">
+
+    <!-- ===== LEFT NAV ===== -->
+    <aside style="width:212px;flex:none;background:#292420;color:#C9BFAD;display:flex;flex-direction:column;padding:18px 14px">
+      <div style="display:flex;align-items:center;gap:10px;padding:6px 8px 18px">
+        <div style="width:30px;height:30px;border-radius:8px;background:#F1EBE1;color:#292420;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px">A</div>
+        <div style="font-size:15px;font-weight:600;color:#F4EFE6;letter-spacing:-.01em">Airbase</div>
+      </div>
+      <button style="display:flex;align-items:center;gap:9px;width:100%;padding:8px 9px;margin-bottom:16px;border:1px solid #4A4239;border-radius:9px;background:#332D26;cursor:pointer;text-align:left">
+        <span style="width:20px;height:20px;border-radius:6px;background:#7C8A66;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">S</span>
+        <span style="flex:1;font-size:13px;font-weight:600;color:#F4EFE6">Steward Home</span>
+        <span style="font-size:10px;color:#7E7468">▾</span>
+      </button>
+      <nav style="display:flex;flex-direction:column;gap:2px;font-size:13.5px">
+        <div style="padding:7px 10px;border-radius:8px;color:#9C9384">Dashboard</div>
+        <div style="padding:7px 10px;border-radius:8px;color:#9C9384">Customers</div>
+        <div style="padding:7px 10px;border-radius:8px;color:#9C9384">Jobs</div>
+        <div style="padding:7px 10px;border-radius:8px;color:#9C9384">Dispatch</div>
+        <div style="display:flex;align-items:center;padding:7px 10px;border-radius:8px;background:#F1EBE1;color:#292420;font-weight:600">Booking<span style="margin-left:auto;font-size:11px;font-weight:700;color:#fff;background:#A85A40;padding:1px 7px;border-radius:99px">2</span></div>
+        <div style="padding:7px 10px;border-radius:8px;color:#9C9384">Pricebook</div>
+        <div style="padding:7px 10px;border-radius:8px;color:#9C9384">Invoices</div>
+        <div style="padding:7px 10px;border-radius:8px;color:#9C9384">Settings</div>
+      </nav>
+      <div style="margin-top:auto;display:flex;align-items:center;gap:9px;padding:9px;border-top:1px solid #3D372F">
+        <div style="width:30px;height:30px;border-radius:99px;background:#5B6B9E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600">SF</div>
+        <div style="line-height:1.2"><div style="font-size:12.5px;font-weight:600;color:#F4EFE6">Sofia Marin</div><div style="font-size:11px;color:#8A8071">CSR</div></div>
+      </div>
+    </aside>
+
+    <!-- ===== PANE 1: CONVERSATION LIST ===== -->
+    <div style="width:336px;flex:none;border-right:1px solid #E6DECF;background:#FBF8F3;display:flex;flex-direction:column">
+      <div style="padding:18px 20px 14px;border-bottom:1px solid #EFE9DE">
+        <div style="display:flex;align-items:center;gap:9px">
+          <h1 style="font-size:20px;font-weight:600;margin:0;letter-spacing:-.01em">Booking</h1>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#5E7A5A;font-weight:600;margin-left:auto"><span style="width:7px;height:7px;border-radius:99px;background:#5E7A5A;animation:abpulse 2.4s ease-in-out infinite"></span>4 live</span>
+        </div>
+        <div style="display:flex;gap:2px;margin-top:14px;background:#F1EBE1;border-radius:8px;padding:3px">
+          <button style="flex:1;padding:6px 0;border:none;border-radius:6px;background:#FEFCF9;font:600 12px 'Hanken Grotesk';color:#292420;cursor:pointer;box-shadow:0 1px 2px rgba(41,36,32,.06)">All</button>
+          <button style="flex:1;padding:6px 0;border:none;border-radius:6px;background:transparent;font:600 12px 'Hanken Grotesk';color:#9A9082;cursor:pointer">Escalated <span style="color:#A85A40">2</span></button>
+          <button style="flex:1;padding:6px 0;border:none;border-radius:6px;background:transparent;font:600 12px 'Hanken Grotesk';color:#9A9082;cursor:pointer">Done</button>
+        </div>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:10px">
+        <div style="font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#B0A691;padding:6px 8px 8px">Needs a human</div>
+
+        <!-- c1 (selected/escalated) -->
+        <div onClick="{{ selectC1 }}" style="{{ c1RowStyle }}">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+            <span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:#fff;background:#A85A40;padding:1px 7px;border-radius:5px">⤴ Escalated</span>
+            <span style="font-size:11px;color:#9A9082;margin-left:auto;font-variant-numeric:tabular-nums">8:33 AM</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:2px">
+            <span style="font-size:11px;color:#6F6658">✉</span>
+            <span style="font-size:14px;font-weight:600;color:#292420">Sarah Whitman</span>
+            <span style="font-size:10px;font-weight:600;color:#8A6A22;background:#F8F1E1;padding:1px 6px;border-radius:4px">Gold</span>
+          </div>
+          <div style="font-size:12.5px;color:#6F6658;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">"…can I just talk to a person, this is stressful"</div>
+        </div>
+
+        <!-- c2 voice -->
+        <div onClick="{{ selectC2 }}" style="{{ c2RowStyle }}">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+            <span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:#46537F;background:#EEF0F7;padding:1px 7px;border-radius:5px"><span style="width:6px;height:6px;border-radius:99px;background:#5B6B9E;animation:abpulse 2.4s ease-in-out infinite"></span>Live call</span>
+            <span style="font-size:11px;color:#9A9082;margin-left:auto;font-variant-numeric:tabular-nums">2:14</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:2px">
+            <span style="font-size:11px;color:#6F6658">☏</span>
+            <span style="font-size:14px;font-weight:600;color:#292420">Miguel Ortega</span>
+          </div>
+          <div style="font-size:12.5px;color:#6F6658;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:#46537F">✦</span> Jordan is booking a maintenance visit…</div>
+        </div>
+
+        <div style="font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#B0A691;padding:14px 8px 8px">AI handling · monitor only</div>
+
+        <div style="padding:12px;border-radius:11px;margin-bottom:6px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span style="font-size:11px;color:#6F6658">✉</span><span style="font-size:14px;font-weight:600;color:#292420">Lena Park</span><span style="font-size:11px;color:#9A9082;margin-left:auto;font-variant-numeric:tabular-nums">8:29</span></div>
+          <div style="font-size:12.5px;color:#6F6658;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:#46537F">✦</span> Confirmed Thu 10 AM · drain cleaning</div>
+        </div>
+        <div style="padding:12px;border-radius:11px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span style="font-size:11px;color:#6F6658">✉</span><span style="font-size:14px;font-weight:600;color:#292420">Tom Reyes</span><span style="font-size:11px;color:#9A9082;margin-left:auto;font-variant-numeric:tabular-nums">8:21</span></div>
+          <div style="font-size:12.5px;color:#6F6658;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:#46537F">✦</span> Collecting address for water heater…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PANE 2: THREAD ===== -->
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;background:#F4EFE6">
+
+      <!-- C1 THREAD (SMS, escalated) -->
+      <sc-if value="{{ isC1 }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;gap:13px;padding:16px 24px;border-bottom:1px solid #E6DECF;background:#FBF8F3">
+          <div style="width:40px;height:40px;border-radius:99px;background:#E3D9C7;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#6F6658">SW</div>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px;font-weight:600">Sarah Whitman</span><span style="font-size:10px;font-weight:600;color:#8A6A22;background:#F8F1E1;border:1px solid #ECDDBF;padding:1px 7px;border-radius:5px">Gold member</span></div>
+            <div style="font-size:12.5px;color:#9A9082">✉ SMS · (254) 555-0148</div>
+          </div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+            <button style="height:34px;padding:0 13px;border:1px solid #D8CEBC;border-radius:8px;background:#FEFCF9;font:600 12.5px 'Hanken Grotesk';color:#292420;cursor:pointer">Open job →</button>
+          </div>
+        </div>
+
+        <div style="flex:1;overflow-y:auto;padding:22px 24px;display:flex;flex-direction:column;gap:14px">
+          <!-- customer -->
+          <div style="max-width:74%;align-self:flex-start">
+            <div style="background:#FEFCF9;border:1px solid #E6DECF;border-radius:14px 14px 14px 4px;padding:11px 14px;font-size:14px;line-height:1.5;color:#292420">My water heater is leaking everywhere and there's water all over the floor</div>
+            <div style="font-size:11px;color:#B0A691;margin-top:4px">8:31 AM</div>
+          </div>
+          <!-- AI -->
+          <div style="max-width:74%;align-self:flex-end">
+            <div style="background:#F3F1F8;border:1px solid #D3D9EC;border-radius:14px 14px 4px 14px;padding:11px 14px;font-size:14px;line-height:1.5;color:#3F4664"><span style="font-size:11px;font-weight:700;color:#5B6B9E;letter-spacing:.03em">✦ JORDAN (AI)</span><br>I'm so sorry, Sarah — let's get someone out fast. Is the water coming from the tank itself, or a connection at the top?</div>
+            <div style="font-size:11px;color:#8A7F9E;margin-top:4px;text-align:right">8:31 AM</div>
+          </div>
+          <div style="max-width:74%;align-self:flex-start">
+            <div style="background:#FEFCF9;border:1px solid #E6DECF;border-radius:14px 14px 14px 4px;padding:11px 14px;font-size:14px;line-height:1.5;color:#292420">The bottom of the tank I think. And I need it done before 2 — I have to leave for the airport</div>
+            <div style="font-size:11px;color:#B0A691;margin-top:4px">8:32 AM</div>
+          </div>
+          <div style="max-width:74%;align-self:flex-end">
+            <div style="background:#F3F1F8;border:1px solid #D3D9EC;border-radius:14px 14px 4px 14px;padding:11px 14px;font-size:14px;line-height:1.5;color:#3F4664"><span style="font-size:11px;font-weight:700;color:#5B6B9E;letter-spacing:.03em">✦ JORDAN (AI)</span><br>Understood. I can get a technician there this morning. Can you confirm the address is 1421 Oak St?</div>
+            <div style="font-size:11px;color:#8A7F9E;margin-top:4px;text-align:right">8:32 AM</div>
+          </div>
+          <div style="max-width:74%;align-self:flex-start">
+            <div style="background:#FEFCF9;border:1px solid #E6DECF;border-radius:14px 14px 14px 4px;padding:11px 14px;font-size:14px;line-height:1.5;color:#292420">yes but honestly can I just talk to a person, this is stressful</div>
+            <div style="font-size:11px;color:#B0A691;margin-top:4px">8:33 AM</div>
+          </div>
+
+          <!-- escalation divider -->
+          <div style="display:flex;align-items:center;gap:12px;margin:4px 0">
+            <div style="flex:1;height:1px;background:#E8CFC2"></div>
+            <div style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#A85A40;background:#F7ECE6;border:1px solid #E8CFC2;padding:5px 12px;border-radius:99px">⤴ Jordan escalated to you — customer asked for a person · stressed · 62% confident to continue</div>
+            <div style="flex:1;height:1px;background:#E8CFC2"></div>
+          </div>
+
+          <!-- appended CSR replies -->
+          <sc-for list="{{ sent }}" as="m" hint-placeholder-count="0">
+            <div style="max-width:74%;align-self:flex-end">
+              <div style="background:#292420;border-radius:14px 14px 4px 14px;padding:11px 14px;font-size:14px;line-height:1.5;color:#F1EBE1">{{ m.text }}</div>
+              <div style="font-size:11px;color:#B0A691;margin-top:4px;text-align:right">You · Sofia · just now</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- composer -->
+        <div style="border-top:1px solid #E6DECF;background:#FBF8F3;padding:14px 24px">
+          <sc-if value="{{ notTakenOver }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;align-items:center;gap:13px;padding:12px 16px;background:#F3F1F8;border:1px solid #D3D9EC;border-radius:12px">
+              <span style="width:30px;height:30px;border-radius:8px;background:#5B6B9E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex:none">✦</span>
+              <div style="flex:1;font-size:13px;color:#3F4664;line-height:1.45">Jordan paused and handed this to you. Reply and you'll take over the conversation.</div>
+              <button onClick="{{ takeOver }}" style="height:40px;padding:0 18px;border:none;border-radius:9px;background:#292420;color:#F1EBE1;font:600 13.5px 'Hanken Grotesk';cursor:pointer" style-hover="background:#3a342d">Take over</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ takenOver }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+              <span style="font-size:11.5px;font-weight:600;color:#5E7A5A">● You're handling this now</span>
+              <span style="font-size:11.5px;color:#9A9082;margin-left:6px">Quick replies:</span>
+              <button onClick="{{ useReassure }}" style="font-size:11.5px;border:1px solid #D8CEBC;border-radius:99px;background:#FEFCF9;color:#292420;padding:4px 11px;cursor:pointer;font-family:inherit" style-hover="border-color:#5B6B9E">Reassure + dispatch</button>
+              <button onClick="{{ useSlot }}" style="font-size:11.5px;border:1px solid #D8CEBC;border-radius:99px;background:#FEFCF9;color:#292420;padding:4px 11px;cursor:pointer;font-family:inherit" style-hover="border-color:#5B6B9E">Offer earliest slot</button>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:10px">
+              <textarea value="{{ draft }}" onInput="{{ onDraftInput }}" placeholder="Message Sarah…" style="flex:1;height:46px;max-height:120px;resize:none;padding:12px 14px;border:1px solid #D8CEBC;border-radius:11px;background:#FEFCF9;font:400 14px 'Hanken Grotesk';color:#292420;line-height:1.4" style-focus="border-color:#5B6B9E;outline:none;box-shadow:0 0 0 3px rgba(91,107,158,.14)"></textarea>
+              <button onClick="{{ send }}" style="height:46px;padding:0 20px;border:none;border-radius:11px;background:#292420;color:#F1EBE1;font:600 14px 'Hanken Grotesk';cursor:pointer;flex:none" style-hover="background:#3a342d">Send</button>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- C2 THREAD (live voice) -->
+      <sc-if value="{{ isC2 }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:13px;padding:16px 24px;border-bottom:1px solid #E6DECF;background:#FBF8F3">
+          <div style="width:40px;height:40px;border-radius:99px;background:#E3D9C7;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#6F6658">MO</div>
+          <div>
+            <div style="font-size:16px;font-weight:600">Miguel Ortega</div>
+            <div style="font-size:12.5px;color:#9A9082">☏ Inbound call · (254) 555-0199</div>
+          </div>
+          <span style="margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:#46537F;background:#EEF0F7;border:1px solid #D3D9EC;padding:6px 13px;border-radius:99px"><span style="width:7px;height:7px;border-radius:99px;background:#5B6B9E;animation:abpulse 2.4s ease-in-out infinite"></span>Live · 2:14 · ✦ 88%</span>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:22px 24px;display:flex;flex-direction:column;gap:14px">
+          <div style="max-width:74%;align-self:flex-end">
+            <div style="background:#F3F1F8;border:1px solid #D3D9EC;border-radius:14px 14px 4px 14px;padding:11px 14px;font-size:14px;line-height:1.5;color:#3F4664"><span style="font-size:11px;font-weight:700;color:#5B6B9E">✦ JORDAN (AI)</span><br>Thanks for calling Steward Home Services — this call may be recorded. How can I help?</div>
+          </div>
+          <div style="max-width:74%;align-self:flex-start">
+            <div style="background:#FEFCF9;border:1px solid #E6DECF;border-radius:14px 14px 14px 4px;padding:11px 14px;font-size:14px;line-height:1.5;color:#292420">Hi, I want to get my AC looked at before summer. Nothing's broken, just a tune-up.</div>
+          </div>
+          <div style="max-width:74%;align-self:flex-end">
+            <div style="background:#F3F1F8;border:1px solid #D3D9EC;border-radius:14px 14px 4px 14px;padding:11px 14px;font-size:14px;line-height:1.5;color:#3F4664"><span style="font-size:11px;font-weight:700;color:#5B6B9E">✦ JORDAN (AI)</span><br>Great timing. I have Thursday morning or Friday afternoon this week — which works better?</div>
+          </div>
+          <div style="align-self:center;display:inline-flex;align-items:center;gap:8px;font-size:12px;color:#8A7F9E;background:#FBF8F3;border:1px solid #EFE9DE;padding:5px 12px;border-radius:99px"><span style="width:6px;height:6px;border-radius:99px;background:#5E7A5A"></span>On track — no action needed. Listen in or take the call if you'd like.</div>
+        </div>
+        <div style="border-top:1px solid #E6DECF;background:#FBF8F3;padding:14px 24px;display:flex;gap:10px;justify-content:flex-end">
+          <button style="height:42px;padding:0 18px;border:1px solid #D8CEBC;border-radius:10px;background:#FEFCF9;font:600 13.5px 'Hanken Grotesk';color:#292420;cursor:pointer">🎧 Listen in</button>
+          <button style="height:42px;padding:0 18px;border:none;border-radius:10px;background:#292420;color:#F1EBE1;font:600 13.5px 'Hanken Grotesk';cursor:pointer" style-hover="background:#3a342d">Take the call</button>
+        </div>
+      </sc-if>
+    </div>
+
+    <!-- ===== PANE 3: CONTEXT ===== -->
+    <div style="width:330px;flex:none;border-left:1px solid #E6DECF;background:#FBF8F3;overflow-y:auto">
+      <sc-if value="{{ isC1 }}" hint-placeholder-val="{{ true }}">
+        <div style="padding:18px 20px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#B0A691;margin-bottom:12px">What Jordan already knows</div>
+
+          <div style="background:#F3F1F8;border:1px solid #D3D9EC;border-radius:12px;padding:14px;margin-bottom:16px">
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <div><div style="font-size:11px;color:#8A7F9E;margin-bottom:1px">Problem</div><div style="font-size:13.5px;font-weight:600;color:#292420">Water heater leaking · tank base</div></div>
+              <div><div style="font-size:11px;color:#8A7F9E;margin-bottom:1px">Address</div><div style="font-size:13.5px;font-weight:600;color:#292420">1421 Oak St ✓ confirmed</div></div>
+              <div><div style="font-size:11px;color:#8A7F9E;margin-bottom:1px">Must finish by</div><div style="font-size:13.5px;font-weight:600;color:#292420">2:00 PM</div></div>
+              <div><div style="font-size:11px;color:#8A7F9E;margin-bottom:1px">Priority</div><div style="font-size:13.5px;font-weight:600;color:#A85A40">Emergency</div></div>
+            </div>
+          </div>
+
+          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#B0A691;margin-bottom:10px">Customer</div>
+          <div style="background:#FEFCF9;border:1px solid #E6DECF;border-radius:12px;padding:14px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:34px;height:34px;border-radius:99px;background:#E3D9C7;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#6F6658">SW</div><div><div style="font-size:13.5px;font-weight:600">Sarah Whitman</div><div style="font-size:12px;color:#8A6A22">Gold member · since 2021</div></div></div>
+            <div style="font-size:12.5px;color:#6F6658;line-height:1.6;border-top:1px solid #EFE9DE;padding-top:10px">6 jobs · last: drain cleaning, 3 mo ago<br>Equipment: Rheem water heater, 2016 <span style="color:#9A9082">(out of warranty)</span></div>
+          </div>
+
+          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8A7F9E;margin-bottom:10px">✦ Draft job, ready to confirm</div>
+          <div style="background:#FEFCF9;border:1px solid #C7CFE6;border-left:3px solid #5B6B9E;border-radius:12px;padding:14px">
+            <div style="font-size:13.5px;font-weight:600;color:#292420;margin-bottom:3px">Emergency · water heater</div>
+            <div style="font-size:12.5px;color:#46537F;line-height:1.45;margin-bottom:12px"><span style="font-size:9px">✦</span> Suggest <strong>Dani</strong> — closest, certified, can arrive by 11:30 AM</div>
+            <button style="width:100%;height:38px;border:none;border-radius:9px;background:#292420;color:#F1EBE1;font:600 13px 'Hanken Grotesk';cursor:pointer" style-hover="background:#3a342d">Create &amp; dispatch</button>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isC2 }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#B0A691;margin-bottom:12px">Live transcription</div>
+          <div style="background:#F3F1F8;border:1px solid #D3D9EC;border-radius:12px;padding:14px;margin-bottom:16px">
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <div><div style="font-size:11px;color:#8A7F9E;margin-bottom:1px">Intent</div><div style="font-size:13.5px;font-weight:600;color:#292420">HVAC maintenance · tune-up</div></div>
+              <div><div style="font-size:11px;color:#8A7F9E;margin-bottom:1px">Customer</div><div style="font-size:13.5px;font-weight:600;color:#292420">Miguel Ortega · returning</div></div>
+              <div><div style="font-size:11px;color:#8A7F9E;margin-bottom:1px">Confidence</div><div style="font-size:13.5px;font-weight:600;color:#46537F">88% · proceeding</div></div>
+            </div>
+          </div>
+          <div style="font-size:12.5px;color:#9A9082;line-height:1.6">Deepgram transcribes, Claude reasons, Cartesia speaks. Full transcript attaches to the job if a booking is made.</div>
+        </div>
+      </sc-if>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { selected: 'c1', takenOver: false, draft: '', sent: [] };
+  renderVals() {
+    const s = this.state;
+    const rowBase = 'padding:12px;border-radius:11px;margin-bottom:6px;cursor:pointer';
+    const sel = s.selected;
+    return {
+      isC1: sel === 'c1',
+      isC2: sel === 'c2',
+      selectC1: () => this.setState({ selected: 'c1' }),
+      selectC2: () => this.setState({ selected: 'c2' }),
+      c1RowStyle: rowBase + (sel === 'c1'
+        ? ';background:#F7ECE6;border:1px solid #E8CFC2;box-shadow:0 1px 2px rgba(41,36,32,.05)'
+        : ';background:transparent;border:1px solid transparent'),
+      c2RowStyle: rowBase + (sel === 'c2'
+        ? ';background:#EEF0F7;border:1px solid #D3D9EC;box-shadow:0 1px 2px rgba(41,36,32,.05)'
+        : ';background:transparent;border:1px solid transparent'),
+
+      takenOver: s.takenOver,
+      notTakenOver: !s.takenOver,
+      takeOver: () => this.setState({ takenOver: true }),
+
+      draft: s.draft,
+      onDraftInput: (e) => this.setState({ draft: e.target.value }),
+      useReassure: () => this.setState({ draft: "Hi Sarah, it's Sofia from Steward — I've got this now. Dani is heading your way and will be there before 11:30. Please move anything off the floor near the heater; we'll handle the rest." }),
+      useSlot: () => this.setState({ draft: "I can have a technician out to you by 11:30 AM today — well before your 2:00 cutoff. Want me to lock that in?" }),
+      send: () => {
+        const t = this.state.draft.trim();
+        if (!t) return;
+        this.setState({ sent: [...this.state.sent, { text: t }], draft: '' });
+      },
+      sent: s.sent,
+    };
+  }
+}
+</script>
+</body>
+</html>

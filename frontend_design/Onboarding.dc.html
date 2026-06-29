@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:#EDE6DA;font-family:'Hanken Grotesk',system-ui,sans-serif;color:#292420;-webkit-font-smoothing:antialiased}
+  ::selection{background:#D9D3E6}
+  *::-webkit-scrollbar{width:10px;height:10px}
+  *::-webkit-scrollbar-thumb{background:#D8CEBC;border-radius:99px;border:3px solid transparent;background-clip:padding-box}
+</style>
+</helmet>
+
+<div style="min-height:100vh;padding:40px 24px 80px;display:flex;flex-direction:column;align-items:center">
+
+  <!-- brand + greeting -->
+  <div style="width:100%;max-width:760px;display:flex;align-items:center;gap:10px;margin-bottom:30px">
+    <div style="width:30px;height:30px;border-radius:8px;background:#292420;display:flex;align-items:center;justify-content:center;color:#F1EBE1;font-weight:600;font-size:14px">A</div>
+    <span style="font-size:15px;font-weight:600;letter-spacing:-.01em">Airbase</span>
+    <span style="margin-left:auto;font-size:13px;color:#9A9082">{{ stepCounter }}</span>
+  </div>
+
+  <!-- stepper -->
+  <div style="width:100%;max-width:760px;display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap">
+    <sc-for list="{{ stepperItems }}" as="st" hint-placeholder-count="5">
+      <div onClick="{{ st.goto }}" style="{{ st.pillStyle }}">
+        <span style="{{ st.dotStyle }}">{{ st.mark }}</span>
+        <span>{{ st.label }}</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- card -->
+  <div style="width:100%;max-width:760px;background:#FBF8F3;border:1px solid #E6DECF;border-radius:18px;box-shadow:0 2px 4px rgba(41,36,32,.05),0 30px 70px -34px rgba(41,36,32,.3);overflow:hidden">
+
+    <sc-if value="{{ notDone }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:34px 38px;min-height:392px">
+
+        <!-- STEP 0 — COMPANY -->
+        <sc-if value="{{ isStep0 }}" hint-placeholder-val="{{ true }}">
+          <h2 style="font-size:24px;font-weight:600;letter-spacing:-.01em;margin:0 0 6px">Tell us about your company</h2>
+          <p style="font-size:14.5px;color:#6F6658;margin:0 0 26px;line-height:1.5">This is the name and trade your customers and AI agents will use.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px 20px">
+            <div style="grid-column:1 / -1">
+              <label style="display:block;font-size:12.5px;font-weight:600;color:#6F6658;margin-bottom:7px">Company name</label>
+              <input value="Steward Home Services" style="width:100%;height:44px;padding:0 14px;border:1px solid #D8CEBC;border-radius:9px;background:#FEFCF9;font:400 15px 'Hanken Grotesk';color:#292420" style-focus="border-color:#5B6B9E;outline:none;box-shadow:0 0 0 3px rgba(91,107,158,.14)" />
+            </div>
+            <div style="grid-column:1 / -1">
+              <label style="display:block;font-size:12.5px;font-weight:600;color:#6F6658;margin-bottom:9px">Primary trade</label>
+              <div style="display:flex;gap:9px;flex-wrap:wrap">
+                <sc-for list="{{ tradeOptions }}" as="t" hint-placeholder-count="4">
+                  <button onClick="{{ t.set }}" style="{{ t.style }}">{{ t.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+            <div>
+              <label style="display:block;font-size:12.5px;font-weight:600;color:#6F6658;margin-bottom:7px">Service area</label>
+              <input value="Belton, TX" style="width:100%;height:44px;padding:0 14px;border:1px solid #D8CEBC;border-radius:9px;background:#FEFCF9;font:400 15px 'Hanken Grotesk';color:#292420" style-focus="border-color:#5B6B9E;outline:none;box-shadow:0 0 0 3px rgba(91,107,158,.14)" />
+            </div>
+            <div>
+              <label style="display:block;font-size:12.5px;font-weight:600;color:#6F6658;margin-bottom:7px">Time zone</label>
+              <div style="display:flex;align-items:center;height:44px;padding:0 14px;border:1px solid #D8CEBC;border-radius:9px;background:#FEFCF9;font-size:15px;color:#292420">Central (US)<span style="margin-left:auto;color:#B0A691;font-size:12px">▾</span></div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- STEP 1 — PHONE -->
+        <sc-if value="{{ isStep1 }}" hint-placeholder-val="{{ false }}">
+          <h2 style="font-size:24px;font-weight:600;letter-spacing:-.01em;margin:0 0 6px">Connect your phone line</h2>
+          <p style="font-size:14.5px;color:#6F6658;margin:0 0 26px;line-height:1.5">Calls and texts to this number are answered 24/7 by Jordan, your AI booking agent. You can forward your existing line here.</p>
+          <div style="display:flex;align-items:center;gap:16px;padding:20px;border:1px solid #C7CFE6;border-left:3px solid #5B6B9E;border-radius:13px;background:#F3F1F8;margin-bottom:14px">
+            <div style="width:46px;height:46px;border-radius:12px;background:#5B6B9E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px">☏</div>
+            <div style="flex:1">
+              <div style="font-size:20px;font-weight:600;color:#292420;font-variant-numeric:tabular-nums">(254) 555‑0100</div>
+              <div style="font-size:13px;color:#46537F"><span style="font-size:10px">✦</span> New Belton number · ready to provision</div>
+            </div>
+            <button style="height:42px;padding:0 18px;border:none;border-radius:10px;background:#292420;color:#F1EBE1;font:600 13.5px 'Hanken Grotesk';cursor:pointer" style-hover="background:#3a342d">Use this number</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;border:1px solid #E6DECF;border-radius:12px;background:#FEFCF9">
+            <span style="font-size:13.5px;color:#6F6658">Already have a business number?</span>
+            <button style="margin-left:auto;height:36px;padding:0 14px;border:1px solid #D8CEBC;border-radius:9px;background:#FEFCF9;font:600 12.5px 'Hanken Grotesk';color:#292420;cursor:pointer">Port a number</button>
+          </div>
+        </sc-if>
+
+        <!-- STEP 2 — PRICEBOOK -->
+        <sc-if value="{{ isStep2 }}" hint-placeholder-val="{{ false }}">
+          <h2 style="font-size:24px;font-weight:600;letter-spacing:-.01em;margin:0 0 6px">Import your pricebook</h2>
+          <p style="font-size:14.5px;color:#6F6658;margin:0 0 20px;line-height:1.5">Upload a ServiceTitan export, spreadsheet, or PDF — Claude reads it into flat-rate items you can review.</p>
+          <div style="display:flex;align-items:center;gap:10px;padding:11px 15px;background:#F3F1F8;border:1px solid #D3D9EC;border-radius:11px;margin-bottom:14px">
+            <span style="color:#5B6B9E">✦</span>
+            <span style="font-size:13.5px;color:#3F4664"><strong style="color:#292420">servicetitan-export.csv</strong> — Claude extracted 47 items across 5 categories.</span>
+            <span style="margin-left:auto;font-size:12px;color:#8A7F9E">Replace file</span>
+          </div>
+          <div style="border:1px solid #E6DECF;border-radius:12px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:1fr 92px 88px 96px;gap:0;background:#F4EFE6;border-bottom:1px solid #E6DECF;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#9A9082">
+              <div style="padding:9px 14px">Item</div><div style="padding:9px 8px">Type</div><div style="padding:9px 8px;text-align:right">Price</div><div style="padding:9px 8px;text-align:center">Source</div>
+            </div>
+            <sc-for list="{{ pbRows }}" as="r" hint-placeholder-count="5">
+              <div style="display:grid;grid-template-columns:1fr 92px 88px 96px;gap:0;border-bottom:1px solid #EFE9DE;align-items:center">
+                <div style="padding:11px 14px;font-size:13.5px;font-weight:600;color:#292420">{{ r.name }}</div>
+                <div style="padding:11px 8px;font-size:12.5px;color:#6F6658">{{ r.type }}</div>
+                <div style="padding:11px 8px;font-size:13.5px;color:#292420;text-align:right;font-variant-numeric:tabular-nums">{{ r.price }}</div>
+                <div style="padding:11px 8px;text-align:center"><span style="font-size:10.5px;font-weight:600;color:#46537F;background:#EEF0F7;border:1px solid #D3D9EC;padding:2px 7px;border-radius:5px">✦ {{ r.conf }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size:12.5px;color:#9A9082;margin-top:12px">+ 42 more items · review anything below 90% confidence before going live.</div>
+        </sc-if>
+
+        <!-- STEP 3 — TEAM -->
+        <sc-if value="{{ isStep3 }}" hint-placeholder-val="{{ false }}">
+          <h2 style="font-size:24px;font-weight:600;letter-spacing:-.01em;margin:0 0 6px">Add your technicians</h2>
+          <p style="font-size:14.5px;color:#6F6658;margin:0 0 22px;line-height:1.5">Their skills tell the dispatch agent who to send. They'll get a text to install the field app.</p>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ techs }}" as="tech" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:13px;padding:13px 15px;border:1px solid #E6DECF;border-radius:12px;background:#FEFCF9">
+                <span style="{{ tech.avStyle }}">{{ tech.initials }}</span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:14.5px;font-weight:600;color:#292420">{{ tech.name }}</div>
+                  <div style="font-size:12.5px;color:#9A9082">{{ tech.skills }}</div>
+                </div>
+                <span style="{{ tech.statusStyle }}">{{ tech.status }}</span>
+              </div>
+            </sc-for>
+            <div style="display:flex;align-items:center;gap:11px;padding:13px 15px;border:1px dashed #D8CEBC;border-radius:12px;color:#9A9082;font-size:13.5px;font-weight:600;cursor:pointer">+ Invite a technician</div>
+          </div>
+        </sc-if>
+
+        <!-- STEP 4 — GO LIVE -->
+        <sc-if value="{{ isStep4 }}" hint-placeholder-val="{{ false }}">
+          <h2 style="font-size:24px;font-weight:600;letter-spacing:-.01em;margin:0 0 6px">You're ready to go live</h2>
+          <p style="font-size:14.5px;color:#6F6658;margin:0 0 22px;line-height:1.5">The moment you go live, Jordan starts answering calls and texts and the dispatch agent begins assigning jobs.</p>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ summary }}" as="row" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:13px;padding:14px 16px;border:1px solid #CFE0CD;border-radius:12px;background:#ECF1EC">
+                <span style="width:26px;height:26px;border-radius:99px;background:#5E7A5A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex:none">✓</span>
+                <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#3A4F38">{{ row.label }}</div></div>
+                <span style="font-size:12.5px;color:#4C6749;font-weight:600">{{ row.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+      </div>
+
+      <!-- footer -->
+      <div style="display:flex;align-items:center;gap:12px;padding:18px 38px;border-top:1px solid #EFE9DE;background:#FBF8F3">
+        <button onClick="{{ back }}" style="{{ backStyle }}">← Back</button>
+        <span style="margin-left:auto;font-size:13px;color:#9A9082">{{ stepCounter }}</span>
+        <button onClick="{{ next }}" style="height:44px;padding:0 22px;border:none;border-radius:10px;background:#292420;color:#F1EBE1;font:600 14px 'Hanken Grotesk';cursor:pointer" style-hover="background:#3a342d">{{ continueLabel }}</button>
+      </div>
+    </sc-if>
+
+    <!-- DONE -->
+    <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:54px 40px;text-align:center">
+        <div style="width:60px;height:60px;border-radius:99px;background:#5E7A5A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 22px">✓</div>
+        <h2 style="font-size:27px;font-weight:600;letter-spacing:-.015em;margin:0 0 10px">Steward Home Services is live</h2>
+        <p style="font-size:15.5px;color:#6F6658;margin:0 auto 28px;max-width:46ch;line-height:1.6">Jordan is answering your phones and the dispatch agent is watching for new jobs. Here's where to go next.</p>
+        <div style="display:flex;gap:12px;justify-content:center">
+          <button style="height:46px;padding:0 22px;border:none;border-radius:10px;background:#292420;color:#F1EBE1;font:600 14px 'Hanken Grotesk';cursor:pointer" style-hover="background:#3a342d">Open dashboard</button>
+          <button style="height:46px;padding:0 22px;border:1px solid #D8CEBC;border-radius:10px;background:#FEFCF9;color:#292420;font:600 14px 'Hanken Grotesk';cursor:pointer">View booking inbox</button>
+        </div>
+        <button onClick="{{ restart }}" style="margin-top:22px;border:none;background:transparent;color:#9A9082;font:500 13px 'Hanken Grotesk';cursor:pointer;text-decoration:underline">Run setup again</button>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { step: 0, done: false, trade: 'Plumbing' };
+  renderVals() {
+    const s = this.state;
+    const labels = ['Company', 'Phone', 'Pricebook', 'Team', 'Go live'];
+    const i = s.step;
+    const setStep = (n) => this.setState({ step: Math.max(0, Math.min(4, n)), done: false });
+
+    const stepperItems = labels.map((label, idx) => {
+      const state = idx < i ? 'done' : idx === i ? 'current' : 'todo';
+      const pillBase = 'display:flex;align-items:center;gap:8px;padding:7px 13px 7px 8px;border-radius:99px;cursor:pointer;font-size:13px;font-weight:600;border:1px solid ';
+      const dotBase = 'width:20px;height:20px;border-radius:99px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:none;';
+      let pill, dot;
+      if (state === 'done') { pill = pillBase + '#CFE0CD;background:#ECF1EC;color:#4C6749'; dot = dotBase + 'background:#5E7A5A;color:#fff'; }
+      else if (state === 'current') { pill = pillBase + '#292420;background:#292420;color:#F1EBE1'; dot = dotBase + 'background:#F1EBE1;color:#292420'; }
+      else { pill = pillBase + '#E6DECF;background:#FBF8F3;color:#9A9082'; dot = dotBase + 'background:#EFE9DE;color:#9A9082'; }
+      return { label, mark: state === 'done' ? '✓' : String(idx + 1), pillStyle: pill, dotStyle: dot, goto: () => setStep(idx) };
+    });
+
+    const tradeOptions = ['Plumbing', 'HVAC', 'Electrical', 'General'].map((label) => {
+      const on = s.trade === label;
+      const style = 'height:40px;padding:0 18px;border-radius:9px;cursor:pointer;font:600 13.5px \'Hanken Grotesk\';border:1px solid '
+        + (on ? '#292420;background:#292420;color:#F1EBE1' : '#D8CEBC;background:#FEFCF9;color:#292420');
+      return { label, style, set: () => this.setState({ trade: label }) };
+    });
+
+    const pbRows = [
+      { name: 'Drain cleaning', type: 'Service', price: '$175', conf: '98%' },
+      { name: 'Water heater diagnostic', type: 'Service', price: '$95', conf: '97%' },
+      { name: 'Trip / travel charge', type: 'Fee', price: '$49', conf: '94%' },
+      { name: 'Water heater anode rod', type: 'Part', price: '$38', conf: '88%' },
+      { name: 'Emergency surcharge', type: 'Fee', price: '$120', conf: '82%' },
+    ];
+
+    const av = 'width:38px;height:38px;border-radius:99px;color:#fff;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none;background:';
+    const stActive = 'font-size:11.5px;font-weight:600;color:#4C6749;background:#ECF1EC;border:1px solid #CFE0CD;padding:4px 10px;border-radius:7px';
+    const stInvited = 'font-size:11.5px;font-weight:600;color:#8A6A22;background:#F8F1E1;border:1px solid #ECDDBF;padding:4px 10px;border-radius:7px';
+    const techs = [
+      { initials: 'MR', name: 'Marcus Reyes', skills: 'Plumbing · Drain cleaning · Water heater', status: 'Active', avStyle: av + '#7C8A66', statusStyle: stActive },
+      { initials: 'DC', name: 'Dani Cho', skills: 'HVAC · Install · Maintenance', status: 'Active', avStyle: av + '#9B7B86', statusStyle: stActive },
+      { initials: 'DO', name: 'David Okonkwo', skills: 'Electrical · Service', status: 'Invited', avStyle: av + '#5B6B9E', statusStyle: stInvited },
+    ];
+
+    const summary = [
+      { label: 'Company & trade', value: 'Steward · ' + s.trade },
+      { label: 'Booking line', value: '(254) 555‑0100' },
+      { label: 'Pricebook', value: '47 items' },
+      { label: 'Technicians', value: '3 added' },
+    ];
+
+    return {
+      stepCounter: 'Step ' + (i + 1) + ' of 5',
+      stepperItems, tradeOptions, pbRows, techs, summary,
+      isStep0: i === 0, isStep1: i === 1, isStep2: i === 2, isStep3: i === 3, isStep4: i === 4,
+      notDone: !s.done, isDone: s.done,
+      continueLabel: i < 4 ? 'Continue' : 'Go live',
+      backStyle: 'height:44px;padding:0 16px;border:1px solid #D8CEBC;border-radius:10px;background:#FEFCF9;font:600 14px \'Hanken Grotesk\';cursor:pointer;'
+        + (i === 0 ? 'color:#C3B9A6;border-color:#EFE9DE;pointer-events:none' : 'color:#292420'),
+      back: () => setStep(i - 1),
+      next: () => { if (i < 4) setStep(i + 1); else this.setState({ done: true }); },
+      restart: () => this.setState({ step: 0, done: false }),
+    };
+  }
+}
+</script>
+</body>
+</html>

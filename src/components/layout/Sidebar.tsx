@@ -9,24 +9,24 @@ import {
   FileText,
   ClipboardList,
   Settings,
+  Bot,
   LogOut,
-  Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { initials } from "@/lib/utils";
 
-const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "dashboard", roles: null },
-  { label: "Customers",  icon: Users,           path: "customers", roles: null },
-  { label: "Jobs",       icon: ClipboardList,   path: "jobs",      roles: null },
-  { label: "Book Job",   icon: CalendarPlus,    path: "jobs/new",  roles: null },
-  { label: "Dispatch",   icon: Columns3,        path: "dispatch",  roles: null },
-  { label: "Booking",    icon: MessageSquare,   path: "booking",   roles: null },
-  { label: "Pricebook",  icon: BookOpen,        path: "pricebook", roles: null },
-  { label: "Invoices",   icon: FileText,        path: "invoices",  roles: null },
-  { label: "Settings",   icon: Settings,        path: "settings",  roles: ["owner"] },
+const NAV_ITEMS = [
+  { label: "Dashboard", icon: LayoutDashboard, path: "dashboard",  roles: null },
+  { label: "Customers",  icon: Users,           path: "customers",  roles: null },
+  { label: "Jobs",       icon: ClipboardList,   path: "jobs",       roles: null },
+  { label: "Book Job",   icon: CalendarPlus,    path: "jobs/new",   roles: null },
+  { label: "Dispatch",   icon: Columns3,        path: "dispatch",   roles: null },
+  { label: "Booking",    icon: MessageSquare,   path: "booking",    roles: null },
+  { label: "Pricebook",  icon: BookOpen,        path: "pricebook",  roles: null },
+  { label: "Invoices",   icon: FileText,        path: "invoices",   roles: null },
+  { label: "AI Settings",icon: Bot,             path: "ai-settings",roles: ["owner"] },
+  { label: "Settings",   icon: Settings,        path: "settings",   roles: ["owner"] },
 ] as const;
 
 export default function Sidebar() {
@@ -34,26 +34,38 @@ export default function Sidebar() {
   const { user, tenant, signOut } = useAuth();
 
   return (
-    <aside className="w-60 flex-shrink-0 border-r bg-slate-950 text-slate-100 flex flex-col">
-      {/* Logo */}
-      <div className="h-16 flex items-center px-6 border-b border-slate-800">
+    <aside className="w-[220px] flex-shrink-0 flex flex-col" style={{ background: "#292420" }}>
+      {/* Wordmark */}
+      <div className="h-14 flex items-center px-5 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
         <div className="flex items-center gap-2">
-          <Wrench className="h-5 w-5 text-blue-400" />
-          <span className="font-bold text-lg tracking-tight">Airbase</span>
+          {/* "A" logo mark */}
+          <span
+            className="h-6 w-6 rounded flex items-center justify-center text-xs font-bold"
+            style={{ background: "#F1EBE1", color: "#292420" }}
+          >
+            A
+          </span>
+          <span className="font-semibold text-sm tracking-tight" style={{ color: "#F1EBE1" }}>
+            Airbase
+          </span>
         </div>
       </div>
 
-      {/* Tenant name */}
+      {/* Company name */}
       {tenant && (
-        <div className="px-6 py-3 border-b border-slate-800">
-          <p className="text-xs text-slate-400 uppercase tracking-wider">Company</p>
-          <p className="text-sm font-medium text-slate-200 truncate">{tenant.name}</p>
+        <div className="px-5 py-3 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+          <p className="text-[10px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: "#6F6658" }}>
+            Company
+          </p>
+          <p className="text-sm font-medium truncate" style={{ color: "#C9BFAD" }}>
+            {tenant.name}
+          </p>
         </div>
       )}
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems
+      <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
+        {NAV_ITEMS
           .filter((item) => !item.roles || (item.roles as readonly string[]).includes(user?.role ?? ""))
           .map((item) => (
             <NavLink
@@ -61,37 +73,52 @@ export default function Sidebar() {
               to={`/${tenantSlug}/${item.path}`}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors",
                   isActive
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-400 hover:text-slate-100 hover:bg-slate-800"
+                    ? "text-[#F1EBE1] bg-white/10"
+                    : "text-[#9A9082] hover:text-[#C9BFAD] hover:bg-white/6",
                 )
               }
             >
-              <item.icon className="h-4 w-4 flex-shrink-0" />
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  <item.icon
+                    className="h-4 w-4 flex-shrink-0"
+                    style={{ color: isActive ? "#F1EBE1" : "#6F6658" }}
+                  />
+                  {item.label}
+                </>
+              )}
             </NavLink>
           ))}
       </nav>
 
       {/* User footer */}
-      <div className="border-t border-slate-800 p-4">
+      <div className="border-t p-4" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
         <div className="flex items-center gap-3">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-blue-600 text-white text-xs">
-              {user ? initials(user.name) : "?"}
-            </AvatarFallback>
-          </Avatar>
+          <div
+            className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0"
+            style={{ background: "#3a342d", color: "#C9BFAD" }}
+          >
+            {user ? initials(user.name) : "?"}
+          </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-slate-200 truncate">{user?.name}</p>
-            <p className="text-xs text-slate-400 capitalize">{user?.role}</p>
+            <p className="text-[13px] font-medium truncate" style={{ color: "#C9BFAD" }}>
+              {user?.name}
+            </p>
+            <p className="text-[11px] capitalize" style={{ color: "#6F6658" }}>
+              {user?.role?.replace("_", " ")}
+            </p>
           </div>
           <button
             onClick={() => void signOut()}
-            className="text-slate-400 hover:text-slate-100 transition-colors"
+            className="transition-colors"
+            style={{ color: "#6F6658" }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#C9BFAD")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#6F6658")}
             title="Sign out"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>

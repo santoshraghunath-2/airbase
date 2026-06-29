@@ -1,51 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    /* Airbase warm design system */
+    --background:  37 36% 91%;        /* bone      #F1EBE1 */
+    --foreground:  27 12% 14%;        /* ink       #292420 */
+    --card:        37 50% 97%;        /* paper     #FBF8F3 */
+    --card-foreground: 27 12% 14%;
+    --popover:     36 71% 99%;        /* raised    #FEFCF9 */
+    --popover-foreground: 27 12% 14%;
+    --primary:     27 12% 14%;        /* ink — dark button fill */
+    --primary-foreground: 37 36% 91%; /* bone text on ink */
+    --secondary:   36 71% 99%;        /* raised */
+    --secondary-foreground: 27 12% 14%;
+    --muted:       39 39% 93%;        /* panel-warm #F4EFE6 */
+    --muted-foreground: 37 12% 39%;   /* ink-2     #6F6658 */
+    --accent:      39 39% 93%;
+    --accent-foreground: 27 12% 14%;
+    --destructive: 15 45% 45%;        /* blocked   #A85A40 */
+    --destructive-foreground: 21 52% 94%;
+    --border:      39 31% 86%;        /* line      #E6DECF */
+    --input:       39 26% 79%;        /* field-border #D8CEBC */
+    --ring:        226 27% 49%;       /* ai        #5B6B9E — focus ring is periwinkle */
+    --radius:      0.625rem;          /* 10px */
   }
 }
 
@@ -55,6 +36,17 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: "Hanken Grotesk", system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+  /* Numeric values always tabular */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Live pulse for on-site jobs and active AI conversations */
+@keyframes abpulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(2.1); opacity: 0; }
 }

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:#EDE6DA;font-family:'Hanken Grotesk',system-ui,sans-serif;color:#292420;-webkit-font-smoothing:antialiased}
+  ::selection{background:#D9D3E6}
+  input,textarea,select{font-family:inherit}
+  input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer}
+  input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:99px;background:#E3D9C7}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;margin-top:-7px;width:20px;height:20px;border-radius:99px;background:#292420;border:3px solid #FBF8F3;box-shadow:0 1px 3px rgba(41,36,32,.3)}
+  *::-webkit-scrollbar{width:10px;height:10px}
+  *::-webkit-scrollbar-thumb{background:#D8CEBC;border-radius:99px;border:3px solid transparent;background-clip:padding-box}
+</style>
+</helmet>
+
+<div style="min-height:100vh;padding:26px;display:flex;justify-content:center">
+  <div style="width:100%;max-width:1180px;min-height:760px;background:#FBF8F3;border:1px solid #E6DECF;border-radius:18px;overflow:hidden;box-shadow:0 2px 4px rgba(41,36,32,.05),0 40px 90px -40px rgba(41,36,32,.32);display:flex">
+
+    <!-- ===== SETTINGS SUB-NAV ===== -->
+    <aside style="width:248px;flex:none;border-right:1px solid #E6DECF;background:#F4EFE6;display:flex;flex-direction:column;padding:22px 16px">
+      <div style="display:flex;align-items:center;gap:10px;padding:4px 8px 18px">
+        <div style="width:30px;height:30px;border-radius:8px;background:#292420;display:flex;align-items:center;justify-content:center;color:#F1EBE1;font-weight:600;font-size:14px">A</div>
+        <div style="line-height:1.15"><div style="font-size:14.5px;font-weight:600;letter-spacing:-.01em">Settings</div><div style="font-size:12px;color:#9A9082">Steward Home</div></div>
+      </div>
+      <nav style="display:flex;flex-direction:column;gap:2px">
+        <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="7">
+          <div onClick="{{ n.go }}" style="{{ n.style }}">
+            <span style="width:17px;text-align:center;font-size:14px">{{ n.glyph }}</span>
+            <span>{{ n.label }}</span>
+          </div>
+        </sc-for>
+      </nav>
+      <div style="margin-top:auto;padding:12px 8px 4px;border-top:1px solid #E6DECF">
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:30px;height:30px;border-radius:99px;background:#5B6B9E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600">MR</div><div style="line-height:1.2"><div style="font-size:12.5px;font-weight:600">Maria Reyes</div><div style="font-size:11px;color:#9A9082">Owner</div></div></div>
+      </div>
+    </aside>
+
+    <!-- ===== CONTENT ===== -->
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+
+      <!-- header with autosave indicator -->
+      <div style="display:flex;align-items:center;gap:14px;padding:20px 32px 18px;border-bottom:1px solid #EFE9DE;background:#FBF8F3">
+        <div>
+          <h1 style="font-size:21px;font-weight:600;letter-spacing:-.01em;margin:0">{{ sectionTitle }}</h1>
+          <p style="font-size:13px;color:#9A9082;margin:3px 0 0">{{ sectionSub }}</p>
+        </div>
+        <div style="margin-left:auto">
+          <span style="{{ saveStyle }}">{{ saveIcon }} {{ saveText }}</span>
+        </div>
+      </div>
+
+      <div style="flex:1;overflow-y:auto;padding:30px 32px 44px;background:#FBF8F3">
+        <div style="max-width:680px;display:flex;flex-direction:column;gap:24px">
+
+          <!-- ===================== COMPANY PROFILE ===================== -->
+          <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;align-items:center;gap:18px;padding:20px;border:1px solid #E6DECF;border-radius:14px;background:#FEFCF9">
+              <div style="width:64px;height:64px;border-radius:14px;background:#292420;color:#F1EBE1;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:600;flex:none">S</div>
+              <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#292420">Company logo</div><div style="font-size:12.5px;color:#9A9082;margin-top:2px">Shown on invoices and the customer booking page. PNG or SVG, square.</div></div>
+              <button onClick="{{ touch }}" style="height:38px;padding:0 15px;border:1px solid #D8CEBC;border-radius:9px;background:#FEFCF9;font:600 12.5px 'Hanken Grotesk';color:#292420;cursor:pointer">Replace</button>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px 20px">
+              <div style="grid-column:1 / -1">
+                <label style="display:block;font-size:12.5px;font-weight:600;color:#6F6658;margin-bottom:7px">Company name</label>
+                <input onInput="{{ touch }}" value="Steward Home Services" style="width:100%;height:44px;padding:0 14px;border:1px solid #D8CEBC;border-radius:9px;background:#FEFCF9;font-size:15px;color:#292420" style-focus="border-color:#5B6B9E;outline:none;box-shadow:0 0 0 3px rgba(91,107,158,.14)" />
+                <div style="font-size:12px;color:#9A9082;margin-top:6px">How customers see you in texts, emails, and on invoices.</div>
+              </div>
+              <div>
+                <label style="display:block;font-size:12.5px;font-weight:600;color:#6F6658;margin-bottom:7px">Legal / billing name</label>
+                <input onInput="{{ touch }}" value="Steward Home Services LLC" style="width:100%;height:44px;padding:0 14px;border:1px solid #D8CEBC;border-radius:9px;background:#FEFCF9;font-size:15px;color:#292420" style-focus="border-color:#5B6B9E;outline:none;box-shadow:0 0 0 3px rgba(91,107,158,.14)" />
+              </div>
+              <div>
+                <label style="display:block;font-size:12.5px;font-weight:600;color:#6F6658;margin-bottom:7px">Contractor license #</label>
+                <input onInput="{{ touch }}" value="TX-PL-44821" style="width:100%;height:44px;padding:0 14px;border:1px solid #D8CEBC;border-radius:9px;background:#FEFCF9;font-size:15px;color:#292420" style-focus="border-color:#5B6B9E;outline:none;box-shadow:0 0 0 3px rgba(91,107,158,.14)" />
+              </div>
+              <div style="grid-column:1 / -1">
+                <label style="display:block;font-size:12.5px;font-weight:600;color:#6F6658;margin-bottom:9px">Primary trade</label>
+                <div style="display:flex;gap:9px;flex-wrap:wrap">
+                  <sc-for list="{{ tradeOptions }}" as="t" hint-placeholder-count="4">
+                    <button onClick="{{ t.set }}" style="{{ t.style }}">{{ t.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="grid-column:1 / -1">
+                <label style="display:block;font-size:12.5px;font-weight:600;color:#6F6658;margin-bottom:7px">Business address</label>
+                <input onInput="{{ touch }}" value="312 Commerce St, Belton, TX 76513" style="width:100%;height:44px;padding:0 14px;border:1px solid #D8CEBC;border-radius:9px;background:#FEFCF9;font-size:15px;color:#292420" style-focus="border-color:#5B6B9E;outline:none;box-shadow:0 0 0 3px rgba(91,107,158,.14)" />
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ===================== HOURS (HERO) ===================== -->
+          <sc-if value="{{ isHours }}" hint-placeholder-val="{{ false }}">
+            <div style="border:1px solid #E6DECF;border-radius:14px;background:#FEFCF9;overflow:hidden">
+              <div style="display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid #EFE9DE"><span style="font-size:13px;font-weight:600;color:#292420">Weekly hours</span><span style="margin-left:auto;font-size:12.5px;color:#9A9082">When jobs can be booked</span></div>
+              <sc-for list="{{ days }}" as="d" hint-placeholder-count="7">
+                <div style="display:flex;align-items:center;gap:16px;padding:13px 18px;border-bottom:1px solid #F1EBE1">
+                  <div onClick="{{ d.toggle }}" style="display:flex;align-items:center;gap:10px;width:118px;flex:none;cursor:pointer">
+                    <div style="{{ d.switchTrack }}"><div style="{{ d.switchKnob }}"></div></div>
+                    <span style="font-size:14px;font-weight:600;color:#292420">{{ d.day }}</span>
+                  </div>
+                  <sc-if value="{{ d.open }}" hint-placeholder-val="{{ true }}">
+                    <div style="display:flex;align-items:center;gap:9px">
+                      <div style="display:flex;align-items:center;height:38px;padding:0 13px;border:1px solid #D8CEBC;border-radius:8px;background:#FBF8F3;font-size:13.5px;color:#292420;font-variant-numeric:tabular-nums">{{ d.from }}</div>
+                      <span style="color:#B0A691;font-size:13px">to</span>
+                      <div style="display:flex;align-items:center;height:38px;padding:0 13px;border:1px solid #D8CEBC;border-radius:8px;background:#FBF8F3;font-size:13.5px;color:#292420;font-variant-numeric:tabular-nums">{{ d.to }}</div>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ d.closed }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-size:13.5px;color:#B0A691">Closed</span>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#292420;margin-bottom:4px">After-hours &amp; emergencies</div>
+              <div style="font-size:12.5px;color:#9A9082;margin-bottom:12px">What happens when someone contacts you outside the hours above.</div>
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <sc-for list="{{ afterHoursOptions }}" as="o" hint-placeholder-count="3">
+                  <div onClick="{{ o.set }}" style="{{ o.style }}">
+                    <span style="{{ o.radio }}"><span style="{{ o.radioDot }}"></span></span>
+                    <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#292420">{{ o.label }}</div><div style="font-size:12.5px;color:#6F6658;margin-top:1px">{{ o.desc }}</div></div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ===================== SERVICE AREA ===================== -->
+          <sc-if value="{{ isArea }}" hint-placeholder-val="{{ false }}">
+            <div style="display:inline-flex;gap:2px;background:#F1EBE1;border-radius:9px;padding:3px;align-self:flex-start">
+              <button onClick="{{ setRadius }}" style="{{ radiusTabStyle }}">Distance from base</button>
+              <button onClick="{{ setZip }}" style="{{ zipTabStyle }}">Specific ZIP codes</button>
+            </div>
+
+            <sc-if value="{{ areaIsRadius }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;align-items:center;gap:26px;padding:22px;border:1px solid #E6DECF;border-radius:14px;background:#FEFCF9">
+                <div style="width:150px;height:150px;flex:none;border-radius:99px;background:radial-gradient(circle,#EEF0F7 0%,#E3E7F3 70%,#D3D9EC 100%);border:1px solid #D3D9EC;position:relative;display:flex;align-items:center;justify-content:center">
+                  <div style="position:absolute;width:10px;height:10px;border-radius:99px;background:#292420"></div>
+                  <span style="position:absolute;bottom:18px;font-size:11px;font-weight:600;color:#46537F;font-variant-numeric:tabular-nums">{{ radius }} mi</span>
+                </div>
+                <div style="flex:1">
+                  <label style="display:block;font-size:12.5px;font-weight:600;color:#6F6658;margin-bottom:10px">Service radius — {{ radius }} miles from Belton</label>
+                  <input type="range" min="5" max="60" step="5" value="{{ radius }}" onInput="{{ onRadius }}" style="width:100%" />
+                  <div style="display:flex;justify-content:space-between;font-size:11.5px;color:#9A9082;margin-top:7px"><span>5 mi</span><span>60 mi</span></div>
+                  <div style="font-size:12.5px;color:#6F6658;margin-top:14px">Covers roughly <strong style="color:#292420">{{ zipCount }} ZIP codes</strong>. Addresses outside this range are politely declined at booking.</div>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ areaIsZip }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:20px;border:1px solid #E6DECF;border-radius:14px;background:#FEFCF9">
+                <label style="display:block;font-size:12.5px;font-weight:600;color:#6F6658;margin-bottom:12px">Covered ZIP codes</label>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <sc-for list="{{ zips }}" as="z" hint-placeholder-count="6">
+                    <span style="display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 12px;border:1px solid #D8CEBC;border-radius:8px;background:#FBF8F3;font-size:13px;font-variant-numeric:tabular-nums;color:#292420">{{ z }}<span onClick="{{ touch }}" style="color:#B0A691;cursor:pointer;font-size:14px">×</span></span>
+                  </sc-for>
+                  <button onClick="{{ touch }}" style="height:34px;padding:0 13px;border:1px dashed #D8CEBC;border-radius:8px;background:transparent;font:600 13px 'Hanken Grotesk';color:#9A9082;cursor:pointer">+ Add</button>
+                </div>
+              </div>
+            </sc-if>
+          </sc-if>
+
+          <!-- ===================== CUSTOMER-FACING IDENTITY ===================== -->
+          <sc-if value="{{ isIdentity }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px 20px">
+              <div>
+                <label style="display:block;font-size:12.5px;font-weight:600;color:#6F6658;margin-bottom:7px">Text message sender name</label>
+                <input onInput="{{ touch }}" value="Steward Home" style="width:100%;height:44px;padding:0 14px;border:1px solid #D8CEBC;border-radius:9px;background:#FEFCF9;font-size:15px;color:#292420" style-focus="border-color:#5B6B9E;outline:none;box-shadow:0 0 0 3px rgba(91,107,158,.14)" />
+                <div style="font-size:12px;color:#9A9082;margin-top:6px">The name customers see when Jordan texts them.</div>
+              </div>
+              <div>
+                <label style="display:block;font-size:12.5px;font-weight:600;color:#6F6658;margin-bottom:7px">Reply-to email</label>
+                <input onInput="{{ touch }}" value="hello@stewardhome.com" style="width:100%;height:44px;padding:0 14px;border:1px solid #D8CEBC;border-radius:9px;background:#FEFCF9;font-size:15px;color:#292420" style-focus="border-color:#5B6B9E;outline:none;box-shadow:0 0 0 3px rgba(91,107,158,.14)" />
+              </div>
+              <div style="grid-column:1 / -1">
+                <label style="display:block;font-size:12.5px;font-weight:600;color:#6F6658;margin-bottom:7px">Review link</label>
+                <input onInput="{{ touch }}" value="g.page/steward-home/review" style="width:100%;height:44px;padding:0 14px;border:1px solid #D8CEBC;border-radius:9px;background:#FEFCF9;font-size:15px;color:#292420" style-focus="border-color:#5B6B9E;outline:none;box-shadow:0 0 0 3px rgba(91,107,158,.14)" />
+                <div style="font-size:12px;color:#9A9082;margin-top:6px">The follow-up agent sends this after a job is completed and paid.</div>
+              </div>
+            </div>
+
+            <div>
+              <div style="font-size:12.5px;font-weight:600;color:#6F6658;margin-bottom:10px">Accent color on customer documents</div>
+              <div style="display:flex;gap:10px">
+                <sc-for list="{{ brandColors }}" as="c" hint-placeholder-count="4">
+                  <div onClick="{{ c.set }}" style="{{ c.style }}"><span style="{{ c.swatch }}"></span></div>
+                </sc-for>
+              </div>
+            </div>
+
+            <!-- live preview -->
+            <div style="border:1px solid #E6DECF;border-radius:14px;background:#F4EFE6;padding:20px">
+              <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#B0A691;margin-bottom:14px">Preview — what customers get</div>
+              <div style="max-width:300px;background:#FEFCF9;border:1px solid #E6DECF;border-radius:14px 14px 14px 4px;padding:12px 14px;font-size:13.5px;line-height:1.5;color:#292420">
+                <div style="font-size:11px;font-weight:600;color:#9A9082;margin-bottom:4px">Steward Home · text</div>
+                Hi Sarah! This is Steward Home — your technician Marcus is on the way, ETA 2:15 PM. Reply STOP to opt out.
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ===================== TEAM & ACCESS ===================== -->
+          <sc-if value="{{ isTeam }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center"><span style="font-size:13px;font-weight:600;color:#292420">Office &amp; operations</span><button onClick="{{ touch }}" style="margin-left:auto;height:38px;padding:0 16px;border:none;border-radius:9px;background:#292420;color:#F1EBE1;font:600 12.5px 'Hanken Grotesk';cursor:pointer" style-hover="background:#3a342d">+ Invite</button></div>
+            <div style="border:1px solid #E6DECF;border-radius:14px;background:#FEFCF9;overflow:hidden">
+              <sc-for list="{{ team }}" as="p" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:13px;padding:14px 18px;border-bottom:1px solid #F1EBE1">
+                  <span style="{{ p.avStyle }}">{{ p.initials }}</span>
+                  <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;color:#292420">{{ p.name }}</div><div style="font-size:12.5px;color:#9A9082">{{ p.email }}</div></div>
+                  <span style="{{ p.statusStyle }}">{{ p.status }}</span>
+                  <div style="display:flex;align-items:center;gap:7px;height:34px;padding:0 12px;border:1px solid #D8CEBC;border-radius:8px;background:#FBF8F3;font-size:13px;font-weight:600;color:#292420;cursor:pointer;min-width:104px">{{ p.role }}<span style="margin-left:auto;color:#B0A691;font-size:11px">▾</span></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="font-size:12.5px;color:#9A9082;line-height:1.55">Roles: <strong style="color:#6F6658">Owner</strong> controls billing &amp; settings · <strong style="color:#6F6658">Operator</strong> runs dispatch &amp; jobs · <strong style="color:#6F6658">CSR</strong> handles the booking inbox · <strong style="color:#6F6658">Viewer</strong> is read-only.</div>
+
+            <!-- TECHNICIANS -->
+            <div style="display:flex;align-items:center;margin-top:8px"><span style="font-size:13px;font-weight:600;color:#292420">Field technicians</span><button onClick="{{ touch }}" style="margin-left:auto;height:38px;padding:0 16px;border:none;border-radius:9px;background:#292420;color:#F1EBE1;font:600 12.5px 'Hanken Grotesk';cursor:pointer" style-hover="background:#3a342d">+ Add technician</button></div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <sc-for list="{{ technicians }}" as="t" hint-placeholder-count="3">
+                <div style="border:1px solid #E6DECF;border-radius:14px;background:#FEFCF9;padding:15px 18px">
+                  <div style="display:flex;align-items:center;gap:13px;margin-bottom:13px">
+                    <span style="{{ t.avStyle }}">{{ t.initials }}</span>
+                    <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;color:#292420">{{ t.name }}</div><div style="font-size:12.5px;color:#9A9082">{{ t.phone }}</div></div>
+                    <span style="{{ t.statusStyle }}">{{ t.status }}</span>
+                  </div>
+                  <div style="font-size:11.5px;font-weight:600;color:#9A9082;margin-bottom:9px">Skills — tap to set what the dispatch agent can assign</div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <sc-for list="{{ t.skills }}" as="sk" hint-placeholder-count="5">
+                      <button onClick="{{ sk.toggle }}" style="{{ sk.style }}">{{ sk.check }}{{ sk.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="font-size:12.5px;color:#9A9082;line-height:1.55">Skills decide who the dispatch agent can send to each job. Technicians install the field app from the text invite — what they can see there follows from their skills above.</div>
+          </sc-if>
+
+          <!-- ===================== PLAN & BILLING ===================== -->
+          <sc-if value="{{ isBilling }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:18px;padding:22px;border:1px solid #C7CFE6;border-radius:14px;background:#F3F1F8">
+              <div style="flex:1">
+                <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5B6B9E;margin-bottom:5px">Current plan</div>
+                <div style="font-size:22px;font-weight:600;color:#292420">Airbase Standard</div>
+                <div style="font-size:13.5px;color:#6F6658;margin-top:3px">$499 / location · billed monthly · unlimited technicians</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:26px;font-weight:600;color:#292420;font-variant-numeric:tabular-nums">$998<span style="font-size:14px;font-weight:500;color:#9A9082">/mo</span></div>
+                <div style="font-size:12.5px;color:#9A9082">2 active locations</div>
+              </div>
+            </div>
+
+            <div style="border:1px solid #E6DECF;border-radius:14px;background:#FEFCF9;overflow:hidden">
+              <div style="display:flex;align-items:center;padding:13px 18px;border-bottom:1px solid #EFE9DE"><span style="font-size:13px;font-weight:600">Locations</span><button onClick="{{ touch }}" style="margin-left:auto;height:32px;padding:0 13px;border:1px solid #D8CEBC;border-radius:8px;background:#FBF8F3;font:600 12px 'Hanken Grotesk';color:#292420;cursor:pointer">+ Add location</button></div>
+              <div style="display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid #F1EBE1"><span style="width:8px;height:8px;border-radius:99px;background:#5E7A5A"></span><div style="flex:1"><div style="font-size:14px;font-weight:600">Belton (HQ)</div><div style="font-size:12.5px;color:#9A9082">312 Commerce St · 6 technicians</div></div><span style="font-size:13px;color:#6F6658;font-variant-numeric:tabular-nums">$499/mo</span></div>
+              <div style="display:flex;align-items:center;gap:12px;padding:13px 18px"><span style="width:8px;height:8px;border-radius:99px;background:#5E7A5A"></span><div style="flex:1"><div style="font-size:14px;font-weight:600">Temple</div><div style="font-size:12.5px;color:#9A9082">88 Industrial Blvd · 3 technicians</div></div><span style="font-size:13px;color:#6F6658;font-variant-numeric:tabular-nums">$499/mo</span></div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:14px;padding:16px 18px;border:1px solid #E6DECF;border-radius:14px;background:#FEFCF9">
+              <div style="width:42px;height:30px;border-radius:6px;background:#292420;display:flex;align-items:center;justify-content:center;color:#F1EBE1;font-size:10px;font-weight:700;letter-spacing:.05em">VISA</div>
+              <div style="flex:1"><div style="font-size:14px;font-weight:600;color:#292420">•••• 4417</div><div style="font-size:12.5px;color:#9A9082">Expires 09/27</div></div>
+              <button onClick="{{ touch }}" style="height:36px;padding:0 14px;border:1px solid #D8CEBC;border-radius:9px;background:#FBF8F3;font:600 12.5px 'Hanken Grotesk';color:#292420;cursor:pointer">Update</button>
+            </div>
+
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#292420;margin-bottom:10px">Billing history</div>
+              <div style="display:flex;flex-direction:column">
+                <sc-for list="{{ invoices }}" as="inv" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px solid #F1EBE1"><span style="font-size:13.5px;color:#292420;width:120px">{{ inv.date }}</span><span style="font-size:13.5px;color:#6F6658;flex:1">{{ inv.desc }}</span><span style="font-size:13.5px;color:#292420;font-variant-numeric:tabular-nums">{{ inv.amount }}</span><span onClick="{{ touch }}" style="font-size:12.5px;font-weight:600;color:#46537F;cursor:pointer">PDF</span></div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ===================== CONNECTIONS ===================== -->
+          <sc-if value="{{ isConnections }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:13px">
+              <sc-for list="{{ connections }}" as="c" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:15px;padding:18px 20px;border:1px solid #E6DECF;border-radius:14px;background:#FEFCF9">
+                  <span style="{{ c.iconStyle }}">{{ c.glyph }}</span>
+                  <div style="flex:1;min-width:0">
+                    <div style="display:flex;align-items:center;gap:9px"><span style="font-size:15px;font-weight:600;color:#292420">{{ c.name }}</span><span style="{{ c.badgeStyle }}">{{ c.badge }}</span></div>
+                    <div style="font-size:12.5px;color:#9A9082;margin-top:3px">{{ c.detail }}</div>
+                  </div>
+                  <button onClick="{{ touch }}" style="{{ c.btnStyle }}">{{ c.btnLabel }}</button>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    section: 'profile',
+    trade: 'Plumbing',
+    save: 'idle',
+    areaMode: 'radius',
+    radius: 25,
+    brand: '#5B6B9E',
+    days: [
+      { day: 'Monday', open: true, from: '8:00 AM', to: '6:00 PM' },
+      { day: 'Tuesday', open: true, from: '8:00 AM', to: '6:00 PM' },
+      { day: 'Wednesday', open: true, from: '8:00 AM', to: '6:00 PM' },
+      { day: 'Thursday', open: true, from: '8:00 AM', to: '6:00 PM' },
+      { day: 'Friday', open: true, from: '8:00 AM', to: '5:00 PM' },
+      { day: 'Saturday', open: true, from: '9:00 AM', to: '2:00 PM' },
+      { day: 'Sunday', open: false, from: '', to: '' },
+    ],
+    afterHours: 'emergency',
+    techs: [
+      { initials: 'MR', name: 'Marcus Reyes', phone: '(254) 555‑0161', status: 'Active', bg: '#7C8A66', skills: ['Plumbing', 'Drain cleaning', 'Water heater'] },
+      { initials: 'DC', name: 'Dani Cho', phone: '(254) 555‑0172', status: 'Active', bg: '#9B7B86', skills: ['HVAC', 'Maintenance'] },
+      { initials: 'DO', name: 'David Okonkwo', phone: '(254) 555‑0188', status: 'Invited', bg: '#5B6B9E', skills: ['Electrical'] },
+    ],
+  };
+
+  touch = () => {
+    clearTimeout(this._t);
+    this.setState({ save: 'saving' });
+    this._t = setTimeout(() => this.setState({ save: 'saved' }), 600);
+  };
+  componentWillUnmount() { clearTimeout(this._t); }
+
+  SKILL_CATALOG = ['Plumbing', 'Drain cleaning', 'Water heater', 'HVAC', 'Maintenance', 'Electrical', 'Install'];
+
+  renderVals() {
+    const s = this.state;
+
+    const sections = [
+      { key: 'profile', label: 'Company profile', glyph: '◫', title: 'Company profile', sub: 'Your identity on invoices, texts, and the booking page.' },
+      { key: 'hours', label: 'Hours & availability', glyph: '◷', title: 'Hours & availability', sub: 'When jobs can be booked, and what happens after hours.' },
+      { key: 'area', label: 'Service area', glyph: '◎', title: 'Service area', sub: 'Where you take jobs. Used to accept or decline at booking.' },
+      { key: 'identity', label: 'Customer-facing identity', glyph: '✉', title: 'Customer-facing identity', sub: 'What your customers see and read.' },
+      { key: 'team', label: 'Team & access', glyph: '◐', title: 'Team & access', sub: 'Office staff, technicians, and what each can do.' },
+      { key: 'billing', label: 'Plan & billing', glyph: '$', title: 'Plan & billing', sub: 'Your Airbase subscription, locations, and payment method.' },
+      { key: 'connections', label: 'Connections', glyph: '⇄', title: 'Connections', sub: 'Phone, payments, and accounting integrations.' },
+    ];
+    const cur = sections.find(x => x.key === s.section) || sections[0];
+
+    const navItems = sections.map(sec => {
+      const on = sec.key === s.section;
+      const style = 'display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:9px;cursor:pointer;font-size:13.5px;font-weight:'
+        + (on ? '600;background:#FBF8F3;color:#292420;box-shadow:0 1px 2px rgba(41,36,32,.05);border:1px solid #E6DECF'
+              : '500;color:#6F6658;border:1px solid transparent');
+      return { label: sec.label, glyph: sec.glyph, style, go: () => this.setState({ section: sec.key }) };
+    });
+
+    // save indicator
+    const saveMap = {
+      idle: { text: 'All changes saved', icon: '✓', style: 'display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:#9A9082' },
+      saving: { text: 'Saving…', icon: '◌', style: 'display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:#8A7F9E' },
+      saved: { text: 'Saved just now', icon: '✓', style: 'display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:#4C6749' },
+    };
+    const sv = saveMap[s.save] || saveMap.idle;
+
+    // trade chips
+    const tradeOptions = ['Plumbing', 'HVAC', 'Electrical', 'General'].map(label => {
+      const on = s.trade === label;
+      const style = 'height:40px;padding:0 18px;border-radius:9px;cursor:pointer;font:600 13.5px \'Hanken Grotesk\';border:1px solid '
+        + (on ? '#292420;background:#292420;color:#F1EBE1' : '#D8CEBC;background:#FEFCF9;color:#292420');
+      return { label, style, set: () => { this.setState({ trade: label }); this.touch(); } };
+    });
+
+    // hours days
+    const days = s.days.map((d, idx) => {
+      const track = 'width:38px;height:22px;border-radius:99px;position:relative;flex:none;transition:background .15s;background:' + (d.open ? '#5B6B9E' : '#D8CEBC');
+      const knob = 'position:absolute;top:2px;left:' + (d.open ? '18px' : '2px') + ';width:18px;height:18px;border-radius:99px;background:#fff;box-shadow:0 1px 2px rgba(41,36,32,.25);transition:left .15s';
+      return {
+        day: d.day, open: d.open, closed: !d.open, from: d.from, to: d.to,
+        switchTrack: track, switchKnob: knob,
+        toggle: () => {
+          const nd = this.state.days.map((x, i) => i === idx ? { ...x, open: !x.open, from: x.open ? '' : '8:00 AM', to: x.open ? '' : '5:00 PM' } : x);
+          this.setState({ days: nd }); this.touch();
+        },
+      };
+    });
+
+    const afterHoursOptions = [
+      { key: 'voicemail', label: 'Take a message', desc: 'Jordan records the request and adds it to your morning briefing.' },
+      { key: 'emergency', label: 'Book emergencies only', desc: 'Jordan books true emergencies after hours; everything else waits for morning.' },
+      { key: 'book', label: 'Book anything, anytime', desc: 'Jordan schedules around the clock against next-day availability.' },
+    ].map(o => {
+      const on = s.afterHours === o.key;
+      const style = 'display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:12px;cursor:pointer;border:1px solid '
+        + (on ? '#C7CFE6;background:#F3F1F8' : '#E6DECF;background:#FEFCF9');
+      const radio = 'width:18px;height:18px;border-radius:99px;flex:none;margin-top:1px;display:flex;align-items:center;justify-content:center;border:2px solid ' + (on ? '#5B6B9E' : '#C9BCA3');
+      const radioDot = 'width:8px;height:8px;border-radius:99px;background:' + (on ? '#5B6B9E' : 'transparent');
+      return { label: o.label, desc: o.desc, style, radio, radioDot, set: () => { this.setState({ afterHours: o.key }); this.touch(); } };
+    });
+
+    // service area
+    const tabOn = 'padding:8px 15px;border:none;border-radius:7px;font:600 13px \'Hanken Grotesk\';cursor:pointer;background:#FEFCF9;color:#292420;box-shadow:0 1px 2px rgba(41,36,32,.07)';
+    const tabOff = 'padding:8px 15px;border:none;border-radius:7px;font:600 13px \'Hanken Grotesk\';cursor:pointer;background:transparent;color:#9A9082';
+    const zips = ['76513', '76511', '76502', '76504', '76571', '76534'];
+
+    // brand colors
+    const brandColors = ['#5B6B9E', '#5E7A5A', '#B0822F', '#A85A40'].map(hex => {
+      const on = s.brand === hex;
+      const style = 'width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid ' + (on ? '#292420' : 'transparent');
+      const swatch = 'width:30px;height:30px;border-radius:7px;background:' + hex;
+      return { style, swatch, set: () => { this.setState({ brand: hex }); this.touch(); } };
+    });
+
+    // team
+    const av = 'width:38px;height:38px;border-radius:99px;color:#fff;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none;background:';
+    const stActive = 'font-size:11.5px;font-weight:600;color:#4C6749;background:#ECF1EC;border:1px solid #CFE0CD;padding:4px 10px;border-radius:7px';
+    const stPending = 'font-size:11.5px;font-weight:600;color:#8A6A22;background:#F8F1E1;border:1px solid #ECDDBF;padding:4px 10px;border-radius:7px';
+    const team = [
+      { initials: 'MR', name: 'Maria Reyes', email: 'maria@stewardhome.com', role: 'Owner', status: 'Active', avStyle: av + '#5B6B9E', statusStyle: stActive },
+      { initials: 'SF', name: 'Sofia Marin', email: 'sofia@stewardhome.com', role: 'CSR', status: 'Active', avStyle: av + '#7C8A66', statusStyle: stActive },
+      { initials: 'JT', name: 'James Tran', email: 'james@stewardhome.com', role: 'Operator', status: 'Active', avStyle: av + '#9B7B86', statusStyle: stActive },
+      { initials: 'LP', name: 'Lena Park', email: 'lena@stewardhome.com', role: 'Viewer', status: 'Invited', avStyle: av + '#B0822F', statusStyle: stPending },
+    ];
+
+    // technicians with toggleable skills
+    const technicians = s.techs.map((t, ti) => {
+      const has = (skill) => t.skills.indexOf(skill) !== -1;
+      const skills = this.SKILL_CATALOG.map(label => {
+        const on = has(label);
+        const style = 'display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 12px;border-radius:99px;cursor:pointer;font:600 12.5px \'Hanken Grotesk\';border:1px solid '
+          + (on ? '#CFE0CD;background:#ECF1EC;color:#4C6749' : '#E6DECF;background:#FBF8F3;color:#9A9082');
+        return {
+          label, style, check: on ? '✓ ' : '',
+          toggle: () => {
+            const next = this.state.techs.map((x, i) => {
+              if (i !== ti) return x;
+              const sk = has(label) ? x.skills.filter(z => z !== label) : [...x.skills, label];
+              return { ...x, skills: sk };
+            });
+            this.setState({ techs: next }); this.touch();
+          },
+        };
+      });
+      return {
+        initials: t.initials, name: t.name, phone: t.phone, status: t.status,
+        avStyle: av + t.bg,
+        statusStyle: t.status === 'Active' ? stActive : stPending,
+        skills,
+      };
+    });
+
+    const invoices = [
+      { date: 'Jun 1, 2026', desc: 'Airbase Standard · 2 locations', amount: '$998.00' },
+      { date: 'May 1, 2026', desc: 'Airbase Standard · 2 locations', amount: '$998.00' },
+      { date: 'Apr 1, 2026', desc: 'Airbase Standard · 1 location', amount: '$499.00' },
+    ];
+
+    // connections
+    const cIcon = 'width:42px;height:42px;border-radius:11px;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;flex:none;background:';
+    const okBadge = 'font-size:11px;font-weight:600;color:#4C6749;background:#ECF1EC;border:1px solid #CFE0CD;padding:2px 8px;border-radius:6px';
+    const offBadge = 'font-size:11px;font-weight:600;color:#9A6A12;background:#F8F1E1;border:1px solid #ECDDBF;padding:2px 8px;border-radius:6px';
+    const manageBtn = 'height:38px;padding:0 16px;border:1px solid #D8CEBC;border-radius:9px;background:#FBF8F3;font:600 12.5px \'Hanken Grotesk\';color:#292420;cursor:pointer';
+    const connectBtn = 'height:38px;padding:0 16px;border:none;border-radius:9px;background:#292420;color:#F1EBE1;font:600 12.5px \'Hanken Grotesk\';cursor:pointer';
+    const connections = [
+      { name: 'Phone & SMS', glyph: '☏', detail: '(254) 555‑0100 · provisioned · answering 24/7', badge: 'Connected', iconStyle: cIcon + '#5B6B9E', badgeStyle: okBadge, btnLabel: 'Manage', btnStyle: manageBtn },
+      { name: 'Payments', glyph: '$', detail: 'Stripe · deposits to ••••4417 · next payout Jun 30', badge: 'Connected', iconStyle: cIcon + '#5E7A5A', badgeStyle: okBadge, btnLabel: 'Manage', btnStyle: manageBtn },
+      { name: 'Accounting', glyph: '▤', detail: 'Sync invoices & payments to QuickBooks Online', badge: 'Not connected', iconStyle: cIcon + '#9A9082', badgeStyle: offBadge, btnLabel: 'Connect', btnStyle: connectBtn },
+    ];
+
+    return {
+      navItems,
+      sectionTitle: cur.title, sectionSub: cur.sub,
+      saveText: sv.text, saveIcon: sv.icon, saveStyle: sv.style,
+      isProfile: s.section === 'profile',
+      isHours: s.section === 'hours',
+      isArea: s.section === 'area',
+      isIdentity: s.section === 'identity',
+      isTeam: s.section === 'team',
+      isBilling: s.section === 'billing',
+      isConnections: s.section === 'connections',
+      tradeOptions, days, afterHoursOptions,
+      areaIsRadius: s.areaMode === 'radius', areaIsZip: s.areaMode === 'zip',
+      setRadius: () => { this.setState({ areaMode: 'radius' }); },
+      setZip: () => { this.setState({ areaMode: 'zip' }); },
+      radiusTabStyle: s.areaMode === 'radius' ? tabOn : tabOff,
+      zipTabStyle: s.areaMode === 'zip' ? tabOn : tabOff,
+      radius: s.radius, zipCount: Math.round(s.radius * 1.1), zips,
+      onRadius: (e) => { this.setState({ radius: parseInt(e.target.value, 10) }); this.touch(); },
+      brandColors, team, technicians, invoices, connections,
+      touch: this.touch,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -7,7 +7,6 @@ export default function AppLayout() {
   const { tenantSlug } = useParams<{ tenantSlug: string }>();
   const { tenant, user } = useAuth();
 
-  // Ensure the URL slug matches the user's tenant
   if (tenant && tenantSlug !== tenant.slug) {
     return <Navigate to={`/${tenant.slug}/dashboard`} replace />;
   }
@@ -15,9 +14,9 @@ export default function AppLayout() {
   const showOperatorChat = user?.role === "owner" || user?.role === "dispatcher";
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-screen bg-bone overflow-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto bg-bone">
         <Outlet />
       </main>
       {showOperatorChat && <OperatorChatPanel />}

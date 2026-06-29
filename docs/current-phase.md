@@ -51,18 +51,18 @@ Build in this sequence — each item unblocks the next:
 - [x] AI pricebook import (PDF/CSV → Claude → review → confirm)
 
 ### Sprint 6 — Booking Agent Voice (Week 14–18, parallel with Sprint 5)
-- [ ] Twilio Voice inbound → streaming Claude → TTS response
-- [ ] Voice booking agent system prompt
-- [ ] Call recording → transcript → job notes
+- [x] Twilio Voice inbound → streaming Claude → TTS response
+- [x] Voice booking agent system prompt
+- [x] Call recording → transcript → job notes
 
 ### Sprint 6 — Quick Win AI bolt-ons (approved for Phase 2)
 
 Low-effort, high-impact agents that reuse existing Phase 2 infra.
 Build after Sprint 5 completes, or in parallel if capacity allows.
 
-- [ ] **ETA notification agent** — SMS customer when tech status → `en_route`; include tech name + ETA; detect and notify if prior job runs long (Twilio trigger on job status change)
-- [ ] **Review request agent** — SMS customer 30 min after job → `completed`; personalized with tech name + direct Google listing link (Twilio + 30-min delay)
-- [ ] **Warranty / callback detector** — on new job creation, check same customer + overlapping job type within 30 days; auto-waive service call fee, prefer same tech assignment
+- [x] **ETA notification agent** — SMS customer when tech status → `en_route`; include tech name + ETA; detect and notify if prior job runs long (Twilio trigger on job status change)
+- [x] **Review request agent** — SMS customer 30 min after job → `completed`; personalized with tech name + direct Google listing link (Twilio + 30-min delay)
+- [x] **Warranty / callback detector** — on new job creation, check same customer + overlapping job type within 30 days; auto-waive service call fee, prefer same tech assignment
 
 ## What Is NOT In Phase 2
 

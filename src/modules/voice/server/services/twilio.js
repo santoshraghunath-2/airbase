@@ -44,3 +44,14 @@ export async function sendSms({ to, from, body }) {
   const message = await getClient().messages.create({ to, from, body })
   return message.sid
 }
+
+/**
+ * Redirect an in-progress call to a new TwiML URL.
+ * Used to transfer a Media Stream call to a live human (escalate flow).
+ *
+ * @param {{ callSid: string, twimlUrl: string }} opts
+ * @returns {Promise<void>}
+ */
+export async function redirectCall({ callSid, twimlUrl }) {
+  await getClient().calls(callSid).update({ url: twimlUrl, method: 'POST' })
+}

@@ -31,7 +31,41 @@ highest effort-to-impact ratio in the entire product. Approved for Phase 2 sprin
 | **Slow-day demand generation** | Detects thin board coverage early in the week; drafts + sends targeted promo to right customer segment | 13/20 | Converts sunk labor cost (idle tech time) into revenue |
 
 ### Core Phase 3 features (non-AI)
-- Membership tiers + recurring billing
+
+#### Memberships & Recurring Billing
+Full membership lifecycle — the single highest-margin recurring revenue stream for a trades company.
+
+**Database (new migrations)**
+- `memberships` table — plan definitions: name, description, price, billing_cycle (monthly/annual), benefits JSONB, trade, is_active
+- `customer_memberships` table — enrollment records: customer_id, plan_id, status (active/paused/lapsed/cancelled), stripe_subscription_id, start_date, next_renewal_date, card_on_file_last4
+- Benefit rules stored as JSONB on plan: discount_pct, waived_fee_types (trip_charge, etc.), priority_scheduling, free_visits_per_year, parts_discount_pct
+
+**Core UI**
+- Membership Plans page (`/settings/memberships`) — CRUD for plan tiers (e.g. Silver $9.99/mo, Gold $19.99/mo)
+- Customer Memberships tab on CustomerDetailPage — active plan, renewal date, benefits summary, enroll/cancel
+- Enroll flow — select plan, collect card (Stripe Payment Element), confirm → Stripe subscription → write customer_memberships row
+- Memberships list page (`/memberships`) — all active/lapsed members, MRR widget, renewal calendar
+
+**Stripe integration**
+- Create Stripe Product + Price for each plan on save
+- Subscription lifecycle: create on enroll, cancel on cancel, handle `invoice.payment_failed` (pause + notify), `customer.subscription.deleted` (mark lapsed)
+- Card-on-file update flow (Stripe Setup Intent)
+
+**Benefits applied at runtime**
+- `invoice-agent` checks `customer_memberships` when drafting — applies discount_pct, waives trip charge automatically
+- Dispatch agent gives priority scheduling to members (higher score in assignment ranking)
+- Job booking form shows member badge + active benefits on customer lookup
+
+**Membership agent (Edge Function)**
+- Nightly cron — finds memberships expiring in 60 / 30 / 7 days
+- Sends personalized renewal reminder SMS (Claude drafts, operator previews first send)
+- On lapse: 7 / 30 / 90-day win-back sequences
+- Auto-sends on subsequent contacts once operator sets opt-in flag per customer
+
+**Out of scope for membership MVP**
+- Multi-membership per customer, commercial/site-wide plans, gifting, mid-cycle proration (Phase 4+)
+
+#### Other Phase 3 features
 - Multi-option estimate builder (good/better/best)
 - Customer financing (Wisetack)
 - Customer portal (view history, pay, schedule)

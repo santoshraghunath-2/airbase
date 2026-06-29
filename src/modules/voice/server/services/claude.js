@@ -15,6 +15,7 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
  *   modelId:             string,
  *   conversationHistory: Array<{ role: 'user'|'assistant', content: string }>,
  *   state:               string,
+ *   toolDefinitions?:    Array<object>,
  * }} opts
  * @returns {Promise<{
  *   text:      string | null,
@@ -22,16 +23,17 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
  *   newState:  null,
  * }>}
  */
-export async function callAgent({ systemPrompt, modelId, conversationHistory, state }) {
+export async function callAgent({ systemPrompt, modelId, conversationHistory, state, toolDefinitions }) {
   const model    = modelId ?? 'claude-sonnet-4-6'
   const system   = buildSystemPrompt(systemPrompt, state)
   const messages = buildMessages(conversationHistory)
+  const tools    = toolDefinitions ?? TOOL_DEFINITIONS
 
   const response = await client.messages.create({
     model,
     system,
     messages,
-    tools:       TOOL_DEFINITIONS,
+    tools,
     temperature: 0.2,   // low temp for consistent, decision-quality responses
     max_tokens:  1024,
   })

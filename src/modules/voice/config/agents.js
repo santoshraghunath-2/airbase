@@ -15,6 +15,15 @@ export const FORM_SOURCE_MAP = {
     brandId:     'recast_texas',
     fromNumber:  process.env.VOICE_TWILIO_PHONE_NUMBER_RECAST,
   },
+  // Steward inbound only — no outbound form-fill trigger for field service
+  // Steward calls are handled by voice_agent_config keyed on the Twilio phone number
+}
+
+// Brands that support inbound AI calling (used in voice_agent_config seed)
+export const INBOUND_BRANDS = {
+  ggb_express:              { envKey: 'VOICE_TWILIO_PHONE_NUMBER_GGB',     outboundEnabled: true  },
+  recast_texas:             { envKey: 'VOICE_TWILIO_PHONE_NUMBER_RECAST',  outboundEnabled: true  },
+  steward_home_services:    { envKey: 'VOICE_TWILIO_PHONE_NUMBER_STEWARD', outboundEnabled: false },
 }
 
 /**

@@ -21,12 +21,13 @@ interface DashboardStats {
 
 interface AgentAction {
   id: string;
-  action_type: string;
-  status: string;
-  confidence_score: number | null;
-  reasoning: Record<string, unknown> | null;
-  created_at: string;
   agent_type: string;
+  trigger_event: string;
+  status: string;
+  confidence: number | null;
+  reasoning: string | null;
+  proposed_action: Record<string, unknown> | null;
+  created_at: string;
 }
 
 // Confirmed proposal row — periwinkle → green after confirm
@@ -38,9 +39,11 @@ interface ProposalRowProps {
 }
 
 function ProposalRow({ action, onConfirm, onReject, confirmed }: ProposalRowProps) {
-  const reasoning = action.reasoning as Record<string, string> | null;
-  const summary = reasoning?.summary ?? reasoning?.rationale ?? `${action.action_type.replace(/_/g, " ")} action proposed`;
-  const confidence = action.confidence_score != null ? Math.round(action.confidence_score * 100) : null;
+  const pa = action.proposed_action;
+  const summary = action.reasoning
+    || (pa && typeof pa === "object" ? (pa as Record<string, string>).description ?? (pa as Record<string, string>).summary : null)
+    || `${action.agent_type} action proposed`;
+  const confidence = action.confidence != null ? Math.round(action.confidence * 100) : null;
 
   if (confirmed) {
     return (
@@ -193,7 +196,7 @@ export default function DashboardPage() {
         // Agent actions — proposals + today's activity
         supabase
           .from("agent_actions")
-          .select("id, action_type, status, confidence_score, reasoning, created_at, agent_type")
+          .select("id, agent_type, trigger_event, status, confidence, reasoning, proposed_action, created_at")
           .eq("tenant_id", tenant.id)
           .order("created_at", { ascending: false })
           .limit(30),
@@ -216,7 +219,7 @@ export default function DashboardPage() {
       );
       const aiHandledToday = allActions.filter(
         (a) =>
-          (a.status === "auto_executed" || a.status === "approved") &&
+          (a.status === "auto_executed" || a.status === "operator_approved") &&
           new Date(a.created_at) >= startOfDay(now)
       ).length;
 
@@ -230,13 +233,13 @@ export default function DashboardPage() {
 
   async function confirmProposal(id: string) {
     setConfirmedIds((s) => new Set(s).add(id));
-    await supabase.from("agent_actions").update({ status: "approved" }).eq("id", id);
+    await supabase.from("agent_actions").update({ status: "operator_approved" }).eq("id", id);
   }
 
   async function rejectProposal(id: string) {
     setProposals((prev) => prev.filter((p) => p.id !== id));
     setConfirmedIds((s) => { const n = new Set(s); n.delete(id); return n; });
-    await supabase.from("agent_actions").update({ status: "rejected" }).eq("id", id);
+    await supabase.from("agent_actions").update({ status: "operator_rejected" }).eq("id", id);
   }
 
   const totalActiveJobs = stats ? Object.values(stats.jobsByStatus).reduce((a, b) => a + b, 0) : 0;
@@ -247,36 +250,38 @@ export default function DashboardPage() {
     return "Good evening";
   })();
 
-  // Activity feed label map
+  // Activity feed label map — keyed by agent_type (the DB column that exists)
   function activityLabel(action: AgentAction): string {
     const map: Record<string, string> = {
-      dispatch_job:    "Dispatched job",
-      send_eta_sms:    "Sent ETA notification",
-      send_review_sms: "Sent review request",
-      auto_invoice:    "Auto-sent invoice",
-      book_job:        "Booked new job",
-      flag_invoice:    "Flagged invoice for review",
+      dispatch:          "Dispatched job",
+      booking:           "Booked new job",
+      invoice:           "Auto-sent invoice",
+      eta_notification:  "Sent ETA notification",
+      review_request:    "Sent review request",
+      warranty_detector: "Flagged warranty callback",
+      operator:          "Answered operator query",
     };
-    return map[action.action_type] ?? action.action_type.replace(/_/g, " ");
+    return map[action.agent_type] ?? action.trigger_event.replace(/_/g, " ");
   }
 
   function activityGlyph(action: AgentAction): string {
     const map: Record<string, string> = {
-      dispatch_job:    "⟶",
-      send_eta_sms:    "✉",
-      send_review_sms: "★",
-      auto_invoice:    "◈",
-      book_job:        "+",
-      flag_invoice:    "⚠",
+      dispatch:          "⟶",
+      booking:           "+",
+      invoice:           "◈",
+      eta_notification:  "✉",
+      review_request:    "★",
+      warranty_detector: "⚠",
+      operator:          "?",
     };
-    return map[action.action_type] ?? "✦";
+    return map[action.agent_type] ?? "✦";
   }
 
   function activityColor(action: AgentAction): { bg: string; text: string } {
-    if (action.status === "auto_executed") return { bg: "#EEF0F7", text: "#46537F" };
-    if (action.status === "approved")      return { bg: "#ECF1EC", text: "#4C6749" };
-    if (action.status === "rejected")      return { bg: "#F4EFE6", text: "#9A9082" };
-    if (action.status === "flagged")       return { bg: "#F8F1E1", text: "#8A6A22" };
+    if (action.status === "auto_executed")    return { bg: "#EEF0F7", text: "#46537F" };
+    if (action.status === "operator_approved") return { bg: "#ECF1EC", text: "#4C6749" };
+    if (action.status === "operator_rejected") return { bg: "#F4EFE6", text: "#9A9082" };
+    if (action.status === "proposed")          return { bg: "#F8F1E1", text: "#8A6A22" };
     return { bg: "#F4EFE6", text: "#6F6658" };
   }
 
@@ -397,9 +402,9 @@ export default function DashboardPage() {
                           )}
                         </p>
                       </div>
-                      {action.confidence_score != null && (
+                      {action.confidence != null && (
                         <span className="text-xs tabular-nums text-ink-muted flex-shrink-0">
-                          {Math.round(action.confidence_score * 100)}%
+                          {Math.round(action.confidence * 100)}%
                         </span>
                       )}
                     </div>

@@ -44,6 +44,9 @@ export type InvoiceStatus =
 
 // ─── Row types ────────────────────────────────────────────────────────────────
 
+export type AfterHoursMode = "message" | "emergency" | "anytime";
+export type ModelTier = "balanced" | "capable" | "fast";
+
 export interface TenantRow {
   id: string;
   name: string;
@@ -64,6 +67,14 @@ export interface TenantRow {
   qbo_access_token: string | null;
   qbo_refresh_token: string | null;
   parent_tenant_id: string | null;
+  google_review_url: string | null;
+  yelp_review_url: string | null;
+  sms_sender_name: string | null;
+  reply_to_email: string | null;
+  brand_color: string | null;
+  service_area_radius_miles: number | null;
+  service_area_zips: string[] | null;
+  after_hours_mode: AfterHoursMode;
   created_at: string;
   updated_at: string;
 }
@@ -256,6 +267,32 @@ export interface PaymentRow {
   created_at: string;
 }
 
+export interface AgentConfigRow {
+  id: string;
+  tenant_id: string;
+  agent_type: string;
+  model_id: string | null;
+  model_tier: ModelTier;
+  autonomy_level: 0 | 1 | 2 | 3;
+  confidence_threshold: number;
+  enabled: boolean;
+  auto_execute: boolean;
+  settings: Json;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TenantHoursRow {
+  id: string;
+  tenant_id: string;
+  day_of_week: number;
+  is_open: boolean;
+  open_time: string;
+  close_time: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface AgentActionRow {
   id: string;
   tenant_id: string;
@@ -347,6 +384,16 @@ export interface Database {
         Insert: Omit<AgentActionRow, "id" | "created_at"> & { id?: string };
         Update: Partial<Omit<AgentActionRow, "id" | "created_at">>;
       };
+      agent_config: {
+        Row: AgentConfigRow;
+        Insert: Omit<AgentConfigRow, "id" | "created_at" | "updated_at"> & { id?: string };
+        Update: Partial<Omit<AgentConfigRow, "id" | "created_at">>;
+      };
+      tenant_hours: {
+        Row: TenantHoursRow;
+        Insert: Omit<TenantHoursRow, "id" | "created_at" | "updated_at"> & { id?: string };
+        Update: Partial<Omit<TenantHoursRow, "id" | "created_at">>;
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -377,6 +424,8 @@ export type Invoice = InvoiceRow;
 export type InvoiceLineItem = InvoiceLineItemRow;
 export type Payment = PaymentRow;
 export type AgentAction = AgentActionRow;
+export type AgentConfig = AgentConfigRow;
+export type TenantHours = TenantHoursRow;
 
 // ─── Join types ───────────────────────────────────────────────────────────────
 export type JobWithRelations = JobRow & {

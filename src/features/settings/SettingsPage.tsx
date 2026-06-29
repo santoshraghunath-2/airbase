@@ -155,17 +155,75 @@ function CompanyProfileSection({ isOwner }: { isOwner: boolean }) {
 }
 
 function HoursSection({ isOwner }: { isOwner: boolean }) {
-  // TODO (backend): tenant_hours table not yet created. Currently local state only.
+  const { tenant } = useAuth();
   const [hours, setHours] = useState<WeekHours>(DEFAULT_HOURS);
   const [afterHours, setAfterHours] = useState<AfterHours>("message");
+  const [loading, setLoading] = useState(true);
+  const [savingDay, setSavingDay] = useState<Day | null>(null);
+  const timeTimers = useRef<Partial<Record<Day, ReturnType<typeof setTimeout>>>>({});
+
+  useEffect(() => {
+    if (!tenant) return;
+    void (async () => {
+      const [hoursRes, tenantRes] = await Promise.all([
+        supabase.from("tenant_hours").select("*").eq("tenant_id", tenant.id),
+        supabase.from("tenants").select("after_hours_mode").eq("id", tenant.id).single(),
+      ]);
+      if (hoursRes.data?.length) {
+        const updated = { ...DEFAULT_HOURS };
+        (hoursRes.data as Array<{ day_of_week: number; is_open: boolean; open_time: string; close_time: string }>).forEach((row) => {
+          const day = DAYS[row.day_of_week];
+          if (day) updated[day] = { open: row.is_open, from: row.open_time.slice(0, 5), to: row.close_time.slice(0, 5) };
+        });
+        setHours(updated);
+      }
+      if (tenantRes.data?.after_hours_mode) setAfterHours(tenantRes.data.after_hours_mode as AfterHours);
+      setLoading(false);
+    })();
+  }, [tenant]);
+
+  async function upsertDay(day: Day, current: DayHours) {
+    if (!tenant) return;
+    setSavingDay(day);
+    try {
+      const { error } = await supabase.from("tenant_hours").upsert({
+        tenant_id: tenant.id,
+        day_of_week: DAYS.indexOf(day),
+        is_open: current.open,
+        open_time: current.from,
+        close_time: current.to,
+      }, { onConflict: "tenant_id,day_of_week" });
+      if (error) throw error;
+    } catch (err) {
+      toast.error("Failed to save hours", { description: (err as Error).message });
+    } finally {
+      setSavingDay(null);
+    }
+  }
 
   function toggleDay(day: Day) {
-    setHours((h) => ({ ...h, [day]: { ...h[day], open: !h[day].open } }));
-    toast.success("Hours updated (pending backend save)");
+    if (!isOwner) return;
+    const next = { ...hours[day], open: !hours[day].open };
+    setHours((h) => ({ ...h, [day]: next }));
+    void upsertDay(day, next);
   }
+
   function setTime(day: Day, field: "from" | "to", val: string) {
-    setHours((h) => ({ ...h, [day]: { ...h[day], [field]: val } }));
+    if (!isOwner) return;
+    const next = { ...hours[day], [field]: val };
+    setHours((h) => ({ ...h, [day]: next }));
+    clearTimeout(timeTimers.current[day]);
+    timeTimers.current[day] = setTimeout(() => void upsertDay(day, next), 800);
   }
+
+  async function saveAfterHours(mode: AfterHours) {
+    if (!tenant || !isOwner) return;
+    setAfterHours(mode);
+    const { error } = await supabase.from("tenants").update({ after_hours_mode: mode }).eq("id", tenant.id);
+    if (error) toast.error("Failed to save after-hours setting");
+  }
+
+  if (loading) return <div className="space-y-2">{[...Array(7)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>;
 
   return (
     <div className="space-y-5">
@@ -176,7 +234,7 @@ function HoursSection({ isOwner }: { isOwner: boolean }) {
             <div key={day} className="flex items-center gap-4 px-5 py-3.5 border-b border-line-2 last:border-b-0 bg-paper hover:bg-raised transition-colors">
               <span className="w-8 text-sm font-medium text-ink">{day}</span>
               <button
-                onClick={() => isOwner && toggleDay(day)}
+                onClick={() => toggleDay(day)}
                 className="flex items-center gap-1.5 text-xs font-medium transition-colors"
                 disabled={!isOwner}
               >
@@ -198,6 +256,7 @@ function HoursSection({ isOwner }: { isOwner: boolean }) {
                     onChange={(e) => setTime(day, "to", e.target.value)}
                     className="text-sm text-ink bg-raised border border-field-border rounded-lg px-2 py-1.5 tabular-nums"
                   />
+                  {savingDay === day && <Loader2 className="h-3.5 w-3.5 text-ink-muted animate-spin flex-shrink-0" />}
                 </div>
               )}
             </div>
@@ -221,7 +280,7 @@ function HoursSection({ isOwner }: { isOwner: boolean }) {
             )}>
               <input
                 type="radio" value={opt} checked={afterHours === opt}
-                onChange={() => setAfterHours(opt)} disabled={!isOwner}
+                onChange={() => void saveAfterHours(opt)} disabled={!isOwner}
                 className="mt-0.5 accent-ink"
               />
               <div>
@@ -237,15 +296,60 @@ function HoursSection({ isOwner }: { isOwner: boolean }) {
 }
 
 function ServiceAreaSection({ isOwner }: { isOwner: boolean }) {
-  // TODO (backend): service_area columns not yet on tenants table.
+  const { tenant } = useAuth();
   const [mode, setMode] = useState<AreaMode>("radius");
   const [radius, setRadius] = useState(25);
-  const [zips, setZips] = useState<string[]>(["94103", "94110", "94115", "94117", "94118"]);
+  const [zips, setZips] = useState<string[]>([]);
   const [zipInput, setZipInput] = useState("");
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => {
+    if (!tenant) return;
+    void (async () => {
+      const { data } = await supabase
+        .from("tenants")
+        .select("service_area_radius_miles, service_area_zips")
+        .eq("id", tenant.id)
+        .single();
+      if (data) {
+        const row = data as { service_area_radius_miles: number | null; service_area_zips: string[] | null };
+        if (row.service_area_radius_miles) setRadius(row.service_area_radius_miles);
+        if (row.service_area_zips?.length) { setZips(row.service_area_zips); setMode("zips"); }
+      }
+    })();
+  }, [tenant]);
+
+  async function save(patch: { radius?: number; zips?: string[] }) {
+    if (!tenant) return;
+    setSaveState("saving");
+    const { error } = await supabase.from("tenants").update({
+      service_area_radius_miles: patch.radius ?? radius,
+      service_area_zips: patch.zips ?? zips,
+    }).eq("id", tenant.id);
+    setSaveState(error ? "idle" : "saved");
+    setTimeout(() => setSaveState("idle"), 3000);
+  }
+
+  function handleRadiusChange(val: number) {
+    setRadius(val);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => void save({ radius: val }), 650);
+  }
 
   function addZip() {
     const z = zipInput.trim();
-    if (z && !zips.includes(z)) { setZips((s) => [...s, z]); setZipInput(""); }
+    if (!z || zips.includes(z)) return;
+    const next = [...zips, z];
+    setZips(next);
+    setZipInput("");
+    void save({ zips: next });
+  }
+
+  function removeZip(z: string) {
+    const next = zips.filter((x) => x !== z);
+    setZips(next);
+    void save({ zips: next });
   }
 
   return (
@@ -274,10 +378,9 @@ function ServiceAreaSection({ isOwner }: { isOwner: boolean }) {
           </div>
           <input
             type="range" min={5} max={60} step={5} value={radius}
-            onChange={(e) => setRadius(Number(e.target.value))} disabled={!isOwner}
+            onChange={(e) => handleRadiusChange(Number(e.target.value))} disabled={!isOwner}
             className="w-full accent-ink"
           />
-          {/* Visual circle representation */}
           <div className="flex items-center justify-center py-2">
             <div className="relative" style={{ width: 120, height: 120 }}>
               <div className="absolute inset-0 rounded-full border-2 border-ai-tint-border bg-ai-tint opacity-40" />
@@ -322,7 +425,7 @@ function ServiceAreaSection({ isOwner }: { isOwner: boolean }) {
               <span key={z} className="flex items-center gap-1 px-2.5 py-1 rounded-pill bg-paper border border-line text-sm font-medium text-ink">
                 {z}
                 {isOwner && (
-                  <button onClick={() => setZips((s) => s.filter((x) => x !== z))} className="text-ink-muted hover:text-blocked-text ml-0.5">
+                  <button onClick={() => removeZip(z)} className="text-ink-muted hover:text-blocked-text ml-0.5">
                     <Trash2 className="h-3 w-3" />
                   </button>
                 )}
@@ -334,28 +437,48 @@ function ServiceAreaSection({ isOwner }: { isOwner: boolean }) {
           )}
         </div>
       )}
+
+      <div className="flex justify-end">
+        <SaveIndicator state={saveState} />
+      </div>
     </div>
   );
 }
 
 function CustomerIdentitySection({ isOwner }: { isOwner: boolean }) {
-  // TODO (backend): sms_sender_name, reply_to_email, brand_color not yet on tenants table.
   const { tenant } = useAuth();
-  const [smsName, setSmsName]     = useState("Steward Home");
-  const [replyEmail, setReplyEmail] = useState("");
-  const [reviewLink, setReviewLink] = useState((tenant as unknown as Record<string, string>)?.google_review_url ?? "");
-  const [accentColor, setAccentColor] = useState("#5B6B9E");
+
+  const saveFn = useCallback(async (d: typeof form) => {
+    if (!tenant) return;
+    const { error } = await supabase.from("tenants").update({
+      sms_sender_name: d.smsName || null,
+      reply_to_email: d.replyEmail || null,
+      brand_color: d.accentColor,
+      google_review_url: d.reviewLink || null,
+    }).eq("id", tenant.id);
+    if (error) throw error;
+  }, [tenant]);
+
+  const form = {
+    smsName:     tenant?.sms_sender_name ?? "",
+    replyEmail:  tenant?.reply_to_email ?? "",
+    reviewLink:  tenant?.google_review_url ?? "",
+    accentColor: tenant?.brand_color ?? "#5B6B9E",
+  };
+  const { data, set, saveState } = useAutoSave(tenant ? form : null, saveFn);
 
   const ACCENT_SWATCHES = ["#5B6B9E", "#4C6749", "#8A6A22", "#A85A40", "#292420"];
+
+  if (!data) return <Skeleton className="h-64 w-full" />;
 
   return (
     <div className="space-y-5">
       <Field label="SMS sender name" helper="Max 11 chars. Shown as the sender name in text messages.">
-        <Input value={smsName} onChange={(e) => setSmsName(e.target.value.slice(0, 11))} disabled={!isOwner} maxLength={11} />
+        <Input value={data.smsName} onChange={(e) => set({ smsName: e.target.value.slice(0, 11) })} disabled={!isOwner} maxLength={11} placeholder="Steward" />
         <div className="mt-1.5 rounded-xl border border-field-border bg-raised px-4 py-3 flex items-start gap-3">
           <div className="flex-1">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-ink-muted mb-1">Preview</p>
-            <p className="text-xs text-ink-muted mb-0.5 font-medium">{smsName || "Your Company"}</p>
+            <p className="text-xs text-ink-muted mb-0.5 font-medium">{data.smsName || "Your Company"}</p>
             <div className="rounded-xl bg-paper border border-line px-3 py-2 text-sm text-ink max-w-[220px]">
               Hi! Your tech is 10 min away. — Jordan
             </div>
@@ -363,13 +486,13 @@ function CustomerIdentitySection({ isOwner }: { isOwner: boolean }) {
         </div>
       </Field>
       <Field label="Reply-to email" helper="Customer replies to AI emails go here.">
-        <Input type="email" value={replyEmail} onChange={(e) => setReplyEmail(e.target.value)} disabled={!isOwner} placeholder="hello@yourcompany.com" />
+        <Input type="email" value={data.replyEmail} onChange={(e) => set({ replyEmail: e.target.value })} disabled={!isOwner} placeholder="hello@yourcompany.com" />
       </Field>
       <Field label="Google review link" helper="Sent to customers after job completion.">
         <div className="flex gap-2">
-          <Input type="url" value={reviewLink} onChange={(e) => setReviewLink(e.target.value)} disabled={!isOwner} placeholder="https://g.page/r/.../review" />
-          {reviewLink && (
-            <a href={reviewLink} target="_blank" rel="noreferrer" className="h-10 w-10 flex items-center justify-center rounded-lg border border-line bg-raised hover:bg-panel-warm transition-colors">
+          <Input type="url" value={data.reviewLink} onChange={(e) => set({ reviewLink: e.target.value })} disabled={!isOwner} placeholder="https://g.page/r/.../review" />
+          {data.reviewLink && (
+            <a href={data.reviewLink} target="_blank" rel="noreferrer" className="h-10 w-10 flex items-center justify-center rounded-lg border border-line bg-raised hover:bg-panel-warm transition-colors">
               <ExternalLink className="h-4 w-4 text-ink-muted" />
             </a>
           )}
@@ -382,13 +505,16 @@ function CustomerIdentitySection({ isOwner }: { isOwner: boolean }) {
           {ACCENT_SWATCHES.map((c) => (
             <button
               key={c}
-              onClick={() => setAccentColor(c)}
-              className={cn("h-8 w-8 rounded-lg border-2 transition-all", accentColor === c ? "border-ink scale-110" : "border-transparent")}
+              onClick={() => isOwner && set({ accentColor: c })}
+              className={cn("h-8 w-8 rounded-lg border-2 transition-all", data.accentColor === c ? "border-ink scale-110" : "border-transparent")}
               style={{ background: c }}
             />
           ))}
-          <input type="color" value={accentColor} onChange={(e) => setAccentColor(e.target.value)} className="h-8 w-8 rounded-lg cursor-pointer border border-line" />
+          <input type="color" value={data.accentColor} onChange={(e) => isOwner && set({ accentColor: e.target.value })} className="h-8 w-8 rounded-lg cursor-pointer border border-line" />
         </div>
+      </div>
+      <div className="flex justify-end pt-1">
+        <SaveIndicator state={saveState} />
       </div>
     </div>
   );

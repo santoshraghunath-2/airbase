@@ -4,6 +4,7 @@ import { MessageSquare, Phone, CheckCircle, MapPin, Clock, User, Briefcase } fro
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import { AIBadge } from "@/components/ui/ai-badge";
 import ConversationPanel from "./components/ConversationPanel";
 
@@ -43,7 +44,10 @@ function lastMessageRole(conv: BookingConversation): string {
 
 /* ── Context pane ──────────────────────────────────────────────────────────── */
 
-function ContextPane({ conv }: { conv: BookingConversation }) {
+function ContextPane({ conv, onConfirmJob }: {
+  conv: BookingConversation;
+  onConfirmJob: (conv: BookingConversation, draftJob: Record<string, string>) => Promise<void>;
+}) {
   const ctx = conv.context as Record<string, unknown>;
 
   // Extract structured context from the JSONB field
@@ -119,7 +123,10 @@ function ContextPane({ conv }: { conv: BookingConversation }) {
           {draftJob.notes && (
             <p className="text-xs text-ink-2 mt-1 leading-snug">{draftJob.notes}</p>
           )}
-          <button className="mt-3 w-full py-2 rounded-lg bg-ink text-bone text-xs font-semibold hover:bg-ink-hover transition-colors">
+          <button
+            className="mt-3 w-full py-2 rounded-lg bg-ink text-bone text-xs font-semibold hover:bg-ink-hover transition-colors"
+            onClick={() => void onConfirmJob(conv, draftJob)}
+          >
             Confirm & Create Job
           </button>
         </div>
@@ -175,6 +182,44 @@ export default function BookingInboxPage() {
       if (updated) setSelected(updated);
     }
   }, [conversations]);
+
+  const handleConfirmJob = useCallback(async (conv: BookingConversation, draftJob: Record<string, string>) => {
+    if (!tenant || !conv.customer_id) {
+      toast.error("Cannot create job — no customer linked to this conversation");
+      return;
+    }
+    try {
+      const { data: locations } = await supabase
+        .from("service_locations")
+        .select("id")
+        .eq("customer_id", conv.customer_id)
+        .eq("tenant_id", tenant.id)
+        .limit(1);
+
+      if (!locations?.length) {
+        toast.error("No service location found for this customer. Open the customer record first.");
+        return;
+      }
+
+      const { data: job, error } = await supabase.from("jobs").insert({
+        tenant_id:   tenant.id,
+        customer_id: conv.customer_id,
+        location_id: locations[0].id,
+        job_type:    draftJob.job_type ?? "plumbing_service",
+        description: draftJob.notes ?? draftJob.description ?? "",
+        status:      "unassigned",
+        priority:    "normal",
+        source:      "ai_booking",
+      }).select("id").single();
+
+      if (error) throw error;
+      await supabase.from("booking_conversations").update({ job_id: job.id }).eq("id", conv.id);
+      toast.success("Job created and linked to conversation");
+      void load();
+    } catch (err) {
+      toast.error("Failed to create job", { description: (err as Error).message });
+    }
+  }, [tenant, load]);
 
   const counts = {
     all:       conversations.length,
@@ -370,7 +415,7 @@ export default function BookingInboxPage() {
       </div>
 
       {/* Pane 3 — Context (only when a conversation is selected) */}
-      {selected && <ContextPane conv={selected} />}
+      {selected && <ContextPane conv={selected} onConfirmJob={handleConfirmJob} />}
     </div>
   );
 }

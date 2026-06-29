@@ -99,6 +99,24 @@ const AGENTS: AgentDef[] = [
   },
 ];
 
+// Resolve a model_id from a tier+agent combination so agent_config.model_id stays valid
+function tierToModelId(agentKey: AgentKey, tier: AgentConfig["model_tier"]): string {
+  if (tier === "capable") return "claude-opus-4-8";
+  if (tier === "fast") {
+    const fast: Record<AgentKey, string> = {
+      booking: "deepseek-chat", dispatch: "claude-haiku-4-5-20251001",
+      invoice: "deepseek-chat", followup: "deepseek-chat",
+    };
+    return fast[agentKey];
+  }
+  // balanced
+  const balanced: Record<AgentKey, string> = {
+    booking: "claude-sonnet-4-6", dispatch: "claude-sonnet-4-6",
+    invoice: "deepseek-chat",     followup: "deepseek-chat",
+  };
+  return balanced[agentKey];
+}
+
 const DEFAULT_CONFIG: Record<AgentKey, AgentConfig> = {
   booking:  { agent_type: "booking",  autonomy_level: 2, model_tier: "fast",    auto_execute: true,  confidence_threshold: 0.85 },
   dispatch: { agent_type: "dispatch", autonomy_level: 1, model_tier: "balanced", auto_execute: false, confidence_threshold: 0.95 },
@@ -258,6 +276,7 @@ export default function AISettingsPage() {
         agent_type:           key,
         autonomy_level:       updated.autonomy_level,
         model_tier:           updated.model_tier,
+        model_id:             tierToModelId(key, updated.model_tier),
         auto_execute:         updated.auto_execute,
         confidence_threshold: updated.confidence_threshold,
       }, { onConflict: "tenant_id,agent_type" });

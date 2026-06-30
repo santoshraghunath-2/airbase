@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ChevronLeft, Plus, Trash2, Search, Loader2, Presentation } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -95,7 +95,7 @@ function PricebookSheet({
                 )}
               </div>
               <span className="text-sm font-semibold text-foreground ml-4 flex-shrink-0">
-                {cents(item.price_cents)}
+                {cents(Math.round(item.unit_price * 100))}
               </span>
             </button>
           ))}
@@ -245,8 +245,7 @@ export default function TechEstimateBuilder() {
         id: est.id,
         title: est.title,
         customer_id: est.customer_id,
-        // @ts-expect-error — joined
-        customer_name: est.customers?.name ?? "Customer",
+        customer_name: (est.customers as unknown as { name: string } | null)?.name ?? "Customer",
         job_id: est.job_id,
         tech_id: est.tech_id,
         presentation_mode: est.presentation_mode as EstimatePresentationMode,
@@ -285,8 +284,7 @@ export default function TechEstimateBuilder() {
       if (!job) return;
       setMeta({
         id: "",
-        // @ts-expect-error — joined
-        customer_name: job.customers?.name ?? "Customer",
+        customer_name: (job.customers as unknown as { name: string } | null)?.name ?? "Customer",
         customer_id: job.customer_id,
         job_id: job.id,
         tech_id: techIdRef.current,
@@ -294,8 +292,7 @@ export default function TechEstimateBuilder() {
         presentation_mode: "good_better_best",
         status: "draft",
       });
-      // @ts-expect-error — joined
-      setTitle(`Estimate — ${job.customers?.name ?? "On-site"}`);
+      setTitle(`Estimate — ${(job.customers as unknown as { name: string } | null)?.name ?? "On-site"}`);
     })();
   }, [isNew, jobIdParam, tenant]);
 
@@ -316,7 +313,7 @@ export default function TechEstimateBuilder() {
     if (!pbTarget) return;
     setItems((prev) => [
       ...prev,
-      { _id: nextId(), option: pbTarget, description: pb.name, quantity: 1, unit_price_cents: pb.price_cents, pricebook_item_id: pb.id, is_upsell: false },
+      { _id: nextId(), option: pbTarget, description: pb.name, quantity: 1, unit_price_cents: Math.round(pb.unit_price * 100), pricebook_item_id: pb.id, is_upsell: false },
     ]);
     setPbTarget(null);
   };
@@ -387,7 +384,6 @@ export default function TechEstimateBuilder() {
   };
 
   const activeItems = items.filter((i) => i.option === activeTab);
-  const activeOptions = mode === "good_better_best" ? OPTIONS : (["base"] as EstimateOption[]);
 
   if (loading) {
     return (

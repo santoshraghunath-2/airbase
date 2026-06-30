@@ -41,7 +41,7 @@ export default function JobCard({ job }: Props) {
           {jobTypeLabel(job.job_type)}
         </span>
         {job.membership_id && (
-          <BadgeCheck className="h-3.5 w-3.5 flex-shrink-0 text-blue-500" title="Membership customer" />
+          <BadgeCheck className="h-3.5 w-3.5 flex-shrink-0 text-blue-500" aria-label="Membership customer" />
         )}
       </div>
 

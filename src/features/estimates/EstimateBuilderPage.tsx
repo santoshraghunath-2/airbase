@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  Plus, Trash2, Sparkles, ChevronDown, ChevronUp, Save, Send,
+  Plus, Trash2, Sparkles, Save, Send,
   CheckCircle2, XCircle, ArrowRight, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -109,7 +109,7 @@ function LineItemRow({
                   onMouseDown={() => {
                     onChange({
                       description: p.name,
-                      unit_price_cents: p.price_cents,
+                      unit_price_cents: Math.round(p.unit_price * 100),
                       pricebook_item_id: p.id,
                     });
                     setPbOpen(false);
@@ -117,7 +117,7 @@ function LineItemRow({
                   }}
                 >
                   <span className="text-xs text-ink">{p.name}</span>
-                  <span className="text-xs text-ink-muted">{centsToDisplay(p.price_cents)}</span>
+                  <span className="text-xs text-ink-muted">{centsToDisplay(Math.round(p.unit_price * 100))}</span>
                 </button>
               ))}
             </div>
@@ -361,8 +361,7 @@ export default function EstimateBuilderPage() {
           ? String(Math.max(1, Math.round((new Date(est.valid_until).getTime() - Date.now()) / 86400000)))
           : "30",
       );
-      // @ts-expect-error — joined relation
-      if (est.customers) setCustomer(est.customers as CustomerRow);
+      if (est.customers) setCustomer(est.customers as unknown as CustomerRow);
       setSuggestions(
         Array.isArray(est.ai_upsell_suggestions) ? est.ai_upsell_suggestions as AiSuggestion[] : [],
       );

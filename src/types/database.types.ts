@@ -48,6 +48,9 @@ export type AfterHoursMode = "message" | "emergency" | "anytime";
 export type ModelTier = "balanced" | "capable" | "fast";
 export type MembershipStatus = "pending" | "active" | "lapsed" | "cancelled";
 export type BillingCycle = "monthly" | "annual";
+export type EstimateStatus = "draft" | "sent" | "accepted" | "declined" | "expired" | "converted";
+export type EstimatePresentationMode = "single" | "good_better_best";
+export type EstimateOption = "good" | "better" | "best" | "base";
 
 export interface TenantRow {
   id: string;
@@ -295,6 +298,47 @@ export interface TenantHoursRow {
   updated_at: string;
 }
 
+export interface EstimateRow {
+  id: string;
+  tenant_id: string;
+  customer_id: string;
+  location_id: string | null;
+  job_id: string | null;
+  tech_id: string | null;
+  title: string;
+  status: EstimateStatus;
+  presentation_mode: EstimatePresentationMode;
+  selected_option: EstimateOption | null;
+  notes: string | null;
+  internal_notes: string | null;
+  valid_until: string | null;
+  sent_at: string | null;
+  accepted_at: string | null;
+  declined_at: string | null;
+  converted_job_id: string | null;
+  ai_generated: boolean;
+  ai_upsell_suggestions: Array<{ description: string; reason: string; price_cents: number }>;
+  wisetack_application_id: string | null;
+  wisetack_offer_url: string | null;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EstimateLineItemRow {
+  id: string;
+  estimate_id: string;
+  option: EstimateOption;
+  pricebook_item_id: string | null;
+  description: string;
+  quantity: number;
+  unit_price_cents: number;
+  total_cents: number;
+  is_upsell: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface MembershipPlanRow {
   id: string;
   tenant_id: string;
@@ -430,6 +474,16 @@ export interface Database {
         Insert: Omit<AgentActionRow, "id" | "created_at"> & { id?: string };
         Update: Partial<Omit<AgentActionRow, "id" | "created_at">>;
       };
+      estimates: {
+        Row: EstimateRow;
+        Insert: Omit<EstimateRow, "id" | "total_cents" | "created_at" | "updated_at"> & { id?: string };
+        Update: Partial<Omit<EstimateRow, "id" | "created_at">>;
+      };
+      estimate_line_items: {
+        Row: EstimateLineItemRow;
+        Insert: Omit<EstimateLineItemRow, "id" | "total_cents" | "created_at"> & { id?: string };
+        Update: Partial<Omit<EstimateLineItemRow, "id" | "created_at">>;
+      };
       membership_plans: {
         Row: MembershipPlanRow;
         Insert: Omit<MembershipPlanRow, "id" | "created_at" | "updated_at"> & { id?: string };
@@ -484,6 +538,8 @@ export type AgentConfig = AgentConfigRow;
 export type TenantHours = TenantHoursRow;
 export type MembershipPlan = MembershipPlanRow;
 export type Membership = MembershipRow;
+export type Estimate = EstimateRow;
+export type EstimateLineItem = EstimateLineItemRow;
 
 // ─── Join types ───────────────────────────────────────────────────────────────
 export type JobWithRelations = JobRow & {

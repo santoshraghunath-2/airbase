@@ -33,7 +33,7 @@ CREATE POLICY "tenant_delete_plans" ON membership_plans
 
 CREATE TRIGGER set_membership_plans_updated_at
   BEFORE UPDATE ON membership_plans
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- ─── Customer Memberships ─────────────────────────────────────────────────────
 -- One active membership per customer (enforced by unique partial index)
@@ -91,7 +91,7 @@ CREATE POLICY "tenant_delete_memberships" ON memberships
 
 CREATE TRIGGER set_memberships_updated_at
   BEFORE UPDATE ON memberships
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- ─── Seed default plans for new tenants ──────────────────────────────────────
 -- Run after tenant provisioning; the provision-tenant Edge Function

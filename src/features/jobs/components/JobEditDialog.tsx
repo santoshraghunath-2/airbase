@@ -4,9 +4,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { BadgeCheck, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -54,9 +55,32 @@ interface Props {
   onSaved: () => void;
 }
 
+interface MemberBadgeData {
+  plan_name: string;
+  discount_percent: number;
+  free_service_call: boolean;
+  priority_dispatch: boolean;
+}
+
 export default function JobEditDialog({ open, job, onClose, onSaved }: Props) {
   const { tenant } = useAuth();
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving]       = useState(false);
+  const [membership, setMembership] = useState<MemberBadgeData | null>(null);
+
+  useEffect(() => {
+    if (!open || !job?.customer_id || !tenant?.id) { setMembership(null); return; }
+    void (async () => {
+      const { data } = await supabase
+        .from("memberships")
+        .select("membership_plans(name,discount_percent,free_service_call,priority_dispatch)")
+        .eq("customer_id", job.customer_id)
+        .eq("tenant_id", tenant.id)
+        .eq("status", "active")
+        .maybeSingle();
+      const plan = (data as { membership_plans: MemberBadgeData | null } | null)?.membership_plans;
+      setMembership(plan ?? null);
+    })();
+  }, [open, job?.customer_id, tenant?.id]);
 
   const {
     register,
@@ -133,6 +157,29 @@ export default function JobEditDialog({ open, job, onClose, onSaved }: Props) {
             <p className="text-sm text-muted-foreground">{job.customers.name}</p>
           )}
         </DialogHeader>
+
+        {/* Membership badge */}
+        {membership && (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-ai-tint-border bg-ai-tint px-3 py-2.5">
+            <BadgeCheck className="h-3.5 w-3.5 text-ai flex-shrink-0" />
+            <span className="text-xs font-semibold text-ai-ink">{membership.plan_name} member</span>
+            {membership.free_service_call && (
+              <span className={cn("text-[10px] font-medium rounded-pill px-1.5 py-0.5 border", "bg-confirmed-bg text-confirmed-text border-confirmed-border")}>
+                Free service call
+              </span>
+            )}
+            {membership.discount_percent > 0 && (
+              <span className={cn("text-[10px] font-medium rounded-pill px-1.5 py-0.5 border", "bg-ai-chip-bg text-ai-ink border-ai-tint-border")}>
+                {membership.discount_percent}% off parts
+              </span>
+            )}
+            {membership.priority_dispatch && (
+              <span className={cn("text-[10px] font-medium rounded-pill px-1.5 py-0.5 border", "bg-ai-chip-bg text-ai-ink border-ai-tint-border")}>
+                Priority dispatch
+              </span>
+            )}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Job type */}

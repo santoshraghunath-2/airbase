@@ -1,6 +1,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { format } from "date-fns";
+import { BadgeCheck } from "lucide-react";
 import { cn, jobStatusColor, jobStatusLabel, priorityColor, jobTypeLabel } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import type { JobWithRelations } from "@/types/database.types";
@@ -31,14 +32,17 @@ export default function JobCard({ job }: Props) {
         job.priority === "high" && "border-orange-200"
       )}
     >
-      {/* Priority dot + job type */}
+      {/* Priority dot + job type + member indicator */}
       <div className="flex items-center gap-2">
         <span
           className={cn("h-2 w-2 rounded-full flex-shrink-0", priorityColor(job.priority))}
         />
-        <span className="text-xs font-semibold text-foreground truncate">
+        <span className="text-xs font-semibold text-foreground truncate flex-1">
           {jobTypeLabel(job.job_type)}
         </span>
+        {job.membership_id && (
+          <BadgeCheck className="h-3.5 w-3.5 flex-shrink-0 text-blue-500" title="Membership customer" />
+        )}
       </div>
 
       {/* Customer name */}

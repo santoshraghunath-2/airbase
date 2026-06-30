@@ -17,11 +17,11 @@ Build in this sequence:
 - [x] `021_memberships.sql` — `membership_plans` + `memberships` tables, RLS
 - [x] Membership Plans page — CRUD for tier definitions (name, price, billing cycle, benefits)
 - [x] Customer enrollment — enroll/cancel/renew from the Memberships page
-- [ ] Membership status badge on job detail (free service call, priority dispatch, discount)
-- [ ] Membership agent Edge Function — nightly sweep: 60/30/7-day pre-expiry SMS outreach
-- [ ] System prompt: `/prompts/membership-agent.md`
+- [x] Membership status badge on job detail (free service call, priority dispatch, discount)
+- [x] Membership agent Edge Function — nightly sweep: 60/30/7-day pre-expiry SMS outreach
+- [x] System prompt: `/prompts/membership-agent.md`
 - [ ] Auto-renewal logic (Stripe recurring subscription creation)
-- [ ] Win-back sequences: 7/30/90-day post-lapse outreach
+- [x] Win-back sequences: 7/30/90-day post-lapse outreach
 
 ### Sprint 2 — Estimates (Week 4–6)
 - [ ] `022_estimates.sql` — `estimates` + `estimate_line_items` tables

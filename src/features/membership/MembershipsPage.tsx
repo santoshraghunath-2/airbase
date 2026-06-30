@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import type { MembershipPlanRow, MembershipRow, CustomerRow } from "@/types/database.types";
+import type { MembershipPlanRow, MembershipRow, CustomerRow, BillingCycle } from "@/types/database.types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -185,7 +185,7 @@ function PlanCard({
               <Label className="text-[12px] text-ink-muted">Billing cycle</Label>
               <select
                 value={draft.billing_cycle}
-                onChange={(e) => setDraft((p) => ({ ...p, billing_cycle: e.target.value }))}
+                onChange={(e) => setDraft((p) => ({ ...p, billing_cycle: e.target.value as BillingCycle }))}
                 className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm"
               >
                 <option value="annual">Annual</option>
@@ -414,7 +414,7 @@ export default function MembershipsPage() {
   const [showNewPlan, setShowNewPlan] = useState(false);
   const [newPlanSaving, setNewPlanSaving] = useState(false);
   const [newPlanDraft, setNewPlanDraft]   = useState({
-    name: "", description: "", price_cents: 39900, billing_cycle: "annual",
+    name: "", description: "", price_cents: 39900, billing_cycle: "annual" as BillingCycle,
     discount_percent: 0, priority_dispatch: false, free_service_call: false, benefits_text: "",
   });
 
@@ -742,7 +742,7 @@ export default function MembershipsPage() {
                         <Label className="text-[12px] text-ink-muted">Billing</Label>
                         <select
                           value={newPlanDraft.billing_cycle}
-                          onChange={(e) => setNewPlanDraft((p) => ({ ...p, billing_cycle: e.target.value }))}
+                          onChange={(e) => setNewPlanDraft((p) => ({ ...p, billing_cycle: e.target.value as BillingCycle }))}
                           className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm"
                         >
                           <option value="annual">Annual</option>

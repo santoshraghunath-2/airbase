@@ -4,10 +4,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import TechJobList from "./TechJobList";
 import TechJobDetail from "./TechJobDetail";
 import TechChatTab from "./TechChatTab";
-import { Wrench, List, Bot } from "lucide-react";
+import TechEstimateList from "./TechEstimateList";
+import TechEstimateBuilder from "./TechEstimateBuilder";
+import TechEstimatePresent from "./TechEstimatePresent";
+import { Wrench, List, Bot, Calculator } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Tab = "jobs" | "help";
+type Tab = "jobs" | "estimates" | "help";
 
 export default function TechApp() {
   const { user } = useAuth();
@@ -34,7 +37,7 @@ export default function TechApp() {
         )}
       </header>
 
-      {/* Content area — jobs tab uses nested router, help tab is flat */}
+      {/* Content area */}
       <div className="flex-1 overflow-hidden flex flex-col">
         {tab === "jobs" ? (
           <div className="flex-1 overflow-y-auto">
@@ -42,6 +45,16 @@ export default function TechApp() {
               <Route index element={<TechJobList />} />
               <Route path="jobs/:jobId" element={<TechJobDetail />} />
               <Route path="*" element={<Navigate to="/tech" replace />} />
+            </Routes>
+          </div>
+        ) : tab === "estimates" ? (
+          <div className="flex-1 overflow-y-auto">
+            <Routes>
+              <Route index element={<TechEstimateList />} />
+              <Route path="estimates/new" element={<TechEstimateBuilder />} />
+              <Route path="estimates/:estimateId" element={<TechEstimateBuilder />} />
+              <Route path="estimates/:estimateId/present" element={<TechEstimatePresent />} />
+              <Route path="*" element={<TechEstimateList />} />
             </Routes>
           </div>
         ) : (
@@ -53,17 +66,21 @@ export default function TechApp() {
 
       {/* Bottom tab bar */}
       <nav className="border-t bg-white flex sticky bottom-0">
-        {(["jobs", "help"] as Tab[]).map((t) => (
+        {([
+          { id: "jobs",      icon: <List className="h-5 w-5" />,       label: "Jobs" },
+          { id: "estimates", icon: <Calculator className="h-5 w-5" />, label: "Estimates" },
+          { id: "help",      icon: <Bot className="h-5 w-5" />,        label: "Help" },
+        ] as { id: Tab; icon: React.ReactNode; label: string }[]).map((t) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={t.id}
+            onClick={() => setTab(t.id)}
             className={cn(
               "flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors",
-              tab === t ? "text-blue-600" : "text-slate-500 hover:text-slate-700",
+              tab === t.id ? "text-blue-600" : "text-slate-500 hover:text-slate-700",
             )}
           >
-            {t === "jobs" ? <List className="h-5 w-5" /> : <Bot className="h-5 w-5" />}
-            {t === "jobs" ? "Jobs" : "Help"}
+            {t.icon}
+            {t.label}
           </button>
         ))}
       </nav>

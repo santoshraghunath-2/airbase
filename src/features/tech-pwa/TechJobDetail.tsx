@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
-  Phone, ChevronLeft, Camera, Loader2, Navigation, CheckCircle2,
+  Phone, ChevronLeft, Camera, Loader2, Navigation, CheckCircle2, Calculator,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,6 +24,7 @@ const STATUS_FLOW: { from: JobStatus; to: JobStatus; label: string }[] = [
 export default function TechJobDetail() {
   const { jobId } = useParams<{ jobId: string }>();
   const { tenant } = useAuth();
+  const navigate = useNavigate();
   const [job, setJob] = useState<JobWithRelations | null>(null);
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState("");
@@ -229,6 +230,22 @@ export default function TechJobDetail() {
         />
         <Button variant="outline" size="sm" onClick={saveNotes}>Save Notes</Button>
       </div>
+
+      {/* Create estimate — visible once arrived or in progress */}
+      {(job.status === "arrived" || job.status === "in_progress") && (
+        <button
+          onClick={() => navigate(`/tech/estimates/new?jobId=${job.id}`)}
+          className="w-full flex items-center gap-3 rounded-xl border bg-white p-4 active:bg-muted transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
+            <Calculator className="h-5 w-5 text-blue-600" />
+          </div>
+          <div className="text-left">
+            <p className="text-sm font-medium">Build Estimate</p>
+            <p className="text-xs text-muted-foreground">Good / Better / Best — present on-site</p>
+          </div>
+        </button>
+      )}
 
       {/* Photo upload */}
       <div className="rounded-xl border bg-white p-4">

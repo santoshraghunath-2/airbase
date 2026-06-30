@@ -23,7 +23,7 @@ const STATUS_FLOW: { from: JobStatus; to: JobStatus; label: string }[] = [
 
 export default function TechJobDetail() {
   const { jobId } = useParams<{ jobId: string }>();
-  const { tenant } = useAuth();
+  const { tenant, user } = useAuth();
   const navigate = useNavigate();
   const [job, setJob] = useState<JobWithRelations | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,7 +37,7 @@ export default function TechJobDetail() {
   }, [jobId, tenant]);
 
   async function loadJob() {
-    if (!jobId || !tenant) return;
+    if (!jobId || !tenant || !user) return;
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -47,6 +47,21 @@ export default function TechJobDetail() {
         .eq("tenant_id", tenant.id)
         .single();
       if (error) throw error;
+
+      // Scope check: techs can only see jobs assigned to them
+      if (user.role === "technician") {
+        const { data: tech } = await supabase
+          .from("technicians")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("tenant_id", tenant.id)
+          .maybeSingle();
+        if (tech && data.tech_id !== tech.id) {
+          navigate("/tech");
+          return;
+        }
+      }
+
       setJob(data as JobWithRelations);
       setNotes(data.internal_notes ?? "");
     } catch {
@@ -140,14 +155,14 @@ export default function TechJobDetail() {
   if (loading) {
     return (
       <div className="p-4 space-y-4">
-        <Skeleton className="h-8 w-32" />
-        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-8 w-32 rounded-xl" />
+        <Skeleton className="h-40 w-full rounded-xl" />
       </div>
     );
   }
 
   if (!job) {
-    return <div className="p-4 text-sm text-muted-foreground">Job not found.</div>;
+    return <div className="p-4 text-sm text-ink-muted">Job not found.</div>;
   }
 
   const nextTransition = STATUS_FLOW.find((t) => t.from === job.status);
@@ -165,20 +180,20 @@ export default function TechJobDetail() {
       </div>
 
       {/* Job header */}
-      <div className="rounded-xl border bg-white p-4 space-y-3">
+      <div className="rounded-xl border border-line bg-paper p-4 space-y-3">
         <div>
-          <p className="text-xs text-muted-foreground">{jobTypeLabel(job.job_type)}</p>
-          <h2 className="text-xl font-bold">{job.customers?.name ?? "—"}</h2>
+          <p className="text-xs text-ink-muted">{jobTypeLabel(job.job_type)}</p>
+          <h2 className="text-xl font-bold text-ink">{job.customers?.name ?? "—"}</h2>
         </div>
 
         {job.scheduled_start && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-ink-muted">
             {format(new Date(job.scheduled_start), "EEE MMM d 'at' h:mm a")}
           </p>
         )}
 
         {job.description && (
-          <p className="text-sm bg-muted rounded-lg p-3">{job.description}</p>
+          <p className="text-sm bg-raised border border-line rounded-xl p-3 text-ink">{job.description}</p>
         )}
 
         {/* Location */}
@@ -187,12 +202,12 @@ export default function TechJobDetail() {
             href={`https://maps.apple.com/?q=${encodeURIComponent(
               `${job.service_locations.address} ${job.service_locations.city ?? ""}`
             )}`}
-            className="flex items-start gap-2 text-sm text-blue-600"
+            className="flex items-start gap-2 text-sm text-ai"
           >
             <Navigation className="h-4 w-4 mt-0.5 flex-shrink-0" />
             <div>
               <p className="font-medium">{job.service_locations.address}</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-ink-muted">
                 {[job.service_locations.city, job.service_locations.state, job.service_locations.zip]
                   .filter(Boolean).join(", ")}
               </p>
@@ -201,7 +216,7 @@ export default function TechJobDetail() {
         )}
 
         {job.service_locations?.location_notes && (
-          <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+          <div className="rounded-xl bg-waiting-bg border border-waiting-border p-3 text-xs text-waiting-text">
             <strong>Location note:</strong> {job.service_locations.location_notes}
           </div>
         )}
@@ -210,7 +225,7 @@ export default function TechJobDetail() {
         {job.customers?.phone && (
           <a
             href={`tel:${job.customers.phone}`}
-            className="flex items-center gap-2 text-sm text-blue-600"
+            className="flex items-center gap-2 text-sm text-ai"
           >
             <Phone className="h-4 w-4" />
             {job.customers.phone}
@@ -219,8 +234,8 @@ export default function TechJobDetail() {
       </div>
 
       {/* Notes */}
-      <div className="rounded-xl border bg-white p-4 space-y-3">
-        <p className="font-semibold text-sm">Job Notes</p>
+      <div className="rounded-xl border border-line bg-paper p-4 space-y-3">
+        <p className="font-semibold text-sm text-ink">Job Notes</p>
         <Textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
@@ -248,18 +263,18 @@ export default function TechJobDetail() {
       )}
 
       {/* Photo upload */}
-      <div className="rounded-xl border bg-white p-4">
+      <div className="rounded-xl border border-line bg-paper p-4">
         <label className="flex items-center gap-3 cursor-pointer">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-raised border border-line">
             {photoUploading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              <Camera className="h-5 w-5 text-muted-foreground" />
+              <Camera className="h-5 w-5 text-ink-muted" />
             )}
           </div>
           <div>
-            <p className="text-sm font-medium">Add Photo</p>
-            <p className="text-xs text-muted-foreground">Before / after, nameplate, issue</p>
+            <p className="text-sm font-medium text-ink">Add Photo</p>
+            <p className="text-xs text-ink-muted">Before / after, nameplate, issue</p>
           </div>
           <input
             type="file"
@@ -291,7 +306,7 @@ export default function TechJobDetail() {
       )}
 
       {isComplete && (
-        <div className="flex items-center justify-center gap-2 py-4 text-green-700 bg-green-50 rounded-xl border border-green-200">
+        <div className="flex items-center justify-center gap-2 py-4 text-confirmed-text bg-confirmed-bg rounded-xl border border-confirmed-border">
           <CheckCircle2 className="h-5 w-5" />
           <span className="font-medium">Job Complete</span>
         </div>

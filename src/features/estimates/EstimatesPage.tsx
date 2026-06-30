@@ -21,7 +21,7 @@ function statusConfig(status: EstimateRow["status"]) {
     case "draft":     return { label: "Draft",     cls: "bg-muted text-muted-foreground border-border",                    icon: <Clock className="h-3 w-3" /> };
     case "sent":      return { label: "Sent",       cls: "bg-ai-chip-bg text-ai-ink border-ai-tint-border",                 icon: <Send className="h-3 w-3" /> };
     case "accepted":  return { label: "Accepted",   cls: "bg-confirmed-bg text-confirmed-text border-confirmed-border",     icon: <CheckCircle2 className="h-3 w-3" /> };
-    case "declined":  return { label: "Declined",   cls: "bg-urgent-bg text-urgent-text border-urgent-border",              icon: <XCircle className="h-3 w-3" /> };
+    case "declined":  return { label: "Declined",   cls: "bg-blocked-bg text-blocked-text border-blocked-border",           icon: <XCircle className="h-3 w-3" /> };
     case "expired":   return { label: "Expired",    cls: "bg-muted text-muted-foreground border-border",                    icon: <Clock className="h-3 w-3" /> };
     case "converted": return { label: "Converted",  cls: "bg-confirmed-bg text-confirmed-text border-confirmed-border",     icon: <ArrowRight className="h-3 w-3" /> };
   }

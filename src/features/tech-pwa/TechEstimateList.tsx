@@ -14,11 +14,11 @@ type EstimateItem = Pick<
 
 function statusIcon(s: EstimateRow["status"]) {
   switch (s) {
-    case "draft":     return <Clock className="h-4 w-4 text-slate-400" />;
-    case "sent":      return <Send className="h-4 w-4 text-blue-500" />;
+    case "draft":     return <Clock className="h-4 w-4 text-ink-muted" />;
+    case "sent":      return <Send className="h-4 w-4 text-ai" />;
     case "accepted":
-    case "converted": return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-    default:          return <Clock className="h-4 w-4 text-slate-400" />;
+    case "converted": return <CheckCircle2 className="h-4 w-4 text-confirmed-text" />;
+    default:          return <Clock className="h-4 w-4 text-ink-muted" />;
   }
 }
 
@@ -110,10 +110,10 @@ export default function TechEstimateList() {
   return (
     <div className="p-4 pb-24 space-y-3">
       <div className="flex items-center justify-between mb-1">
-        <h2 className="text-base font-bold text-slate-900">My Estimates</h2>
+        <h2 className="text-base font-bold text-ink">My Estimates</h2>
         <button
           onClick={() => navigate("/tech/estimates/new")}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-medium active:bg-blue-700"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-ink text-paper text-xs font-medium active:bg-ink-hover"
         >
           <Plus className="h-3.5 w-3.5" />
           New
@@ -121,13 +121,13 @@ export default function TechEstimateList() {
       </div>
 
       {estimates.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-200 bg-white px-6 py-12 text-center">
-          <Calculator className="h-8 w-8 text-slate-300 mx-auto mb-3" />
-          <p className="text-sm font-medium text-slate-700 mb-1">No estimates yet</p>
-          <p className="text-xs text-slate-400 mb-4">Build good / better / best options on-site</p>
+        <div className="rounded-xl border border-dashed border-line bg-paper px-6 py-12 text-center">
+          <Calculator className="h-8 w-8 text-faint mx-auto mb-3" />
+          <p className="text-sm font-medium text-ink mb-1">No estimates yet</p>
+          <p className="text-xs text-ink-muted mb-4">Build good / better / best options on-site</p>
           <button
             onClick={() => navigate("/tech/estimates/new")}
-            className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-medium"
+            className="px-4 py-2 rounded-xl bg-ink text-paper text-xs font-medium active:bg-ink-hover"
           >
             Create estimate
           </button>
@@ -137,16 +137,16 @@ export default function TechEstimateList() {
           <button
             key={e.id}
             onClick={() => navigate(`/tech/estimates/${e.id}`)}
-            className="w-full rounded-xl border border-slate-200 bg-white p-4 text-left active:bg-slate-50 transition-colors"
+            className="w-full rounded-xl border border-line bg-paper p-4 text-left active:bg-raised transition-colors"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-900 truncate">{e.customer_name}</p>
-                <p className="text-xs text-slate-500 truncate">{e.title}</p>
+                <p className="text-sm font-semibold text-ink truncate">{e.customer_name}</p>
+                <p className="text-xs text-ink-muted truncate">{e.title}</p>
               </div>
               <div className="flex-shrink-0 text-right">
-                <p className="text-sm font-bold text-slate-900 tabular-nums">{cents(e.total_cents)}</p>
-                <p className="text-xs text-slate-400">
+                <p className="text-sm font-bold text-ink tabular-nums">{cents(e.total_cents)}</p>
+                <p className="text-xs text-ink-muted">
                   {e.presentation_mode === "good_better_best" ? "G/B/B" : "Single"}
                 </p>
               </div>
@@ -155,12 +155,12 @@ export default function TechEstimateList() {
               {statusIcon(e.status)}
               <span className={cn(
                 "text-xs font-medium",
-                e.status === "accepted" || e.status === "converted" ? "text-green-600" :
-                e.status === "sent" ? "text-blue-600" : "text-slate-500",
+                e.status === "accepted" || e.status === "converted" ? "text-confirmed-text" :
+                e.status === "sent" ? "text-ai" : "text-ink-muted",
               )}>
                 {statusLabel(e.status)}
               </span>
-              <span className="text-xs text-slate-300 ml-auto">
+              <span className="text-xs text-faint ml-auto">
                 {new Date(e.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
               </span>
             </div>

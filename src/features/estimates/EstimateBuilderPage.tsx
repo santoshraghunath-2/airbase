@@ -147,7 +147,7 @@ function LineItemRow({
 
       <button
         onClick={onRemove}
-        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-ink-muted hover:text-urgent-text"
+        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-ink-muted hover:text-blocked-text"
       >
         <Trash2 className="h-3 w-3" />
       </button>
@@ -566,7 +566,7 @@ export default function EstimateBuilderPage() {
                     {status === "draft" && (
                       <button
                         onClick={() => { setCustomer(null); setCustomerQuery(""); }}
-                        className="text-ink-muted hover:text-urgent-text"
+                        className="text-ink-muted hover:text-blocked-text"
                       >
                         <XCircle className="h-3.5 w-3.5" />
                       </button>
@@ -696,7 +696,7 @@ export default function EstimateBuilderPage() {
                 <button
                   onClick={() => save("declined")}
                   disabled={saving}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-urgent-border bg-urgent-bg text-urgent-text text-xs font-medium hover:opacity-80 transition-opacity disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blocked-border bg-blocked-bg text-blocked-text text-xs font-medium hover:opacity-80 transition-opacity disabled:opacity-50"
                 >
                   <XCircle className="h-3 w-3" />
                   Decline

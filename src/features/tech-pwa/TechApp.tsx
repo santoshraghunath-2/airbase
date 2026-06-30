@@ -27,13 +27,13 @@ export default function TechApp() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col max-w-lg mx-auto">
+    <div className="min-h-screen bg-bone flex flex-col max-w-lg mx-auto">
       {/* Mobile header */}
-      <header className="bg-slate-900 text-white px-4 py-3 flex items-center gap-2 sticky top-0 z-20">
-        <Wrench className="h-4 w-4 text-blue-400" />
+      <header className="bg-ink text-paper px-4 py-3 flex items-center gap-2 sticky top-0 z-20">
+        <Wrench className="h-4 w-4 text-ai" />
         <span className="font-bold text-sm">Airbase Tech</span>
         {user && (
-          <span className="ml-auto text-xs text-slate-400">{user.name}</span>
+          <span className="ml-auto text-xs text-faint">{user.name}</span>
         )}
       </header>
 
@@ -65,7 +65,7 @@ export default function TechApp() {
       </div>
 
       {/* Bottom tab bar */}
-      <nav className="border-t bg-white flex sticky bottom-0">
+      <nav className="border-t border-line bg-paper flex sticky bottom-0">
         {([
           { id: "jobs",      icon: <List className="h-5 w-5" />,       label: "Jobs" },
           { id: "estimates", icon: <Calculator className="h-5 w-5" />, label: "Estimates" },
@@ -76,7 +76,7 @@ export default function TechApp() {
             onClick={() => setTab(t.id)}
             className={cn(
               "flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors",
-              tab === t.id ? "text-blue-600" : "text-slate-500 hover:text-slate-700",
+              tab === t.id ? "text-ai" : "text-ink-muted hover:text-ink",
             )}
           >
             {t.icon}

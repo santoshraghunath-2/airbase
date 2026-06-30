@@ -61,31 +61,31 @@ export default function TechJobList() {
   if (loading) {
     return (
       <div className="p-4 space-y-3">
-        {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
+        {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
       </div>
     );
   }
 
   return (
     <div className="p-4 space-y-4">
-      <h1 className="text-lg font-bold">My Jobs</h1>
+      <h1 className="text-lg font-bold text-ink">My Jobs</h1>
 
       {jobs.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground text-sm">
+        <div className="text-center py-12 text-ink-muted text-sm">
           No active jobs assigned to you.
         </div>
       )}
 
       {todayJobs.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Today</p>
+          <p className="text-[11px] font-semibold text-ink-muted uppercase tracking-widest">Today</p>
           {todayJobs.map((job) => <TechJobRow key={job.id} job={job} />)}
         </div>
       )}
 
       {otherJobs.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Upcoming</p>
+          <p className="text-[11px] font-semibold text-ink-muted uppercase tracking-widest">Upcoming</p>
           {otherJobs.map((job) => <TechJobRow key={job.id} job={job} />)}
         </div>
       )}
@@ -98,25 +98,25 @@ function TechJobRow({ job }: { job: JobWithRelations }) {
     <Link
       to={`/tech/jobs/${job.id}`}
       className={cn(
-        "block rounded-xl border bg-white p-4 shadow-sm active:bg-muted/40 transition-colors",
-        job.priority === "emergency" && "border-red-300"
+        "block rounded-xl border border-line bg-paper p-4 active:bg-raised transition-colors",
+        job.priority === "emergency" && "border-blocked-border"
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-1">
             <span className={cn("h-2 w-2 rounded-full flex-shrink-0", priorityColor(job.priority))} />
-            <span className="font-semibold text-sm">{jobTypeLabel(job.job_type)}</span>
+            <span className="font-semibold text-sm text-ink">{jobTypeLabel(job.job_type)}</span>
           </div>
-          <p className="text-base font-medium">{job.customers?.name ?? "—"}</p>
-          <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
+          <p className="text-base font-medium text-ink">{job.customers?.name ?? "—"}</p>
+          <div className="flex items-center gap-1 mt-1 text-sm text-ink-muted">
             <MapPin className="h-3.5 w-3.5" />
             <span className="truncate">
               {job.service_locations?.address}, {job.service_locations?.city}
             </span>
           </div>
           {job.customers?.phone && (
-            <div className="flex items-center gap-1 mt-0.5 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1 mt-0.5 text-sm text-ink-muted">
               <Phone className="h-3.5 w-3.5" />
               <span>{job.customers.phone}</span>
             </div>
@@ -127,11 +127,11 @@ function TechJobRow({ job }: { job: JobWithRelations }) {
             {jobStatusLabel(job.status)}
           </Badge>
           {job.scheduled_start && (
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-ink-muted">
               {format(new Date(job.scheduled_start), "h:mm a")}
             </span>
           )}
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <ChevronRight className="h-4 w-4 text-ink-muted" />
         </div>
       </div>
     </Link>

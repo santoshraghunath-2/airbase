@@ -32,7 +32,7 @@ function daysUntil(dateStr: string): number {
 
 function statusBadge(status: MembershipRow["status"], expiresAt: string) {
   if (status === "cancelled") return { label: "Cancelled", cls: "bg-muted text-muted-foreground border-border" };
-  if (status === "lapsed")    return { label: "Lapsed",    cls: "bg-urgent-bg text-urgent-text border-urgent-border" };
+  if (status === "lapsed")    return { label: "Lapsed",    cls: "bg-blocked-bg text-blocked-text border-blocked-border" };
   if (status === "pending")   return { label: "Pending",   cls: "bg-waiting-bg text-waiting-text border-waiting-border" };
   const days = daysUntil(expiresAt);
   if (days <= 30) return { label: `Exp. in ${days}d`, cls: "bg-waiting-bg text-waiting-text border-waiting-border" };
@@ -573,7 +573,7 @@ export default function MembershipsPage() {
                 { label: "Active members", value: activeCount, icon: <Users className="h-4 w-4" />, cls: "text-confirmed-text" },
                 { label: "Monthly revenue", value: centsToDisplay(Math.round(monthlyRevenue)), icon: <TrendingUp className="h-4 w-4" />, cls: "text-ai" },
                 { label: "Expiring in 30 days", value: expiringCount, icon: <AlertTriangle className="h-4 w-4" />, cls: expiringCount > 0 ? "text-waiting-text" : "text-ink-muted" },
-                { label: "Lapsed", value: lapsedCount, icon: <BadgeCheck className="h-4 w-4" />, cls: lapsedCount > 0 ? "text-urgent-text" : "text-ink-muted" },
+                { label: "Lapsed", value: lapsedCount, icon: <BadgeCheck className="h-4 w-4" />, cls: lapsedCount > 0 ? "text-blocked-text" : "text-ink-muted" },
               ].map(({ label, value, icon, cls }) => (
                 <div key={label} className="rounded-xl border border-line bg-paper px-4 py-4">
                   <div className={cn("mb-2", cls)}>{icon}</div>
@@ -694,7 +694,7 @@ export default function MembershipsPage() {
                                   {m.status === "active" && (
                                     <button
                                       onClick={() => void cancelMembership(m)}
-                                      className="text-xs text-ink-muted hover:text-urgent-text font-medium px-2 py-1 rounded-lg hover:bg-urgent-bg transition-colors"
+                                      className="text-xs text-ink-muted hover:text-blocked-text font-medium px-2 py-1 rounded-lg hover:bg-blocked-bg transition-colors"
                                     >
                                       Cancel
                                     </button>

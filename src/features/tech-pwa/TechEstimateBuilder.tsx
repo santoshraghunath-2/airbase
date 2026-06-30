@@ -67,7 +67,7 @@ function PricebookSheet({
       onClick={onClose}
     >
       <div
-        className="mt-auto rounded-t-2xl bg-white max-h-[75vh] flex flex-col"
+        className="mt-auto rounded-t-2xl bg-paper max-h-[75vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2 px-4 py-3 border-b">
@@ -122,43 +122,43 @@ function ItemRow({
   onPricebook: () => void;
 }) {
   return (
-    <div className="border border-muted rounded-xl p-3 space-y-2 bg-white">
+    <div className="border border-line rounded-xl p-3 space-y-2 bg-paper">
       <div className="flex items-start gap-2">
         <input
-          className="flex-1 text-sm font-medium text-foreground bg-transparent outline-none border-b border-muted focus:border-blue-500 pb-1"
+          className="flex-1 text-sm font-medium text-ink bg-transparent outline-none border-b border-line focus:border-ai pb-1"
           placeholder="Description…"
           value={item.description}
           onChange={(e) => onChange({ description: e.target.value })}
         />
         <button
           onClick={onPricebook}
-          className="p-1.5 rounded-lg bg-blue-50 text-blue-600 flex-shrink-0"
+          className="p-1.5 rounded-lg bg-ai-chip-bg text-ai flex-shrink-0"
           title="Search pricebook"
         >
           <Search className="h-3.5 w-3.5" />
         </button>
         <button
           onClick={onRemove}
-          className="p-1.5 rounded-lg bg-red-50 text-red-500 flex-shrink-0"
+          className="p-1.5 rounded-lg bg-blocked-bg text-blocked-text flex-shrink-0"
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-xs text-ink-muted">
           <span>Qty</span>
           <input
-            className="w-12 text-center text-sm font-medium text-foreground bg-transparent border border-muted rounded-lg px-1 py-0.5 outline-none focus:border-blue-500"
+            className="w-12 text-center text-sm font-medium text-ink bg-transparent border border-line rounded-xl px-1 py-0.5 outline-none focus:border-ai"
             value={item.quantity}
             onChange={(e) => onChange({ quantity: parseFloat(e.target.value) || 1 })}
             inputMode="decimal"
           />
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-xs text-ink-muted">
           <span>Price</span>
           <input
-            className="w-20 text-right text-sm font-medium text-foreground bg-transparent border border-muted rounded-lg px-2 py-0.5 outline-none focus:border-blue-500"
+            className="w-20 text-right text-sm font-medium text-ink bg-transparent border border-line rounded-xl px-2 py-0.5 outline-none focus:border-ai"
             value={item.unit_price_cents === 0 ? "" : (item.unit_price_cents / 100).toFixed(2)}
             placeholder="0.00"
             onChange={(e) => {
@@ -224,7 +224,7 @@ export default function TechEstimateBuilder() {
 
   // load existing estimate
   useEffect(() => {
-    if (isNew || !tenant) return;
+    if (isNew || !tenant || !user) return;
     void (async () => {
       const { data: est } = await supabase
         .from("estimates")
@@ -232,6 +232,12 @@ export default function TechEstimateBuilder() {
         .eq("id", estimateId!)
         .single();
       if (!est) { navigate("/tech/estimates"); return; }
+
+      // Scope check: techs can only edit their own estimates
+      if (user.role === "technician" && techIdRef.current && est.tech_id !== techIdRef.current) {
+        navigate("/tech/estimates");
+        return;
+      }
 
       setTitle(est.title);
       setMode(est.presentation_mode as EstimatePresentationMode);
@@ -396,24 +402,24 @@ export default function TechEstimateBuilder() {
     <>
       <div className="flex flex-col pb-40">
         {/* Header */}
-        <div className="bg-slate-900 text-white px-4 py-3 flex items-center gap-2">
+        <div className="bg-ink text-paper px-4 py-3 flex items-center gap-2">
           <button onClick={() => navigate(-1)}>
-            <ChevronLeft className="h-5 w-5 text-slate-400" />
+            <ChevronLeft className="h-5 w-5 text-faint" />
           </button>
           <div className="flex-1 min-w-0">
             <input
-              className="w-full bg-transparent text-sm font-semibold text-white outline-none truncate"
+              className="w-full bg-transparent text-sm font-semibold text-paper outline-none truncate"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
             {meta?.customer_name && (
-              <p className="text-xs text-slate-400">{meta.customer_name}</p>
+              <p className="text-xs text-faint">{meta.customer_name}</p>
             )}
           </div>
           <button
             onClick={() => save().then((id) => id && toast.success("Saved"))}
             disabled={saving}
-            className="text-xs text-blue-400 font-medium disabled:opacity-50"
+            className="text-xs text-ai font-medium disabled:opacity-50"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
           </button>
@@ -428,8 +434,8 @@ export default function TechEstimateBuilder() {
               className={cn(
                 "flex-1 py-2 rounded-xl text-xs font-medium border transition-colors",
                 mode === m
-                  ? "bg-slate-900 text-white border-slate-900"
-                  : "bg-white text-slate-600 border-slate-200",
+                  ? "bg-ink text-paper border-ink"
+                  : "bg-paper text-ink-muted border-line",
               )}
             >
               {m === "good_better_best" ? "Good / Better / Best" : "Single option"}
@@ -449,12 +455,12 @@ export default function TechEstimateBuilder() {
                   className={cn(
                     "flex-1 rounded-xl border py-2.5 transition-colors text-center",
                     activeTab === opt
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-slate-700 border-slate-200",
+                      ? "bg-ink text-paper border-ink"
+                      : "bg-paper text-ink border-line",
                   )}
                 >
                   <p className="text-[11px] font-medium">{LABELS[opt]}</p>
-                  <p className={cn("text-sm font-bold tabular-nums", activeTab === opt ? "text-white" : "text-slate-900")}>
+                  <p className={cn("text-sm font-bold tabular-nums", activeTab === opt ? "text-paper" : "text-ink")}>
                     {cents(total)}
                   </p>
                 </button>
@@ -477,7 +483,7 @@ export default function TechEstimateBuilder() {
 
           <button
             onClick={() => addItem(mode === "good_better_best" ? activeTab : "base")}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-slate-200 text-sm text-slate-500 active:bg-slate-50"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-line text-sm text-ink-muted active:bg-raised"
           >
             <Plus className="h-4 w-4" />
             Add line item
@@ -485,7 +491,7 @@ export default function TechEstimateBuilder() {
 
           <button
             onClick={() => setPbTarget(mode === "good_better_best" ? activeTab : "base")}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-blue-200 bg-blue-50 text-sm text-blue-700 active:bg-blue-100"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-ai-tint-border bg-ai-chip-bg text-sm text-ai-ink active:bg-ai-chip-bg/70"
           >
             <Search className="h-4 w-4" />
             Add from pricebook
@@ -494,11 +500,11 @@ export default function TechEstimateBuilder() {
 
         {/* Per-option subtotals (GBB only) */}
         {mode === "good_better_best" && (
-          <div className="mx-4 mt-4 rounded-xl border border-slate-200 bg-white divide-y">
+          <div className="mx-4 mt-4 rounded-xl border border-line bg-paper divide-y divide-line">
             {OPTIONS.map((opt) => (
               <div key={opt} className="flex justify-between items-center px-4 py-2.5">
-                <span className="text-sm text-slate-600">{LABELS[opt]}</span>
-                <span className="text-sm font-semibold text-slate-900 tabular-nums">{cents(tabTotal(opt))}</span>
+                <span className="text-sm text-ink-muted">{LABELS[opt]}</span>
+                <span className="text-sm font-semibold text-ink tabular-nums">{cents(tabTotal(opt))}</span>
               </div>
             ))}
           </div>
@@ -506,11 +512,11 @@ export default function TechEstimateBuilder() {
       </div>
 
       {/* Sticky present button */}
-      <div className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto p-4 bg-white border-t space-y-2">
+      <div className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto p-4 bg-paper border-t border-line space-y-2">
         <button
           onClick={saveAndPresent}
           disabled={saving || items.filter((i) => i.description.trim()).length === 0}
-          className="w-full flex items-center justify-center gap-2 h-14 rounded-xl bg-blue-600 text-white text-base font-semibold disabled:opacity-40 active:bg-blue-700 transition-colors"
+          className="w-full flex items-center justify-center gap-2 h-14 rounded-xl bg-ink text-paper text-base font-semibold disabled:opacity-40 active:bg-ink-hover transition-colors"
         >
           {saving ? (
             <Loader2 className="h-5 w-5 animate-spin" />

@@ -520,28 +520,83 @@ function CustomerIdentitySection({ isOwner }: { isOwner: boolean }) {
   );
 }
 
-function TeamSection({ isOwner: _isOwner }: { isOwner: boolean }) {
+type UserItem = { id: string; name: string; email: string | null; role: string; is_active: boolean };
+type TechItem = { id: string; name: string; phone: string; email: string | null; is_active: boolean };
+
+const USER_ROLES = [
+  { value: "owner",          label: "Owner" },
+  { value: "office_manager", label: "Office Manager" },
+  { value: "dispatcher",     label: "Dispatcher" },
+];
+
+function TeamSection({ isOwner }: { isOwner: boolean }) {
   const { tenant } = useAuth();
-  const [users, setUsers]       = useState<Array<{ id: string; name: string; email: string; role: string; is_active: boolean }>>([]);
-  const [techs, setTechs]       = useState<Array<{ id: string; name: string; phone: string; is_active: boolean }>>([]);
-  const [loading, setLoading]   = useState(true);
+  const [users, setUsers]         = useState<UserItem[]>([]);
+  const [techs, setTechs]         = useState<TechItem[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [saving, setSaving]       = useState<string | null>(null);
+  const [showAddTech, setShowAddTech] = useState(false);
+  const [newTech, setNewTech]     = useState({ name: "", phone: "", email: "" });
+  const [addingTech, setAddingTech] = useState(false);
+
+  async function reload() {
+    if (!tenant) return;
+    const [uRes, tRes] = await Promise.all([
+      supabase.from("users").select("id,name,email,role,is_active").eq("tenant_id", tenant.id).order("name"),
+      supabase.from("technicians").select("id,name,phone,email,is_active").eq("tenant_id", tenant.id).order("name"),
+    ]);
+    setUsers((uRes.data ?? []) as UserItem[]);
+    setTechs((tRes.data ?? []) as TechItem[]);
+  }
 
   useEffect(() => {
     if (!tenant) return;
-    void (async () => {
-      const [uRes, tRes] = await Promise.all([
-        supabase.from("users").select("id,name,email,role,is_active").eq("tenant_id", tenant.id).order("name"),
-        supabase.from("technicians").select("id,name,phone,is_active").eq("tenant_id", tenant.id).order("name"),
-      ]);
-      setUsers((uRes.data ?? []) as typeof users);
-      setTechs((tRes.data ?? []) as typeof techs);
-      setLoading(false);
-    })();
+    void (async () => { await reload(); setLoading(false); })();
   }, [tenant]);
 
-  const ROLE_LABELS: Record<string, string> = {
-    owner: "Owner", office_manager: "Office Manager", dispatcher: "Dispatcher", technician: "Technician",
-  };
+  async function toggleUserActive(u: UserItem) {
+    setSaving(u.id);
+    const { error } = await supabase.from("users").update({ is_active: !u.is_active }).eq("id", u.id);
+    if (error) toast.error("Failed to update user");
+    else setUsers((prev) => prev.map((x) => x.id === u.id ? { ...x, is_active: !u.is_active } : x));
+    setSaving(null);
+  }
+
+  async function changeRole(u: UserItem, role: string) {
+    setSaving(u.id);
+    const { error } = await supabase.from("users").update({ role }).eq("id", u.id);
+    if (error) toast.error("Failed to update role");
+    else setUsers((prev) => prev.map((x) => x.id === u.id ? { ...x, role } : x));
+    setSaving(null);
+  }
+
+  async function toggleTechActive(t: TechItem) {
+    setSaving(t.id);
+    const { error } = await supabase.from("technicians").update({ is_active: !t.is_active }).eq("id", t.id);
+    if (error) toast.error("Failed to update technician");
+    else setTechs((prev) => prev.map((x) => x.id === t.id ? { ...x, is_active: !t.is_active } : x));
+    setSaving(null);
+  }
+
+  async function addTechnician() {
+    if (!tenant || !newTech.name.trim() || !newTech.phone.trim()) return;
+    setAddingTech(true);
+    const { error } = await supabase.from("technicians").insert({
+      tenant_id: tenant.id,
+      name: newTech.name.trim(),
+      phone: newTech.phone.trim(),
+      email: newTech.email.trim() || null,
+    });
+    if (error) {
+      toast.error("Failed to add technician", { description: error.message });
+    } else {
+      toast.success(`${newTech.name} added`);
+      setNewTech({ name: "", phone: "", email: "" });
+      setShowAddTech(false);
+      await reload();
+    }
+    setAddingTech(false);
+  }
 
   if (loading) return <div className="space-y-2">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>;
 
@@ -560,15 +615,48 @@ function TeamSection({ isOwner: _isOwner }: { isOwner: boolean }) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-ink truncate">{u.name}</p>
-                <p className="text-xs text-ink-muted truncate">{u.email}</p>
+                <p className="text-xs text-ink-muted truncate">{u.email ?? "—"}</p>
               </div>
-              <span className={cn(
-                "text-[11px] font-medium rounded-pill px-2 py-0.5",
-                u.is_active ? "bg-confirmed-bg text-confirmed-text" : "bg-muted text-muted-foreground"
-              )}>
-                {u.is_active ? "Active" : "Inactive"}
-              </span>
-              <span className="text-xs text-ink-muted">{ROLE_LABELS[u.role] ?? u.role}</span>
+              {isOwner ? (
+                <>
+                  <Select
+                    value={u.role}
+                    onValueChange={(role) => void changeRole(u, role)}
+                    disabled={saving === u.id}
+                  >
+                    <SelectTrigger className="h-7 text-xs w-36 border-line bg-raised">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {USER_ROLES.map((r) => (
+                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <button
+                    onClick={() => void toggleUserActive(u)}
+                    disabled={saving === u.id || u.role === "owner"}
+                    className={cn(
+                      "text-[11px] font-medium rounded-pill px-2 py-1 border transition-colors",
+                      u.is_active
+                        ? "bg-confirmed-bg text-confirmed-text border-confirmed-border hover:bg-waiting-bg hover:text-waiting-text hover:border-waiting-border"
+                        : "bg-muted text-muted-foreground border-border hover:bg-confirmed-bg hover:text-confirmed-text hover:border-confirmed-border",
+                      (saving === u.id || u.role === "owner") && "opacity-50 cursor-not-allowed",
+                    )}
+                    title={u.role === "owner" ? "Cannot deactivate owner" : u.is_active ? "Click to deactivate" : "Click to activate"}
+                  >
+                    {saving === u.id ? <Loader2 className="h-3 w-3 animate-spin" /> : u.is_active ? "Active" : "Inactive"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="text-xs text-ink-muted">{USER_ROLES.find((r) => r.value === u.role)?.label ?? u.role}</span>
+                  <span className={cn("text-[11px] font-medium rounded-pill px-2 py-0.5",
+                    u.is_active ? "bg-confirmed-bg text-confirmed-text" : "bg-muted text-muted-foreground")}>
+                    {u.is_active ? "Active" : "Inactive"}
+                  </span>
+                </>
+              )}
             </div>
           ))}
         </div>
@@ -576,26 +664,100 @@ function TeamSection({ isOwner: _isOwner }: { isOwner: boolean }) {
 
       {/* Field techs */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-ink-muted mb-2">Field technicians</p>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-ink-muted">Field technicians</p>
+          {isOwner && !showAddTech && (
+            <button
+              onClick={() => setShowAddTech(true)}
+              className="text-xs font-medium text-ai hover:text-ai-ink transition-colors"
+            >
+              + Add technician
+            </button>
+          )}
+        </div>
+
+        {/* Inline add-tech form */}
+        {showAddTech && (
+          <div className="mb-4 rounded-xl border border-ai-tint-border bg-ai-tint px-4 py-4 space-y-3">
+            <p className="text-xs font-semibold text-ai-ink">New technician</p>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <Input
+                  placeholder="Full name *"
+                  value={newTech.name}
+                  onChange={(e) => setNewTech((p) => ({ ...p, name: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Input
+                  placeholder="Mobile phone *"
+                  type="tel"
+                  value={newTech.phone}
+                  onChange={(e) => setNewTech((p) => ({ ...p, phone: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Input
+                  placeholder="Email (optional)"
+                  type="email"
+                  value={newTech.email}
+                  onChange={(e) => setNewTech((p) => ({ ...p, email: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => { setShowAddTech(false); setNewTech({ name: "", phone: "", email: "" }); }}
+                className="text-xs text-ink-muted hover:text-ink transition-colors px-3 py-1.5"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void addTechnician()}
+                disabled={!newTech.name.trim() || !newTech.phone.trim() || addingTech}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ink text-bone text-xs font-medium hover:bg-ink-hover transition-colors disabled:opacity-40"
+              >
+                {addingTech && <Loader2 className="h-3 w-3 animate-spin" />}
+                Add technician
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
           {techs.length === 0 ? (
             <p className="text-sm text-ink-muted col-span-2 text-center py-4">No technicians found</p>
           ) : techs.map((t) => (
             <div key={t.id} className="rounded-xl border border-line bg-paper px-4 py-3.5 hover:bg-raised transition-colors">
-              <div className="flex items-center gap-3 mb-1">
+              <div className="flex items-center gap-3">
                 <div className="h-8 w-8 rounded-full bg-panel-warm border border-line flex items-center justify-center text-xs font-semibold text-ink-2 flex-shrink-0">
                   {t.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-ink truncate">{t.name}</p>
-                  <p className="text-xs text-ink-muted">{t.phone}</p>
+                  <p className="text-xs text-ink-muted truncate">{t.phone}</p>
                 </div>
-                <span className={cn(
-                  "text-[10px] font-semibold rounded-pill px-1.5 py-0.5",
-                  t.is_active ? "bg-confirmed-bg text-confirmed-text" : "bg-muted text-muted-foreground"
-                )}>
-                  {t.is_active ? "Active" : "Off"}
-                </span>
+                {isOwner ? (
+                  <button
+                    onClick={() => void toggleTechActive(t)}
+                    disabled={saving === t.id}
+                    className={cn(
+                      "text-[10px] font-semibold rounded-pill px-1.5 py-0.5 border transition-colors",
+                      t.is_active
+                        ? "bg-confirmed-bg text-confirmed-text border-confirmed-border hover:bg-waiting-bg hover:text-waiting-text hover:border-waiting-border"
+                        : "bg-muted text-muted-foreground border-border hover:bg-confirmed-bg hover:text-confirmed-text hover:border-confirmed-border",
+                      saving === t.id && "opacity-50 cursor-not-allowed",
+                    )}
+                    title={t.is_active ? "Click to deactivate" : "Click to activate"}
+                  >
+                    {saving === t.id ? <Loader2 className="h-3 w-3 animate-spin inline" /> : t.is_active ? "Active" : "Off"}
+                  </button>
+                ) : (
+                  <span className={cn("text-[10px] font-semibold rounded-pill px-1.5 py-0.5",
+                    t.is_active ? "bg-confirmed-bg text-confirmed-text" : "bg-muted text-muted-foreground")}>
+                    {t.is_active ? "Active" : "Off"}
+                  </span>
+                )}
               </div>
             </div>
           ))}

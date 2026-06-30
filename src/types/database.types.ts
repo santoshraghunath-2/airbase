@@ -46,6 +46,8 @@ export type InvoiceStatus =
 
 export type AfterHoursMode = "message" | "emergency" | "anytime";
 export type ModelTier = "balanced" | "capable" | "fast";
+export type MembershipStatus = "pending" | "active" | "lapsed" | "cancelled";
+export type BillingCycle = "monthly" | "annual";
 
 export interface TenantRow {
   id: string;
@@ -293,6 +295,50 @@ export interface TenantHoursRow {
   updated_at: string;
 }
 
+export interface MembershipPlanRow {
+  id: string;
+  tenant_id: string;
+  name: string;
+  description: string | null;
+  billing_cycle: BillingCycle;
+  price_cents: number;
+  discount_percent: number;
+  priority_dispatch: boolean;
+  free_service_call: boolean;
+  benefits: Array<{ text: string }>;
+  stripe_price_id: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MembershipRow {
+  id: string;
+  tenant_id: string;
+  customer_id: string;
+  plan_id: string;
+  status: MembershipStatus;
+  billing_cycle: BillingCycle;
+  started_at: string;
+  expires_at: string;
+  auto_renew: boolean;
+  stripe_subscription_id: string | null;
+  stripe_customer_id: string | null;
+  cancellation_reason: string | null;
+  cancelled_at: string | null;
+  last_renewed_at: string | null;
+  outreach_sent_at_60: string | null;
+  outreach_sent_at_30: string | null;
+  outreach_sent_at_7: string | null;
+  win_back_sent_at_7: string | null;
+  win_back_sent_at_30: string | null;
+  win_back_sent_at_90: string | null;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface AgentActionRow {
   id: string;
   tenant_id: string;
@@ -384,6 +430,16 @@ export interface Database {
         Insert: Omit<AgentActionRow, "id" | "created_at"> & { id?: string };
         Update: Partial<Omit<AgentActionRow, "id" | "created_at">>;
       };
+      membership_plans: {
+        Row: MembershipPlanRow;
+        Insert: Omit<MembershipPlanRow, "id" | "created_at" | "updated_at"> & { id?: string };
+        Update: Partial<Omit<MembershipPlanRow, "id" | "created_at">>;
+      };
+      memberships: {
+        Row: MembershipRow;
+        Insert: Omit<MembershipRow, "id" | "created_at" | "updated_at"> & { id?: string };
+        Update: Partial<Omit<MembershipRow, "id" | "created_at">>;
+      };
       agent_config: {
         Row: AgentConfigRow;
         Insert: Omit<AgentConfigRow, "id" | "created_at" | "updated_at"> & { id?: string };
@@ -426,6 +482,8 @@ export type Payment = PaymentRow;
 export type AgentAction = AgentActionRow;
 export type AgentConfig = AgentConfigRow;
 export type TenantHours = TenantHoursRow;
+export type MembershipPlan = MembershipPlanRow;
+export type Membership = MembershipRow;
 
 // ─── Join types ───────────────────────────────────────────────────────────────
 export type JobWithRelations = JobRow & {

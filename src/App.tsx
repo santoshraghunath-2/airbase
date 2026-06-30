@@ -17,6 +17,7 @@ import BookingInboxPage from "@/features/booking/BookingInboxPage";
 import SettingsPage from "@/features/settings/SettingsPage";
 import AISettingsPage from "@/features/settings/AISettingsPage";
 import OnboardingPage from "@/features/onboarding/OnboardingPage";
+import MembershipsPage from "@/features/membership/MembershipsPage";
 
 function RouteGuard({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
@@ -86,6 +87,7 @@ export default function App() {
             <Route path="invoices"     element={<InvoiceListPage />} />
             <Route path="invoices/new" element={<InvoiceBuilderPage />} />
             <Route path="invoices/:invoiceId" element={<InvoiceBuilderPage />} />
+            <Route path="memberships"  element={<MembershipsPage />} />
             <Route path="settings"     element={<SettingsPage />} />
             <Route path="ai-settings"  element={<AISettingsPage />} />
           </Route>

@@ -11,6 +11,7 @@ import {
   Settings,
   Bot,
   LogOut,
+  BadgeCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,8 +25,9 @@ const NAV_ITEMS = [
   { label: "Dispatch",   icon: Columns3,        path: "dispatch",   roles: null },
   { label: "Booking",    icon: MessageSquare,   path: "booking",    roles: null },
   { label: "Pricebook",  icon: BookOpen,        path: "pricebook",  roles: null },
-  { label: "Invoices",   icon: FileText,        path: "invoices",   roles: null },
-  { label: "AI Settings",icon: Bot,             path: "ai-settings",roles: ["owner"] },
+  { label: "Invoices",     icon: FileText,      path: "invoices",     roles: null },
+  { label: "Memberships",  icon: BadgeCheck,    path: "memberships",  roles: null },
+  { label: "AI Settings",  icon: Bot,           path: "ai-settings",  roles: ["owner"] },
   { label: "Settings",   icon: Settings,        path: "settings",   roles: ["owner"] },
 ] as const;
 

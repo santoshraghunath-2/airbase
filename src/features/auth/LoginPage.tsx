@@ -20,7 +20,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function LoginPage() {
-  const { session, tenant } = useAuth();
+  const { session, tenant, user } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const {
@@ -29,8 +29,12 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
-  if (session && tenant) {
-    return <Navigate to={`/${tenant.slug}/dashboard`} replace />;
+  if (session && tenant && user) {
+    const dest =
+      user.role === "technician" || user.role === "owner"
+        ? "/tech"
+        : `/${tenant.slug}/dashboard`;
+    return <Navigate to={dest} replace />;
   }
 
   async function onSubmit(values: FormValues) {

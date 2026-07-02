@@ -1,11 +1,5 @@
-import { useLocation, useNavigate, Routes, Route, Navigate } from "react-router-dom";
+import { useLocation, useNavigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import TechJobList from "./TechJobList";
-import TechJobDetail from "./TechJobDetail";
-import TechChatTab from "./TechChatTab";
-import TechEstimateList from "./TechEstimateList";
-import TechEstimateBuilder from "./TechEstimateBuilder";
-import TechEstimatePresent from "./TechEstimatePresent";
 import { Wrench, List, Bot, Calculator } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -54,16 +48,7 @@ export default function TechApp() {
         "flex-1 flex flex-col",
         activeTab === "help" ? "overflow-hidden" : "overflow-y-auto",
       )}>
-        <Routes>
-          <Route index element={<TechJobList />} />
-          <Route path="jobs/:jobId" element={<TechJobDetail />} />
-          <Route path="estimates" element={<TechEstimateList />} />
-          <Route path="estimates/new" element={<TechEstimateBuilder />} />
-          <Route path="estimates/:estimateId" element={<TechEstimateBuilder />} />
-          <Route path="estimates/:estimateId/present" element={<TechEstimatePresent />} />
-          <Route path="help" element={<TechChatTab />} />
-          <Route path="*" element={<Navigate to="/tech" replace />} />
-        </Routes>
+        <Outlet />
       </div>
 
       {/* Bottom tab bar */}

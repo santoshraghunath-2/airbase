@@ -13,6 +13,12 @@ import PricebookPage from "@/features/pricebook/PricebookPage";
 import InvoiceListPage from "@/features/invoicing/InvoiceListPage";
 import InvoiceBuilderPage from "@/features/invoicing/InvoiceBuilderPage";
 import TechApp from "@/features/tech-pwa/TechApp";
+import TechJobList from "@/features/tech-pwa/TechJobList";
+import TechJobDetail from "@/features/tech-pwa/TechJobDetail";
+import TechChatTab from "@/features/tech-pwa/TechChatTab";
+import TechEstimateList from "@/features/tech-pwa/TechEstimateList";
+import TechEstimateBuilder from "@/features/tech-pwa/TechEstimateBuilder";
+import TechEstimatePresent from "@/features/tech-pwa/TechEstimatePresent";
 import BookingInboxPage from "@/features/booking/BookingInboxPage";
 import SettingsPage from "@/features/settings/SettingsPage";
 import AISettingsPage from "@/features/settings/AISettingsPage";
@@ -48,15 +54,24 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
 
-          {/* Technician PWA — separate mobile-optimized layout */}
+          {/* Technician PWA — explicit child routes so /tech/estimates etc. score higher
+              than /:tenantSlug/estimates (two static segs > one dynamic + one static) */}
           <Route
-            path="/tech/*"
+            path="/tech"
             element={
               <RouteGuard>
                 <TechApp />
               </RouteGuard>
             }
-          />
+          >
+            <Route index element={<TechJobList />} />
+            <Route path="jobs/:jobId" element={<TechJobDetail />} />
+            <Route path="estimates" element={<TechEstimateList />} />
+            <Route path="estimates/new" element={<TechEstimateBuilder />} />
+            <Route path="estimates/:estimateId" element={<TechEstimateBuilder />} />
+            <Route path="estimates/:estimateId/present" element={<TechEstimatePresent />} />
+            <Route path="help" element={<TechChatTab />} />
+          </Route>
 
           {/* Onboarding — standalone (no AppLayout sidebar) */}
           <Route

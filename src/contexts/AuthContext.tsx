@@ -35,10 +35,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setSupabaseUser(session?.user ?? null);
       if (session?.user) {
+        // Mark loading so consumers can wait for profile before redirecting
+        if (event === "SIGNED_IN") setLoading(true);
         loadUserProfile(session.user.id);
       } else {
         setUser(null);

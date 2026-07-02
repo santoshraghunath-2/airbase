@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -20,8 +20,10 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function LoginPage() {
-  const { session, tenant, user } = useAuth();
+  const { session, tenant, user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const from = searchParams.get("from");
 
   const {
     register,
@@ -29,11 +31,13 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
-  if (session && tenant && user) {
-    const dest =
-      user.role === "technician" || user.role === "owner"
+  // Wait for auth + profile to finish loading before redirecting
+  if (session && !authLoading) {
+    const dest = from
+      ? decodeURIComponent(from)
+      : user?.role === "technician" || user?.role === "owner"
         ? "/tech"
-        : `/${tenant.slug}/dashboard`;
+        : `/${tenant?.slug ?? ""}/dashboard`;
     return <Navigate to={dest} replace />;
   }
 

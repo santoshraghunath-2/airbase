@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setSupabaseUser(session?.user ?? null);
       if (session?.user) {
-        loadUserProfile(session.user.id);
+        loadUserProfile(session.user.id, session.user.email ?? undefined);
       } else {
         setLoading(false);
       }
@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         // Mark loading so consumers can wait for profile before redirecting
         if (event === "SIGNED_IN") setLoading(true);
-        loadUserProfile(session.user.id);
+        loadUserProfile(session.user.id, session.user.email ?? undefined);
       } else {
         setUser(null);
         setTenant(null);
@@ -52,15 +52,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function loadUserProfile(authId: string) {
+  async function loadUserProfile(authId: string, email?: string) {
     try {
-      const { data: userData, error: userError } = await supabase
+      // Primary lookup: match by auth_id
+      let { data: userData } = await supabase
         .from("users")
         .select("*")
         .eq("auth_id", authId)
-        .single();
+        .maybeSingle();
 
-      if (userError || !userData) {
+      // Fallback: seeded accounts have auth_id = NULL — claim by email on first login
+      if (!userData && email) {
+        const { data: claimed } = await supabase.rpc("claim_auth_id_by_email");
+        if (claimed && claimed.length > 0) userData = claimed[0];
+      }
+
+      if (!userData) {
         setLoading(false);
         return;
       }

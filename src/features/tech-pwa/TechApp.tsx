@@ -12,15 +12,26 @@ const TABS: { id: Tab; icon: React.ReactNode; label: string; path: string }[] = 
 ];
 
 export default function TechApp() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Profile still loading — don't flash the unauthorized message
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-bone flex items-center justify-center">
+        <div className="h-6 w-6 rounded-full border-2 border-ink border-t-transparent animate-spin" />
+      </div>
+    );
+  }
 
   if (user?.role !== "technician" && user?.role !== "owner") {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="text-center">
-          <p className="text-sm text-muted-foreground">Tech app is only accessible to technicians.</p>
+          <p className="text-sm text-muted-foreground">
+            {user ? "Tech app is only accessible to technicians." : "Could not load your profile — please refresh."}
+          </p>
         </div>
       </div>
     );

@@ -289,10 +289,10 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-full bg-bone">
-      <div className="max-w-[1180px] mx-auto px-8 py-8 space-y-6">
+      <div className="max-w-[1180px] mx-auto px-4 sm:px-8 py-6 sm:py-8 space-y-6">
 
         {/* Page header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-[22px] font-semibold text-ink">
               {greeting}, {tenant?.name?.split(" ")[0] ?? "there"}
@@ -334,7 +334,7 @@ export default function DashboardPage() {
         )}
 
         {/* KPI strip */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <KPICard
             loading={loading}
             label="Active Jobs"
@@ -364,7 +364,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Two-column body */}
-        <div className="grid grid-cols-[1.5fr_1fr] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6">
 
           {/* Agent activity feed */}
           <div className="rounded-xl border border-line bg-paper px-6 py-5">

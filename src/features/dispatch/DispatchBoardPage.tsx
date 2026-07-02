@@ -124,7 +124,7 @@ export default function DispatchBoardPage() {
   return (
     <div className="flex flex-col h-full bg-bone">
       {/* Toolbar */}
-      <div className="flex items-center gap-3 px-6 py-3 border-b border-line bg-paper flex-shrink-0">
+      <div className="flex flex-wrap items-center gap-2 px-4 sm:px-6 py-3 border-b border-line bg-paper flex-shrink-0">
         <h1 className="text-[15px] font-semibold text-ink">Dispatch</h1>
 
         {/* Date navigation */}

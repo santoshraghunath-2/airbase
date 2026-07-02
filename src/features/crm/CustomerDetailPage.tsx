@@ -90,10 +90,10 @@ export default function CustomerDetailPage() {
         </Button>
       </div>
 
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row items-start gap-4">
         <div>
           <h1 className="text-2xl font-bold">{customer.name}</h1>
-          <div className="flex items-center gap-4 mt-1">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1">
             <span className="flex items-center gap-1 text-sm text-muted-foreground">
               <Phone className="h-3.5 w-3.5" />
               {formatPhone(customer.phone)}

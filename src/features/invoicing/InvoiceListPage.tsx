@@ -76,7 +76,7 @@ export default function InvoiceListPage() {
 
   return (
     <div className="p-6 space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">Invoices</h1>
         <Button size="sm" asChild>
           <Link to={`/${tenantSlug}/invoices/new`}>
@@ -100,8 +100,8 @@ export default function InvoiceListPage() {
         </button>
       )}
 
-      <div className="flex gap-3">
-        <div className="relative max-w-xs flex-1">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative w-full sm:max-w-xs sm:flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search invoice # or customer…"
@@ -111,7 +111,7 @@ export default function InvoiceListPage() {
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="w-full sm:w-44">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -130,7 +130,7 @@ export default function InvoiceListPage() {
       {loading ? (
         <div className="space-y-2">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
       ) : (
-        <div className="rounded-lg border overflow-hidden">
+        <div className="rounded-lg border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

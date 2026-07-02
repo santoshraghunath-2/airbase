@@ -99,9 +99,9 @@ export default function EstimatesPage() {
 
   return (
     <div className="min-h-full bg-bone">
-      <div className="max-w-[1100px] mx-auto px-8 py-8">
+      <div className="max-w-[1100px] mx-auto px-4 sm:px-8 py-6 sm:py-8">
         {/* Header */}
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-start gap-4 mb-6">
           <div>
             <div className="flex items-center gap-1.5 text-xs text-ink-muted mb-2">
               <span>Dashboard</span><span>›</span><span className="text-ink">Estimates</span>
@@ -123,7 +123,7 @@ export default function EstimatesPage() {
         ) : (
           <>
             {/* Stats */}
-            <div className="grid grid-cols-4 gap-3 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
               {[
                 { label: "Drafts",    value: draftCount,                              cls: "text-ink-muted" },
                 { label: "Sent",      value: sentCount,                               cls: "text-ai" },
@@ -138,7 +138,7 @@ export default function EstimatesPage() {
             </div>
 
             {/* Filters */}
-            <div className="flex items-center gap-3 mb-5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-5">
               <div className="flex gap-1 bg-raised rounded-xl p-1 border border-line">
                 {(["all", "draft", "sent", "accepted", "declined", "converted"] as const).map((f) => (
                   <button
@@ -154,7 +154,7 @@ export default function EstimatesPage() {
                 ))}
               </div>
               <Input
-                className="max-w-xs"
+                className="w-full sm:max-w-xs"
                 placeholder="Search customer or title…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -176,7 +176,7 @@ export default function EstimatesPage() {
                 </button>
               </div>
             ) : (
-              <div className="rounded-xl border border-line overflow-hidden">
+              <div className="rounded-xl border border-line overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-line-2 bg-raised">

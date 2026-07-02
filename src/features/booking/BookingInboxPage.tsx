@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { MessageSquare, Phone, CheckCircle, MapPin, Clock, User, Briefcase } from "lucide-react";
+import { MessageSquare, Phone, CheckCircle, MapPin, Clock, User, Briefcase, ChevronLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -306,8 +306,8 @@ export default function BookingInboxPage() {
 
   return (
     <div className="flex h-full bg-bone">
-      {/* Pane 1 — Conversation list */}
-      <div className="w-[320px] flex-shrink-0 border-r border-line flex flex-col bg-paper">
+      {/* Pane 1 — Conversation list (hidden on mobile when a conversation is open) */}
+      <div className={`w-full md:w-[320px] flex-shrink-0 border-r border-line flex-col bg-paper ${selected ? "hidden md:flex" : "flex"}`}>
         {/* Header */}
         <div className="px-5 py-4 border-b border-line">
           <div className="flex items-center justify-between">
@@ -399,10 +399,20 @@ export default function BookingInboxPage() {
         </div>
       </div>
 
-      {/* Pane 2 — Thread */}
-      <div className="flex-1 overflow-hidden flex flex-col">
+      {/* Pane 2 — Thread (hidden on mobile when no conversation is open) */}
+      <div className={`flex-1 overflow-hidden flex-col ${!selected ? "hidden md:flex" : "flex"}`}>
         {selected ? (
-          <ConversationPanel conversation={selected} onStatusChange={() => void load()} />
+          <>
+            <div className="md:hidden flex items-center px-4 py-2.5 border-b border-line bg-paper flex-shrink-0">
+              <button
+                onClick={() => setSelected(null)}
+                className="flex items-center gap-1 text-sm text-ink-muted hover:text-ink transition-colors"
+              >
+                <ChevronLeft className="h-4 w-4" /> Back
+              </button>
+            </div>
+            <ConversationPanel conversation={selected} onStatusChange={() => void load()} />
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center p-12">
             <MessageSquare className="h-14 w-14 text-ink-muted/15 mb-4" />

@@ -33,7 +33,11 @@ const NAV_ITEMS = [
   { label: "Settings",   icon: Settings,        path: "settings",   roles: ["owner"] },
 ] as const;
 
-export default function Sidebar() {
+interface SidebarProps {
+  onNavigate?: () => void;
+}
+
+export default function Sidebar({ onNavigate }: SidebarProps) {
   const { tenantSlug } = useParams<{ tenantSlug: string }>();
   const { user, tenant, signOut } = useAuth();
 
@@ -75,6 +79,7 @@ export default function Sidebar() {
             <NavLink
               key={item.path}
               to={`/${tenantSlug}/${item.path}`}
+              onClick={onNavigate}
               className={({ isActive }) =>
                 cn(
                   "flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors",

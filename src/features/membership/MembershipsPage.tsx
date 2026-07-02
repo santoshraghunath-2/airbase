@@ -533,9 +533,9 @@ export default function MembershipsPage() {
 
   return (
     <div className="min-h-full bg-bone">
-      <div className="max-w-[1100px] mx-auto px-8 py-8">
+      <div className="max-w-[1100px] mx-auto px-4 sm:px-8 py-6 sm:py-8">
         {/* Header */}
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-start gap-4 mb-6">
           <div>
             <div className="flex items-center gap-1.5 text-xs text-ink-muted mb-2">
               <span>Dashboard</span><span>›</span><span className="text-ink">Memberships</span>
@@ -568,7 +568,7 @@ export default function MembershipsPage() {
         ) : (
           <>
             {/* Stats */}
-            <div className="grid grid-cols-4 gap-3 mb-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
               {[
                 { label: "Active members", value: activeCount, icon: <Users className="h-4 w-4" />, cls: "text-confirmed-text" },
                 { label: "Monthly revenue", value: centsToDisplay(Math.round(monthlyRevenue)), icon: <TrendingUp className="h-4 w-4" />, cls: "text-ai" },
@@ -642,7 +642,7 @@ export default function MembershipsPage() {
                     <p className="text-xs text-ink-muted">Enroll your first customer to get started.</p>
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-line overflow-hidden">
+                  <div className="rounded-xl border border-line overflow-x-auto">
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-line-2 bg-raised">

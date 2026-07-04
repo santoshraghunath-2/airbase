@@ -17,7 +17,7 @@ const APP_URL = Deno.env.get("APP_URL") ?? "https://app.airbase.io";
 const CORS = {
   "Access-Control-Allow-Origin":  "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 function json(body: unknown, status = 200) {

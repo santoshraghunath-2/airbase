@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Phone, Mail, MapPin, Wrench, ChevronLeft, Plus, ExternalLink, Pencil } from "lucide-react";
+import { Phone, Mail, MapPin, Wrench, ChevronLeft, Plus, ExternalLink, Pencil, Link2, Copy, Send, Check, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -10,9 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatPhone, jobStatusLabel, jobStatusColor, jobTypeLabel } from "@/lib/utils";
+import { formatPhone, jobStatusLabel, jobStatusColor, jobTypeLabel, cn } from "@/lib/utils";
 import CustomerFormDialog from "./components/CustomerFormDialog";
-import type { Customer, ServiceLocation, Equipment, Job } from "@/types/database.types";
+import type { Customer, ServiceLocation, Equipment, Job, PortalInvitationRow } from "@/types/database.types";
 
 export default function CustomerDetailPage() {
   const { customerId, tenantSlug } = useParams<{ customerId: string; tenantSlug: string }>();
@@ -21,8 +21,11 @@ export default function CustomerDetailPage() {
   const [locations, setLocations] = useState<ServiceLocation[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [jobs, setJobs]           = useState<Job[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [editOpen, setEditOpen]   = useState(false);
+  const [loading, setLoading]         = useState(true);
+  const [editOpen, setEditOpen]       = useState(false);
+  const [portal, setPortal]           = useState<PortalInvitationRow | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [copied, setCopied]           = useState(false);
 
   useEffect(() => {
     if (!tenant || !customerId) return;
@@ -33,17 +36,19 @@ export default function CustomerDetailPage() {
     if (!tenant || !customerId) return;
     setLoading(true);
     try {
-      const [custRes, locsRes, jobsRes] = await Promise.all([
+      const [custRes, locsRes, jobsRes, portalRes] = await Promise.all([
         supabase.from("customers").select("*").eq("id", customerId).eq("tenant_id", tenant.id).single(),
         supabase.from("service_locations").select("*").eq("customer_id", customerId),
         supabase.from("jobs").select("*").eq("customer_id", customerId).eq("tenant_id", tenant.id)
           .is("deleted_at", null).order("created_at", { ascending: false }).limit(20),
+        supabase.from("portal_invitations").select("*").eq("tenant_id", tenant.id).eq("customer_id", customerId).maybeSingle(),
       ]);
 
       if (custRes.error) throw custRes.error;
       setCustomer(custRes.data);
       setLocations(locsRes.data ?? []);
       setJobs(jobsRes.data ?? []);
+      setPortal(portalRes.data ?? null);
 
       // Load equipment for all locations
       if (locsRes.data && locsRes.data.length > 0) {
@@ -60,6 +65,39 @@ export default function CustomerDetailPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function sendPortalLink(sendSms: boolean) {
+    if (!customer || !tenant) return;
+    setPortalLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-portal-link", {
+        body: { customer_id: customer.id, send_sms: sendSms },
+      });
+      if (error) throw error;
+      toast.success(sendSms ? "Portal link sent via SMS" : "Portal link generated");
+      // Refresh portal state from DB
+      const { data: inv } = await supabase
+        .from("portal_invitations")
+        .select("*")
+        .eq("tenant_id", tenant.id)
+        .eq("customer_id", customer.id)
+        .maybeSingle();
+      setPortal(inv ?? null);
+      void data;
+    } catch (err) {
+      toast.error("Failed to generate portal link", { description: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setPortalLoading(false);
+    }
+  }
+
+  async function copyPortalLink() {
+    if (!portal) return;
+    const url = `${window.location.origin}/portal/${portal.token}`;
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   if (loading) {
@@ -131,6 +169,94 @@ export default function CustomerDetailPage() {
           {customer.notes}
         </div>
       )}
+
+      {/* Customer Portal */}
+      <div className="rounded-xl border border-line bg-paper px-5 py-4 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Link2 className="h-4 w-4 text-ink-muted" />
+            <p className="text-sm font-semibold text-ink">Customer Portal</p>
+          </div>
+          {portal ? (
+            <span className="text-[11px] font-medium bg-confirmed-bg text-confirmed-text border border-confirmed-border rounded-full px-2 py-0.5">
+              Active
+            </span>
+          ) : (
+            <span className="text-[11px] text-ink-muted">Not created</span>
+          )}
+        </div>
+
+        {portal ? (
+          <>
+            <div className="flex items-center gap-2 rounded-lg bg-raised border border-line px-3 py-2">
+              <code className="flex-1 text-xs text-ink-muted truncate">
+                {`${window.location.origin}/portal/${portal.token}`}
+              </code>
+              <button
+                onClick={() => void copyPortalLink()}
+                className="flex-shrink-0 text-ink-muted hover:text-ink transition-colors"
+                title="Copy link"
+              >
+                {copied ? <Check className="h-3.5 w-3.5 text-confirmed-text" /> : <Copy className="h-3.5 w-3.5" />}
+              </button>
+              <a
+                href={`/portal/${portal.token}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-shrink-0 text-ink-muted hover:text-ink transition-colors"
+                title="Open portal"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </div>
+            {portal.last_sent_at && (
+              <p className="text-xs text-ink-muted">
+                Last sent {format(new Date(portal.last_sent_at), "MMM d, yyyy 'at' h:mm a")}
+              </p>
+            )}
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => void sendPortalLink(true)}
+                disabled={portalLoading || !customer.phone}
+                title={!customer.phone ? "No phone number on file" : undefined}
+              >
+                {portalLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Send className="h-3.5 w-3.5 mr-1" />}
+                Resend SMS
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => void sendPortalLink(false)}
+                disabled={portalLoading}
+              >
+                Refresh link
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center gap-3">
+            <Button
+              size="sm"
+              onClick={() => void sendPortalLink(true)}
+              disabled={portalLoading || !customer.phone}
+              title={!customer.phone ? "No phone number on file" : undefined}
+            >
+              {portalLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Send className="h-3.5 w-3.5 mr-1" />}
+              Generate & Send Link
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void sendPortalLink(false)}
+              disabled={portalLoading}
+            >
+              Generate only
+            </Button>
+          </div>
+        )}
+      </div>
 
       <Tabs defaultValue="jobs">
         <TabsList>

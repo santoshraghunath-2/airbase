@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import {
   TrendingUp, Plus, Search, X, Loader2, User, MapPin, Wrench, ChevronRight,
 } from "lucide-react";

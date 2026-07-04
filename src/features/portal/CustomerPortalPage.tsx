@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { format } from "date-fns";
 import {
   Wrench, FileText, CalendarPlus, Star, Loader2, CheckCircle2, AlertCircle,
-  ClipboardList, ChevronRight,
+  ClipboardList,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Badge } from "@/components/ui/badge";
@@ -235,7 +235,7 @@ export default function CustomerPortalPage() {
     );
   }
 
-  const { tenant, customer, jobs, invoices, equipment, membership } = data;
+  const { tenant, jobs, invoices, equipment, membership } = data;
   const openInvoiceTotal = invoices.reduce((s, i) => s + (i.balance_due ?? 0), 0);
 
   return (

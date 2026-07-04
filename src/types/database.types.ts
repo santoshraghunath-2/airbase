@@ -254,6 +254,7 @@ export interface InvoiceRow {
   paid_at: string | null;
   notes: string | null;
   qbo_invoice_id: string | null;
+  payment_link_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -552,6 +553,16 @@ export interface OpportunityRow {
   updated_at: string;
 }
 
+export interface PortalInvitationRow {
+  id: string;
+  tenant_id: string;
+  customer_id: string;
+  token: string;
+  last_sent_at: string | null;
+  expires_at: string;
+  created_at: string;
+}
+
 export interface JobCrewRow {
   id: string;
   job_id: string;
@@ -583,6 +594,7 @@ export type Estimate = EstimateRow;
 export type EstimateLineItem = EstimateLineItemRow;
 export type Opportunity = OpportunityRow;
 export type JobCrew = JobCrewRow;
+export type PortalInvitation = PortalInvitationRow;
 
 // ─── Join types ───────────────────────────────────────────────────────────────
 export type JobWithRelations = JobRow & {

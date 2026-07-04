@@ -27,6 +27,7 @@ import MembershipsPage from "@/features/membership/MembershipsPage";
 import EstimatesPage from "@/features/estimates/EstimatesPage";
 import EstimateBuilderPage from "@/features/estimates/EstimateBuilderPage";
 import OpportunitiesPage from "@/features/opportunities/OpportunitiesPage";
+import CustomerPortalPage from "@/features/portal/CustomerPortalPage";
 
 function RouteGuard({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
@@ -58,6 +59,9 @@ export default function App() {
         <Toaster richColors position="top-right" />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+
+          {/* Customer portal — public, token-authenticated */}
+          <Route path="/portal/:token" element={<CustomerPortalPage />} />
 
           {/* Technician PWA — explicit child routes so /tech/estimates etc. score higher
               than /:tenantSlug/estimates (two static segs > one dynamic + one static) */}

@@ -24,16 +24,17 @@ Build in this sequence:
 - [x] Win-back sequences: 7/30/90-day post-lapse outreach
 
 ### Sprint 2 — Estimates (Week 4–6)
-- [ ] `022_estimates.sql` — `estimates` + `estimate_line_items` tables
-- [ ] Estimate builder — good / better / best three-option presentation
-- [ ] AI upsell engine — suggest add-ons based on equipment age + job type
-- [ ] Estimate → job conversion tracking
-- [ ] Customer financing via Wisetack API (optional add-on at estimate time)
+- [x] `022_estimates.sql` — `estimates` + `estimate_line_items` tables
+- [x] Estimate builder — good / better / best three-option presentation
+- [x] AI upsell engine — suggest add-ons based on equipment age + job type
+- [x] Estimate → job conversion tracking
+- [ ] Customer financing via Wisetack API (optional add-on at estimate time) ← blocked on Wisetack API key
 
 ### Sprint 3 — Customer Portal (Week 7–9)
-- [ ] `023_portal.sql` — `portal_invitations` table, magic-link auth
-- [ ] Customer portal: view job history, pay invoice, request appointment, view equipment
-- [ ] Portal link auto-sent with invoice (alongside payment link)
+- [x] `028_portal.sql` — `portal_invitations` table, magic-link auth
+- [x] Customer portal: view job history, pay invoice, request appointment, view equipment
+- [x] Portal link auto-sent with invoice (alongside payment link)
+- [x] Operator portal management from CustomerDetailPage (generate, copy, resend)
 
 ### Sprint 4 — Analytics & Intelligence (Week 10–14)
 - [ ] Job profitability analytics — margin by tech, zone, job type, customer

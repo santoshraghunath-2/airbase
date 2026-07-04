@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatPhone, jobStatusLabel, jobStatusColor, jobTypeLabel, cn } from "@/lib/utils";
+import { formatPhone, jobStatusLabel, jobStatusColor, jobTypeLabel } from "@/lib/utils";
 import CustomerFormDialog from "./components/CustomerFormDialog";
 import type { Customer, ServiceLocation, Equipment, Job, PortalInvitationRow } from "@/types/database.types";
 

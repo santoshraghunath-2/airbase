@@ -1,22 +1,30 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { format, startOfDay, endOfDay } from "date-fns";
-import { ArrowRight, CheckCircle, RotateCcw } from "lucide-react";
+import {
+  format, startOfDay, endOfDay, startOfWeek, endOfWeek,
+  addDays, differenceInDays,
+} from "date-fns";
+import { ArrowRight, CheckCircle, MessageSquare, RotateCcw } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AIBadge } from "@/components/ui/ai-badge";
 import { StatusDot } from "@/components/ui/status-dot";
-import { formatCurrency, jobTypeLabel } from "@/lib/utils";
+import { formatCurrency, jobTypeLabel, initials } from "@/lib/utils";
 import type { JobWithRelations } from "@/types/database.types";
 
 interface DashboardStats {
   jobsByStatus: Record<string, number>;
   revenueToday: number;
-  openInvoicesCount: number;
-  openInvoicesTotal: number;
+  revenueThisWeek: number;
   unassignedCount: number;
   aiHandledToday: number;
+}
+
+interface InvoiceAging {
+  recent: { count: number; total: number };
+  aging:  { count: number; total: number };
+  old:    { count: number; total: number };
 }
 
 interface AgentAction {
@@ -30,7 +38,8 @@ interface AgentAction {
   created_at: string;
 }
 
-// Confirmed proposal row — periwinkle → green after confirm
+// ─── ProposalRow ─────────────────────────────────────────────────────────────
+
 interface ProposalRowProps {
   action: AgentAction;
   onConfirm: (id: string) => void;
@@ -40,9 +49,12 @@ interface ProposalRowProps {
 
 function ProposalRow({ action, onConfirm, onReject, confirmed }: ProposalRowProps) {
   const pa = action.proposed_action;
-  const summary = action.reasoning
-    || (pa && typeof pa === "object" ? (pa as Record<string, string>).description ?? (pa as Record<string, string>).summary : null)
-    || `${action.agent_type} action proposed`;
+  const summary =
+    action.reasoning ||
+    (pa && typeof pa === "object"
+      ? (pa as Record<string, string>).description ?? (pa as Record<string, string>).summary
+      : null) ||
+    `${action.agent_type} action proposed`;
   const confidence = action.confidence != null ? Math.round(action.confidence * 100) : null;
 
   if (confirmed) {
@@ -67,9 +79,7 @@ function ProposalRow({ action, onConfirm, onReject, confirmed }: ProposalRowProp
         <div className="flex-1 min-w-0">
           <p className="text-sm text-ink leading-snug">{summary}</p>
           {confidence != null && (
-            <p className="text-xs text-ink-muted mt-0.5 tabular-nums">
-              Confidence {confidence}%
-            </p>
+            <p className="text-xs text-ink-muted mt-0.5 tabular-nums">Confidence {confidence}%</p>
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
@@ -91,21 +101,12 @@ function ProposalRow({ action, onConfirm, onReject, confirmed }: ProposalRowProp
   );
 }
 
-// KPI card
+// ─── KPICard ──────────────────────────────────────────────────────────────────
+
 function KPICard({
-  label,
-  value,
-  sub,
-  loading,
-  warn,
-  ai,
+  label, value, sub, loading, warn, ai,
 }: {
-  label: string;
-  value: string;
-  sub?: string;
-  loading: boolean;
-  warn?: boolean;
-  ai?: boolean;
+  label: string; value: string; sub?: string; loading: boolean; warn?: boolean; ai?: boolean;
 }) {
   return (
     <div
@@ -124,9 +125,11 @@ function KPICard({
       {loading ? (
         <Skeleton className="h-8 w-20 mt-1" />
       ) : (
-        <p className={`text-[28px] font-semibold tracking-tight tabular-nums leading-none ${
-          warn ? "text-waiting-text" : ai ? "text-ai" : "text-ink"
-        }`}>
+        <p
+          className={`text-[28px] font-semibold tracking-tight tabular-nums leading-none ${
+            warn ? "text-waiting-text" : ai ? "text-ai" : "text-ink"
+          }`}
+        >
           {value}
         </p>
       )}
@@ -139,11 +142,105 @@ function KPICard({
   );
 }
 
+// ─── TechChip ─────────────────────────────────────────────────────────────────
+
+function TechChip({ tech, jobs }: { tech: { id: string; name: string }; jobs: JobWithRelations[] }) {
+  const isActive = jobs.some((j) =>
+    ["in_progress", "on_site", "arrived", "en_route"].includes(j.status)
+  );
+  const allDone =
+    jobs.length > 0 && jobs.every((j) => ["completed", "invoiced"].includes(j.status));
+
+  return (
+    <div
+      className="flex items-center gap-2 px-3 py-2 rounded-lg border flex-shrink-0"
+      style={
+        isActive
+          ? { borderColor: "#C8DFCA", background: "#F0F4EC" }
+          : { borderColor: "#E8E2D9", background: "#FAFAF8" }
+      }
+    >
+      <div
+        className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0"
+        style={{
+          background: isActive ? "#D4E6D0" : "#EEEBE6",
+          color: isActive ? "#4C6749" : "#9A9082",
+        }}
+      >
+        {initials(tech.name)}
+      </div>
+      <span
+        className="text-sm font-medium"
+        style={{ color: isActive ? "#4C6749" : allDone ? "#9A9082" : "#6F6658" }}
+      >
+        {tech.name.split(" ")[0]}
+      </span>
+      <span
+        className="text-[11px]"
+        style={{ color: isActive ? "#6B9467" : "#9A9082" }}
+      >
+        {jobs.length === 0
+          ? "Free"
+          : allDone
+          ? `${jobs.length} done`
+          : `${jobs.length} job${jobs.length !== 1 ? "s" : ""}`}
+      </span>
+      {isActive && (
+        <span
+          className="h-1.5 w-1.5 rounded-full animate-pulse flex-shrink-0"
+          style={{ background: "#6B9467" }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── AgingBucket ──────────────────────────────────────────────────────────────
+
+function AgingBucket({
+  label, count, total, warn, critical, loading,
+}: {
+  label: string; count: number; total: number;
+  warn?: boolean; critical?: boolean; loading: boolean;
+}) {
+  const containerClass = critical
+    ? "border-red-200 bg-red-50"
+    : warn
+    ? "border-waiting-border bg-waiting-bg"
+    : "border-line bg-paper";
+  const valueClass = critical ? "text-red-600" : warn ? "text-waiting-text" : "text-ink";
+  const labelClass = critical ? "text-red-400" : warn ? "text-waiting-text" : "text-ink-muted";
+
+  return (
+    <div className={`flex-1 rounded-xl border px-4 py-3.5 ${containerClass}`}>
+      <p className={`text-[10px] font-semibold uppercase tracking-widest mb-1.5 ${labelClass}`}>
+        {label}
+      </p>
+      {loading ? (
+        <Skeleton className="h-6 w-10 mb-1" />
+      ) : (
+        <>
+          <p className={`text-2xl font-semibold tabular-nums leading-none ${valueClass}`}>
+            {count}
+          </p>
+          <p className={`text-xs mt-1 ${labelClass}`}>{formatCurrency(total)}</p>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── DashboardPage ────────────────────────────────────────────────────────────
+
 export default function DashboardPage() {
   const { tenant } = useAuth();
   const { tenantSlug } = useParams<{ tenantSlug: string }>();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [todaysJobs, setTodaysJobs] = useState<JobWithRelations[]>([]);
+  const [tomorrowJobs, setTomorrowJobs] = useState<JobWithRelations[]>([]);
+  const [activeTechs, setActiveTechs] = useState<{ id: string; name: string }[]>([]);
+  const [bookingInboxCount, setBookingInboxCount] = useState(0);
+  const [invoiceAging, setInvoiceAging] = useState<InvoiceAging | null>(null);
   const [proposals, setProposals] = useState<AgentAction[]>([]);
   const [recentActions, setRecentActions] = useState<AgentAction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -159,10 +256,18 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const now = new Date();
-      const todayStart = startOfDay(now).toISOString();
-      const todayEnd = endOfDay(now).toISOString();
+      const todayStart    = startOfDay(now).toISOString();
+      const todayEnd      = endOfDay(now).toISOString();
+      const tomorrowStart = startOfDay(addDays(now, 1)).toISOString();
+      const tomorrowEnd   = endOfDay(addDays(now, 1)).toISOString();
+      const weekStart     = startOfWeek(now).toISOString();
+      const weekEnd       = endOfWeek(now).toISOString();
 
-      const [jobsRes, statusRes, revenueRes, openInvRes, agentRes] = await Promise.all([
+      const [
+        jobsRes, statusRes, revenueRes, weekRevenueRes,
+        openInvRes, agentRes, techsRes, bookingRes, tomorrowRes,
+      ] = await Promise.all([
+        // Today's jobs
         supabase
           .from("jobs")
           .select("*, customers(id,name,phone), service_locations(id,address,city,state), technicians(id,name,phone)")
@@ -172,6 +277,7 @@ export default function DashboardPage() {
           .lte("scheduled_start", todayEnd)
           .order("scheduled_start", { ascending: true }),
 
+        // Job status counts (active)
         supabase
           .from("jobs")
           .select("status")
@@ -179,6 +285,7 @@ export default function DashboardPage() {
           .is("deleted_at", null)
           .not("status", "in", "(cancelled,no_show,invoiced)"),
 
+        // Revenue today
         supabase
           .from("invoices")
           .select("total")
@@ -187,33 +294,87 @@ export default function DashboardPage() {
           .gte("paid_at", todayStart)
           .lte("paid_at", todayEnd),
 
+        // Revenue this week
         supabase
           .from("invoices")
-          .select("balance_due")
+          .select("total")
+          .eq("tenant_id", tenant.id)
+          .eq("status", "paid")
+          .gte("paid_at", weekStart)
+          .lte("paid_at", weekEnd),
+
+        // Open invoices with dates for aging buckets
+        supabase
+          .from("invoices")
+          .select("id, balance_due, sent_at, created_at")
           .eq("tenant_id", tenant.id)
           .in("status", ["sent", "viewed", "partial", "overdue"]),
 
-        // Agent actions — proposals + today's activity
+        // Agent actions
         supabase
           .from("agent_actions")
           .select("id, agent_type, trigger_event, status, confidence, reasoning, proposed_action, created_at")
           .eq("tenant_id", tenant.id)
           .order("created_at", { ascending: false })
           .limit(30),
+
+        // Active technicians
+        supabase
+          .from("technicians")
+          .select("id, name")
+          .eq("tenant_id", tenant.id)
+          .eq("is_active", true)
+          .order("name"),
+
+        // Booking inbox — active + escalated conversations
+        supabase
+          .from("booking_conversations")
+          .select("*", { count: "exact", head: true })
+          .eq("tenant_id", tenant.id)
+          .in("status", ["active", "escalated"])
+          .is("deleted_at", null),
+
+        // Tomorrow's jobs (first 4)
+        supabase
+          .from("jobs")
+          .select("*, customers(id,name,phone), service_locations(id,address,city,state), technicians(id,name,phone)")
+          .eq("tenant_id", tenant.id)
+          .is("deleted_at", null)
+          .gte("scheduled_start", tomorrowStart)
+          .lte("scheduled_start", tomorrowEnd)
+          .order("scheduled_start", { ascending: true })
+          .limit(4),
       ]);
 
       setTodaysJobs((jobsRes.data ?? []) as JobWithRelations[]);
+      setTomorrowJobs((tomorrowRes.data ?? []) as JobWithRelations[]);
+      setActiveTechs((techsRes.data ?? []) as { id: string; name: string }[]);
+      setBookingInboxCount(bookingRes.count ?? 0);
 
       const jobsByStatus: Record<string, number> = {};
       (statusRes.data ?? []).forEach((j) => {
         jobsByStatus[j.status] = (jobsByStatus[j.status] ?? 0) + 1;
       });
 
-      const revenueToday = (revenueRes.data ?? []).reduce((s, i) => s + (i.total ?? 0), 0);
-      const openInvoicesCount = openInvRes.data?.length ?? 0;
-      const openInvoicesTotal = (openInvRes.data ?? []).reduce((s, i) => s + (i.balance_due ?? 0), 0);
+      const revenueToday    = (revenueRes.data ?? []).reduce((s, i) => s + (i.total ?? 0), 0);
+      const revenueThisWeek = (weekRevenueRes.data ?? []).reduce((s, i) => s + (i.total ?? 0), 0);
 
-      const allActions = (agentRes.data ?? []) as AgentAction[];
+      // Invoice aging buckets: key on sent_at, fall back to created_at
+      const aging: InvoiceAging = {
+        recent: { count: 0, total: 0 },
+        aging:  { count: 0, total: 0 },
+        old:    { count: 0, total: 0 },
+      };
+      for (const inv of openInvRes.data ?? []) {
+        const refDate = inv.sent_at ? new Date(inv.sent_at) : new Date(inv.created_at);
+        const daysOld = differenceInDays(now, refDate);
+        const bucket  = daysOld <= 7 ? "recent" : daysOld <= 30 ? "aging" : "old";
+        aging[bucket].count++;
+        aging[bucket].total += Number(inv.balance_due ?? 0);
+      }
+      setInvoiceAging(aging);
+
+      const allActions     = (agentRes.data ?? []) as AgentAction[];
       const todayProposals = allActions.filter(
         (a) => a.status === "proposed" && new Date(a.created_at) >= startOfDay(now)
       );
@@ -225,7 +386,7 @@ export default function DashboardPage() {
 
       setProposals(todayProposals);
       setRecentActions(allActions.filter((a) => a.status !== "proposed").slice(0, 8));
-      setStats({ jobsByStatus, revenueToday, openInvoicesCount, openInvoicesTotal, unassignedCount: jobsByStatus["unassigned"] ?? 0, aiHandledToday });
+      setStats({ jobsByStatus, revenueToday, revenueThisWeek, unassignedCount: jobsByStatus["unassigned"] ?? 0, aiHandledToday });
     } finally {
       setLoading(false);
     }
@@ -242,7 +403,10 @@ export default function DashboardPage() {
     await supabase.from("agent_actions").update({ status: "operator_rejected" }).eq("id", id);
   }
 
-  const totalActiveJobs = stats ? Object.values(stats.jobsByStatus).reduce((a, b) => a + b, 0) : 0;
+  const totalActiveJobs = stats
+    ? Object.values(stats.jobsByStatus).reduce((a, b) => a + b, 0)
+    : 0;
+
   const greeting = (() => {
     const h = new Date().getHours();
     if (h < 12) return "Good morning";
@@ -250,7 +414,14 @@ export default function DashboardPage() {
     return "Good evening";
   })();
 
-  // Activity feed label map — keyed by agent_type (the DB column that exists)
+  // Per-tech job map derived from today's already-loaded jobs
+  const techJobMap = new Map<string, JobWithRelations[]>();
+  for (const job of todaysJobs) {
+    if (job.tech_id) {
+      techJobMap.set(job.tech_id, [...(techJobMap.get(job.tech_id) ?? []), job]);
+    }
+  }
+
   function activityLabel(action: AgentAction): string {
     const map: Record<string, string> = {
       dispatch:          "Dispatched job",
@@ -278,7 +449,7 @@ export default function DashboardPage() {
   }
 
   function activityColor(action: AgentAction): { bg: string; text: string } {
-    if (action.status === "auto_executed")    return { bg: "#EEF0F7", text: "#46537F" };
+    if (action.status === "auto_executed")     return { bg: "#EEF0F7", text: "#46537F" };
     if (action.status === "operator_approved") return { bg: "#ECF1EC", text: "#4C6749" };
     if (action.status === "operator_rejected") return { bg: "#F4EFE6", text: "#9A9082" };
     if (action.status === "proposed")          return { bg: "#F8F1E1", text: "#8A6A22" };
@@ -291,7 +462,7 @@ export default function DashboardPage() {
     <div className="min-h-full bg-bone">
       <div className="max-w-[1180px] mx-auto px-4 sm:px-8 py-6 sm:py-8 space-y-6">
 
-        {/* Page header */}
+        {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-[22px] font-semibold text-ink">
@@ -301,20 +472,33 @@ export default function DashboardPage() {
               {format(new Date(), "EEEE, MMMM d")}
             </p>
           </div>
-          <Link
-            to={`/${tenantSlug}/jobs/new`}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-ink text-bone text-sm font-semibold hover:bg-ink-hover transition-colors"
-          >
-            + New Job
-          </Link>
+          <div className="flex items-center gap-3">
+            {bookingInboxCount > 0 && (
+              <Link
+                to={`/${tenantSlug}/booking`}
+                className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg border border-waiting-border bg-waiting-bg text-waiting-text text-sm font-medium hover:opacity-80 transition-opacity"
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+                {bookingInboxCount} in inbox
+              </Link>
+            )}
+            <Link
+              to={`/${tenantSlug}/jobs/new`}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-ink text-bone text-sm font-semibold hover:bg-ink-hover transition-colors"
+            >
+              + New Job
+            </Link>
+          </div>
         </div>
 
-        {/* AI Briefing card — only when there are proposals */}
+        {/* AI Briefing */}
         {!loading && visibleProposals.length > 0 && (
           <div className="rounded-xl border border-ai-tint-border bg-ai-tint px-6 py-5">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-ai text-base">✦</span>
-              <span className="text-sm font-semibold text-ai-ink">Jordan has {proposals.length} proposal{proposals.length !== 1 ? "s" : ""} for you</span>
+              <span className="text-sm font-semibold text-ai-ink">
+                Jordan has {proposals.length} proposal{proposals.length !== 1 ? "s" : ""} for you
+              </span>
               <span className="ml-auto text-xs text-ai-ink opacity-60">
                 {format(new Date(), "h:mm a")}
               </span>
@@ -345,7 +529,7 @@ export default function DashboardPage() {
             loading={loading}
             label="Revenue Today"
             value={formatCurrency(stats?.revenueToday)}
-            sub="Collected today"
+            sub={stats ? `${formatCurrency(stats.revenueThisWeek)} this week` : undefined}
           />
           <KPICard
             loading={loading}
@@ -361,6 +545,73 @@ export default function DashboardPage() {
             sub="Actions without you"
             ai
           />
+        </div>
+
+        {/* Tech utilization strip */}
+        <div className="rounded-xl border border-line bg-paper px-5 py-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-ink-muted">
+              Technicians Today
+            </h2>
+            <Link
+              to={`/${tenantSlug}/dispatch`}
+              className="text-xs text-ink-muted hover:text-ink flex items-center gap-1 transition-colors"
+            >
+              Dispatch <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          {loading ? (
+            <div className="flex gap-2">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-9 w-28 rounded-lg" />
+              ))}
+            </div>
+          ) : activeTechs.length === 0 ? (
+            <p className="text-sm text-ink-muted py-1">No active technicians configured</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {activeTechs.map((tech) => (
+                <TechChip key={tech.id} tech={tech} jobs={techJobMap.get(tech.id) ?? []} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Invoice aging */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-ink-muted">
+              Open Invoices
+            </h2>
+            <Link
+              to={`/${tenantSlug}/invoices`}
+              className="text-xs text-ink-muted hover:text-ink flex items-center gap-1 transition-colors"
+            >
+              View all <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <div className="flex gap-3 sm:gap-4">
+            <AgingBucket
+              label="0–7 days"
+              count={invoiceAging?.recent.count ?? 0}
+              total={invoiceAging?.recent.total ?? 0}
+              loading={loading}
+            />
+            <AgingBucket
+              label="7–30 days"
+              count={invoiceAging?.aging.count ?? 0}
+              total={invoiceAging?.aging.total ?? 0}
+              warn={(invoiceAging?.aging.count ?? 0) > 0}
+              loading={loading}
+            />
+            <AgingBucket
+              label="30+ days"
+              count={invoiceAging?.old.count ?? 0}
+              total={invoiceAging?.old.total ?? 0}
+              critical={(invoiceAging?.old.count ?? 0) > 0}
+              loading={loading}
+            />
+          </div>
         </div>
 
         {/* Two-column body */}
@@ -384,7 +635,10 @@ export default function DashboardPage() {
                 {recentActions.map((action) => {
                   const { bg, text } = activityColor(action);
                   return (
-                    <div key={action.id} className="flex items-center gap-3 py-2.5 border-b border-line-2 last:border-b-0">
+                    <div
+                      key={action.id}
+                      className="flex items-center gap-3 py-2.5 border-b border-line-2 last:border-b-0"
+                    >
                       <span
                         className="h-7 w-7 rounded-lg flex items-center justify-center text-sm flex-shrink-0 font-medium"
                         style={{ background: bg, color: text }}
@@ -414,7 +668,7 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Today's jobs timeline */}
+          {/* Today's jobs + tomorrow preview */}
           <div className="rounded-xl border border-line bg-paper px-6 py-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-[13px] font-semibold uppercase tracking-widest text-ink-muted">
@@ -433,7 +687,7 @@ export default function DashboardPage() {
                 {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
               </div>
             ) : todaysJobs.length === 0 ? (
-              <div className="py-8 text-center">
+              <div className="py-6 text-center">
                 <CheckCircle className="h-8 w-8 text-confirmed-dot mx-auto mb-2 opacity-40" />
                 <p className="text-sm text-ink-muted">No jobs today</p>
                 <Link
@@ -446,7 +700,10 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-1">
                 {todaysJobs.map((job) => (
-                  <div key={job.id} className="flex items-center gap-3 py-2.5 border-b border-line-2 last:border-b-0">
+                  <div
+                    key={job.id}
+                    className="flex items-center gap-3 py-2.5 border-b border-line-2 last:border-b-0"
+                  >
                     <StatusDot status={job.status} size="sm" className="flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-ink truncate leading-tight">
@@ -469,6 +726,40 @@ export default function DashboardPage() {
                     )}
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Tomorrow preview */}
+            {!loading && (
+              <div className="mt-5 pt-4 border-t border-line-2">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-ink-muted mb-2.5">
+                  Tomorrow
+                </p>
+                {tomorrowJobs.length === 0 ? (
+                  <p className="text-sm text-ink-muted py-1">Nothing scheduled yet</p>
+                ) : (
+                  <div className="space-y-1">
+                    {tomorrowJobs.map((job) => (
+                      <div key={job.id} className="flex items-center gap-3 py-1.5">
+                        <StatusDot status={job.status} size="sm" className="flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-ink truncate leading-tight">
+                            {job.customers?.name ?? "Unknown"}
+                          </p>
+                          <p className="text-xs text-ink-muted truncate">
+                            {jobTypeLabel(job.job_type)}
+                            {job.technicians?.name && ` · ${job.technicians.name}`}
+                          </p>
+                        </div>
+                        {job.scheduled_start && (
+                          <span className="text-xs text-ink-muted tabular-nums flex-shrink-0">
+                            {format(new Date(job.scheduled_start), "h:mm a")}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -1,6 +1,6 @@
 import { NavLink, useParams } from "react-router-dom";
 import {
-  LayoutDashboard,
+  Command,
   Users,
   CalendarPlus,
   Columns3,
@@ -19,7 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { initials } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "dashboard",  roles: null },
+  { label: "Command Center", icon: Command, path: "dashboard",  roles: null },
   { label: "Customers",  icon: Users,           path: "customers",  roles: null },
   { label: "Jobs",       icon: ClipboardList,   path: "jobs",       roles: null },
   { label: "Book Job",   icon: CalendarPlus,    path: "jobs/new",   roles: null },

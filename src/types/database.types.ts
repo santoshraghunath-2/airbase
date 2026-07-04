@@ -51,6 +51,17 @@ export type BillingCycle = "monthly" | "annual";
 export type EstimateStatus = "draft" | "sent" | "accepted" | "declined" | "expired" | "converted";
 export type EstimatePresentationMode = "single" | "good_better_best";
 export type EstimateOption = "good" | "better" | "best" | "base";
+export type TechType = "service" | "install" | "install_lead" | "comfort_advisor";
+export type LeadSource = "service_call" | "inbound_call" | "marketing" | "referral" | "portal" | "manual";
+export type OpportunityStatus =
+  | "new"
+  | "assigned"
+  | "contacted"
+  | "visit_scheduled"
+  | "visit_complete"
+  | "won"
+  | "lost"
+  | "no_decision";
 
 export interface TenantRow {
   id: string;
@@ -155,6 +166,8 @@ export interface TechnicianRow {
   license_number: string | null;
   license_expiry: string | null;
   is_active: boolean;
+  tech_type: TechType;
+  can_sell: boolean;
   current_latitude: number | null;
   current_longitude: number | null;
   last_location_update: string | null;
@@ -520,6 +533,34 @@ export interface Database {
   };
 }
 
+export interface OpportunityRow {
+  id: string;
+  tenant_id: string;
+  customer_id: string;
+  service_location_id: string | null;
+  source: LeadSource;
+  source_job_id: string | null;
+  source_tech_id: string | null;
+  assigned_to: string | null;
+  install_job_id: string | null;
+  status: OpportunityStatus;
+  equipment_notes: string | null;
+  notes: string | null;
+  estimated_value_cents: number | null;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface JobCrewRow {
+  id: string;
+  job_id: string;
+  tech_id: string;
+  role: "lead" | "crew" | "helper";
+  confirmed: boolean;
+  created_at: string;
+}
+
 // ─── Convenience aliases (matches old usage) ─────────────────────────────────
 export type Tenant = TenantRow;
 export type User = UserRow;
@@ -540,6 +581,8 @@ export type MembershipPlan = MembershipPlanRow;
 export type Membership = MembershipRow;
 export type Estimate = EstimateRow;
 export type EstimateLineItem = EstimateLineItemRow;
+export type Opportunity = OpportunityRow;
+export type JobCrew = JobCrewRow;
 
 // ─── Join types ───────────────────────────────────────────────────────────────
 export type JobWithRelations = JobRow & {

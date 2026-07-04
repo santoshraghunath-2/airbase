@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
-  Phone, ChevronLeft, Camera, Loader2, Navigation, CheckCircle2, Calculator,
+  Phone, ChevronLeft, Camera, Loader2, Navigation, CheckCircle2, Calculator, TrendingUp, ChevronDown,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,6 +30,12 @@ export default function TechJobDetail() {
   const [notes, setNotes] = useState("");
   const [updating, setUpdating] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [techCanSell, setTechCanSell] = useState(false);
+  const [techId, setTechId] = useState<string | null>(null);
+  const [showFlagLead, setShowFlagLead] = useState(false);
+  const [leadNotes, setLeadNotes] = useState("");
+  const [equipmentNotes, setEquipmentNotes] = useState("");
+  const [submittingLead, setSubmittingLead] = useState(false);
 
   useEffect(() => {
     if (!jobId || !tenant) return;
@@ -52,13 +58,17 @@ export default function TechJobDetail() {
       if (user.role === "technician") {
         const { data: tech } = await supabase
           .from("technicians")
-          .select("id")
+          .select("id, can_sell")
           .eq("user_id", user.id)
           .eq("tenant_id", tenant.id)
           .maybeSingle();
         if (tech && data.tech_id !== tech.id) {
           navigate("/tech");
           return;
+        }
+        if (tech) {
+          setTechCanSell((tech as Record<string, unknown>).can_sell as boolean ?? false);
+          setTechId(tech.id);
         }
       }
 
@@ -150,6 +160,37 @@ export default function TechJobDetail() {
       .eq("id", job.id);
     if (error) toast.error("Failed to save notes");
     else toast.success("Notes saved");
+  }
+
+  async function flagAsLead() {
+    if (!job || !tenant) return;
+    setSubmittingLead(true);
+    try {
+      const payload: Record<string, unknown> = {
+        tenant_id:       tenant.id,
+        customer_id:     job.customer_id,
+        service_location_id: job.location_id,
+        source:          "service_call",
+        source_job_id:   job.id,
+        source_tech_id:  techId,
+        equipment_notes: equipmentNotes.trim() || null,
+        notes:           leadNotes.trim() || null,
+        status:          techCanSell ? "assigned" : "new",
+      };
+      if (techCanSell && techId) payload.assigned_to = techId;
+
+      const { error } = await supabase.from("opportunities").insert(payload);
+      if (error) throw error;
+
+      toast.success(techCanSell ? "Lead created — assigned to you" : "Lead flagged — a comfort advisor will be assigned");
+      setShowFlagLead(false);
+      setEquipmentNotes("");
+      setLeadNotes("");
+    } catch (e) {
+      toast.error("Failed to create lead", { description: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setSubmittingLead(false);
+    }
   }
 
   if (loading) {
@@ -260,6 +301,68 @@ export default function TechJobDetail() {
             <p className="text-xs text-muted-foreground">Good / Better / Best — present on-site</p>
           </div>
         </button>
+      )}
+
+      {/* Flag as lead / replacement opportunity */}
+      {(job.status === "arrived" || job.status === "in_progress") && (
+        <div className="rounded-xl border border-line bg-paper overflow-hidden">
+          <button
+            onClick={() => setShowFlagLead((v) => !v)}
+            className="w-full flex items-center gap-3 p-4 active:bg-raised transition-colors"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50">
+              <TrendingUp className="h-5 w-5 text-amber-600" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="text-sm font-medium text-ink">Flag as Replacement Lead</p>
+              <p className="text-xs text-ink-muted">
+                {techCanSell ? "Start a sales opportunity — assigned to you" : "Flip to a comfort advisor"}
+              </p>
+            </div>
+            <ChevronDown className={cn("h-4 w-4 text-ink-muted transition-transform", showFlagLead && "rotate-180")} />
+          </button>
+
+          {showFlagLead && (
+            <div className="px-4 pb-4 space-y-3 border-t border-line">
+              <div className="pt-3">
+                <label className="text-xs font-medium text-ink-muted block mb-1">Equipment notes *</label>
+                <textarea
+                  value={equipmentNotes}
+                  onChange={(e) => setEquipmentNotes(e.target.value)}
+                  placeholder="Age, condition, what failed — helps the CA prepare"
+                  rows={3}
+                  className="w-full rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink placeholder:text-ink-muted resize-none focus:outline-none focus:ring-1 focus:ring-ai"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-ink-muted block mb-1">Additional notes</label>
+                <textarea
+                  value={leadNotes}
+                  onChange={(e) => setLeadNotes(e.target.value)}
+                  placeholder="Customer concerns, urgency, financing interest…"
+                  rows={2}
+                  className="w-full rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink placeholder:text-ink-muted resize-none focus:outline-none focus:ring-1 focus:ring-ai"
+                />
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  onClick={() => { setShowFlagLead(false); setEquipmentNotes(""); setLeadNotes(""); }}
+                  className="text-xs text-ink-muted px-3 py-1.5"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => void flagAsLead()}
+                  disabled={!equipmentNotes.trim() || submittingLead}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-medium disabled:opacity-40 active:bg-amber-700 transition-colors"
+                >
+                  {submittingLead && <Loader2 className="h-3 w-3 animate-spin" />}
+                  {techCanSell ? "Create opportunity" : "Flip to CA"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Photo upload */}

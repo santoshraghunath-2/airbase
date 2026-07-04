@@ -521,7 +521,7 @@ function CustomerIdentitySection({ isOwner }: { isOwner: boolean }) {
 }
 
 type UserItem = { id: string; name: string; email: string | null; role: string; is_active: boolean };
-type TechItem = { id: string; name: string; phone: string; email: string | null; is_active: boolean };
+type TechItem = { id: string; name: string; phone: string; email: string | null; is_active: boolean; tech_type: string; can_sell: boolean };
 
 const USER_ROLES = [
   { value: "owner",          label: "Owner" },
@@ -543,7 +543,7 @@ function TeamSection({ isOwner }: { isOwner: boolean }) {
     if (!tenant) return;
     const [uRes, tRes] = await Promise.all([
       supabase.from("users").select("id,name,email,role,is_active").eq("tenant_id", tenant.id).order("name"),
-      supabase.from("technicians").select("id,name,phone,email,is_active").eq("tenant_id", tenant.id).order("name"),
+      supabase.from("technicians").select("id,name,phone,email,is_active,tech_type,can_sell").eq("tenant_id", tenant.id).order("name"),
     ]);
     setUsers((uRes.data ?? []) as UserItem[]);
     setTechs((tRes.data ?? []) as TechItem[]);
@@ -578,6 +578,22 @@ function TeamSection({ isOwner }: { isOwner: boolean }) {
     setSaving(null);
   }
 
+  async function changeTechType(t: TechItem, tech_type: string) {
+    setSaving(t.id);
+    const { error } = await supabase.from("technicians").update({ tech_type }).eq("id", t.id);
+    if (error) toast.error("Failed to update tech type");
+    else setTechs((prev) => prev.map((x) => x.id === t.id ? { ...x, tech_type } : x));
+    setSaving(null);
+  }
+
+  async function toggleCanSell(t: TechItem) {
+    setSaving(t.id);
+    const { error } = await supabase.from("technicians").update({ can_sell: !t.can_sell }).eq("id", t.id);
+    if (error) toast.error("Failed to update can_sell");
+    else setTechs((prev) => prev.map((x) => x.id === t.id ? { ...x, can_sell: !t.can_sell } : x));
+    setSaving(null);
+  }
+
   async function addTechnician() {
     if (!tenant || !newTech.name.trim() || !newTech.phone.trim()) return;
     setAddingTech(true);
@@ -586,6 +602,7 @@ function TeamSection({ isOwner }: { isOwner: boolean }) {
       name: newTech.name.trim(),
       phone: newTech.phone.trim(),
       email: newTech.email.trim() || null,
+      tech_type: "service",
     });
     if (error) {
       toast.error("Failed to add technician", { description: error.message });
@@ -759,6 +776,40 @@ function TeamSection({ isOwner }: { isOwner: boolean }) {
                   </span>
                 )}
               </div>
+              {isOwner && (
+                <div className="mt-3 pt-3 border-t border-line-2 flex items-center gap-2 flex-wrap">
+                  <Select
+                    value={t.tech_type ?? "service"}
+                    onValueChange={(v) => void changeTechType(t, v)}
+                    disabled={saving === t.id}
+                  >
+                    <SelectTrigger className="h-6 text-[11px] w-36 border-line bg-raised">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="service">Service Tech</SelectItem>
+                      <SelectItem value="install">Install Crew</SelectItem>
+                      <SelectItem value="install_lead">Install Lead</SelectItem>
+                      <SelectItem value="comfort_advisor">Comfort Advisor</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {(t.tech_type === "service" || t.tech_type === "install") && (
+                    <button
+                      onClick={() => void toggleCanSell(t)}
+                      disabled={saving === t.id}
+                      className={cn(
+                        "text-[10px] font-medium rounded-pill px-1.5 py-0.5 border transition-colors",
+                        t.can_sell
+                          ? "bg-ai-tint text-ai-ink border-ai-tint-border"
+                          : "bg-muted text-muted-foreground border-border hover:bg-ai-tint hover:text-ai-ink",
+                      )}
+                      title="Toggle selling permission"
+                    >
+                      {t.can_sell ? "Can sell" : "No sell"}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>

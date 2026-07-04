@@ -521,7 +521,7 @@ function CustomerIdentitySection({ isOwner }: { isOwner: boolean }) {
 }
 
 type UserItem = { id: string; name: string; email: string | null; role: string; is_active: boolean };
-type TechItem = { id: string; name: string; phone: string; email: string | null; is_active: boolean; tech_type: string; can_sell: boolean };
+type TechItem = { id: string; name: string; phone: string; email: string | null; is_active: boolean; tech_type: string; can_sell: boolean; cost_rate: number };
 
 const USER_ROLES = [
   { value: "owner",          label: "Owner" },
@@ -543,7 +543,7 @@ function TeamSection({ isOwner }: { isOwner: boolean }) {
     if (!tenant) return;
     const [uRes, tRes] = await Promise.all([
       supabase.from("users").select("id,name,email,role,is_active").eq("tenant_id", tenant.id).order("name"),
-      supabase.from("technicians").select("id,name,phone,email,is_active,tech_type,can_sell").eq("tenant_id", tenant.id).order("name"),
+      supabase.from("technicians").select("id,name,phone,email,is_active,tech_type,can_sell,cost_rate").eq("tenant_id", tenant.id).order("name"),
     ]);
     setUsers((uRes.data ?? []) as UserItem[]);
     setTechs((tRes.data ?? []) as TechItem[]);
@@ -591,6 +591,16 @@ function TeamSection({ isOwner }: { isOwner: boolean }) {
     const { error } = await supabase.from("technicians").update({ can_sell: !t.can_sell }).eq("id", t.id);
     if (error) toast.error("Failed to update can_sell");
     else setTechs((prev) => prev.map((x) => x.id === t.id ? { ...x, can_sell: !t.can_sell } : x));
+    setSaving(null);
+  }
+
+  async function changeCostRate(t: TechItem, value: string) {
+    const rate = parseFloat(value);
+    if (isNaN(rate) || rate < 0) return;
+    setSaving(t.id);
+    const { error } = await supabase.from("technicians").update({ cost_rate: rate }).eq("id", t.id);
+    if (error) toast.error("Failed to update cost rate");
+    else setTechs((prev) => prev.map((x) => x.id === t.id ? { ...x, cost_rate: rate } : x));
     setSaving(null);
   }
 
@@ -777,37 +787,54 @@ function TeamSection({ isOwner }: { isOwner: boolean }) {
                 )}
               </div>
               {isOwner && (
-                <div className="mt-3 pt-3 border-t border-line-2 flex items-center gap-2 flex-wrap">
-                  <Select
-                    value={t.tech_type ?? "service"}
-                    onValueChange={(v) => void changeTechType(t, v)}
-                    disabled={saving === t.id}
-                  >
-                    <SelectTrigger className="h-6 text-[11px] w-36 border-line bg-raised">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="service">Service Tech</SelectItem>
-                      <SelectItem value="install">Install Crew</SelectItem>
-                      <SelectItem value="install_lead">Install Lead</SelectItem>
-                      <SelectItem value="comfort_advisor">Comfort Advisor</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {(t.tech_type === "service" || t.tech_type === "install") && (
-                    <button
-                      onClick={() => void toggleCanSell(t)}
+                <div className="mt-3 pt-3 border-t border-line-2 space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Select
+                      value={t.tech_type ?? "service"}
+                      onValueChange={(v) => void changeTechType(t, v)}
                       disabled={saving === t.id}
-                      className={cn(
-                        "text-[10px] font-medium rounded-pill px-1.5 py-0.5 border transition-colors",
-                        t.can_sell
-                          ? "bg-ai-tint text-ai-ink border-ai-tint-border"
-                          : "bg-muted text-muted-foreground border-border hover:bg-ai-tint hover:text-ai-ink",
-                      )}
-                      title="Toggle selling permission"
                     >
-                      {t.can_sell ? "Can sell" : "No sell"}
-                    </button>
-                  )}
+                      <SelectTrigger className="h-6 text-[11px] w-36 border-line bg-raised">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="service">Service Tech</SelectItem>
+                        <SelectItem value="install">Install Crew</SelectItem>
+                        <SelectItem value="install_lead">Install Lead</SelectItem>
+                        <SelectItem value="comfort_advisor">Comfort Advisor</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {(t.tech_type === "service" || t.tech_type === "install") && (
+                      <button
+                        onClick={() => void toggleCanSell(t)}
+                        disabled={saving === t.id}
+                        className={cn(
+                          "text-[10px] font-medium rounded-pill px-1.5 py-0.5 border transition-colors",
+                          t.can_sell
+                            ? "bg-ai-tint text-ai-ink border-ai-tint-border"
+                            : "bg-muted text-muted-foreground border-border hover:bg-ai-tint hover:text-ai-ink",
+                        )}
+                        title="Toggle selling permission"
+                      >
+                        {t.can_sell ? "Can sell" : "No sell"}
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-ink-muted whitespace-nowrap">$/hr burden rate</span>
+                    <div className="relative w-24">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] text-ink-muted">$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        defaultValue={t.cost_rate ?? 0}
+                        onBlur={(e) => void changeCostRate(t, e.target.value)}
+                        disabled={saving === t.id}
+                        className="w-full h-6 pl-4 pr-2 text-[11px] rounded-lg border border-line bg-raised text-ink focus:outline-none focus:ring-1 focus:ring-ink/20"
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

@@ -36,12 +36,7 @@ Deno.serve(async (req: Request) => {
     const jwt = req.headers.get("Authorization")?.replace("Bearer ", "");
     if (!jwt) return json({ error: "Unauthorized" }, 401);
 
-    const userClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: `Bearer ${jwt}` } } },
-    );
-    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    const { data: { user }, error: authError } = await serviceClient.auth.getUser(jwt);
     if (authError || !user) return json({ error: "Unauthorized" }, 401);
 
     // Resolve tenant from the users table

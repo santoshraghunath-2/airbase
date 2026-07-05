@@ -15,6 +15,7 @@ import {
   Calculator,
   TrendingUp,
   BarChart2,
+  Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,7 +33,8 @@ const NAV_ITEMS = [
   { label: "Memberships",  icon: BadgeCheck,    path: "memberships",  roles: null },
   { label: "Estimates",      icon: Calculator,   path: "estimates",      roles: null },
   { label: "Opportunities",  icon: TrendingUp,  path: "opportunities",  roles: null },
-  { label: "Analytics",      icon: BarChart2,   path: "analytics",      roles: null },
+  { label: "Campaigns",      icon: Megaphone,   path: "campaigns",      roles: null },
+  { label: "Analytics",     icon: BarChart2,   path: "analytics",      roles: null },
   { label: "AI Settings",  icon: Bot,           path: "ai-settings",  roles: ["owner"] },
   { label: "Settings",   icon: Settings,        path: "settings",   roles: ["owner"] },
 ] as const;

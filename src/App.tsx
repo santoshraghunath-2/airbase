@@ -29,6 +29,7 @@ import EstimateBuilderPage from "@/features/estimates/EstimateBuilderPage";
 import OpportunitiesPage from "@/features/opportunities/OpportunitiesPage";
 import CustomerPortalPage from "@/features/portal/CustomerPortalPage";
 import ProfitabilityPage from "@/features/analytics/ProfitabilityPage";
+import CampaignsPage from "@/features/campaigns/CampaignsPage";
 
 function RouteGuard({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
@@ -119,6 +120,7 @@ export default function App() {
             <Route path="estimates/new" element={<EstimateBuilderPage />} />
             <Route path="estimates/:estimateId" element={<EstimateBuilderPage />} />
             <Route path="opportunities" element={<OpportunitiesPage />} />
+            <Route path="campaigns"     element={<CampaignsPage />} />
             <Route path="analytics"     element={<ProfitabilityPage />} />
             <Route path="settings"     element={<SettingsPage />} />
             <Route path="ai-settings"  element={<AISettingsPage />} />

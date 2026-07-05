@@ -4,14 +4,15 @@ import {
   format, startOfDay, endOfDay, startOfWeek, endOfWeek,
   addDays, differenceInDays,
 } from "date-fns";
-import { ArrowRight, CheckCircle, MessageSquare, RotateCcw } from "lucide-react";
+import { ArrowRight, CheckCircle, MessageSquare, RefreshCw, RotateCcw } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AIBadge } from "@/components/ui/ai-badge";
 import { StatusDot } from "@/components/ui/status-dot";
 import { formatCurrency, jobTypeLabel, initials } from "@/lib/utils";
-import type { JobWithRelations } from "@/types/database.types";
+import { useToast } from "@/hooks/use-toast";
+import type { BriefingRow, JobWithRelations } from "@/types/database.types";
 
 interface DashboardStats {
   jobsByStatus: Record<string, number>;
@@ -230,11 +231,85 @@ function AgingBucket({
   );
 }
 
+// ─── BriefingCard ─────────────────────────────────────────────────────────────
+
+function BriefingCard({
+  briefing,
+  onGenerate,
+  generating,
+}: {
+  briefing: BriefingRow | null;
+  onGenerate: () => void;
+  generating: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-ai-tint-border bg-ai-tint px-6 py-5">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-ai text-base">✦</span>
+          <span className="text-sm font-semibold text-ai-ink">Weekly Briefing</span>
+          {briefing && (
+            <span className="text-xs text-ai-ink opacity-60">
+              Week of {briefing.period_start}
+            </span>
+          )}
+        </div>
+        <button
+          onClick={onGenerate}
+          disabled={generating}
+          className="flex items-center gap-1.5 text-xs text-ai-ink hover:opacity-70 transition-opacity disabled:opacity-40"
+        >
+          <RefreshCw className={`h-3 w-3 ${generating ? "animate-spin" : ""}`} />
+          {generating ? "Generating…" : "Regenerate"}
+        </button>
+      </div>
+
+      {!briefing ? (
+        <p className="text-sm text-ai-ink opacity-70 py-2">
+          No briefing yet.{" "}
+          <button onClick={onGenerate} disabled={generating} className="underline hover:opacity-70">
+            Generate now
+          </button>
+          {" "}to get your first summary.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-[15px] font-medium text-ai-ink leading-snug">{briefing.headline}</p>
+          {briefing.highlights.length > 0 && (
+            <ul className="space-y-1">
+              {briefing.highlights.map((h, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-ai-ink">
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-ai flex-shrink-0" />
+                  {h}
+                </li>
+              ))}
+            </ul>
+          )}
+          {briefing.watch_items.length > 0 && (
+            <div className="rounded-lg bg-waiting-bg border border-waiting-border px-4 py-3 space-y-1">
+              {briefing.watch_items.map((w, i) => (
+                <p key={i} className="flex items-start gap-2 text-sm text-waiting-text">
+                  <span className="mt-0.5 flex-shrink-0">⚠</span>
+                  {w}
+                </p>
+              ))}
+            </div>
+          )}
+          <p className="text-sm text-ai-ink italic border-t border-ai-tint-border pt-3">
+            {briefing.recommendation}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── DashboardPage ────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const { tenant } = useAuth();
   const { tenantSlug } = useParams<{ tenantSlug: string }>();
+  const { toast } = useToast();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [todaysJobs, setTodaysJobs] = useState<JobWithRelations[]>([]);
   const [tomorrowJobs, setTomorrowJobs] = useState<JobWithRelations[]>([]);
@@ -245,10 +320,13 @@ export default function DashboardPage() {
   const [recentActions, setRecentActions] = useState<AgentAction[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmedIds, setConfirmedIds] = useState<Set<string>>(new Set());
+  const [briefing, setBriefing] = useState<BriefingRow | null | undefined>(undefined);
+  const [generatingBriefing, setGeneratingBriefing] = useState(false);
 
   useEffect(() => {
     if (!tenant) return;
     void loadDashboard();
+    void loadBriefing();
   }, [tenant]);
 
   async function loadDashboard() {
@@ -389,6 +467,36 @@ export default function DashboardPage() {
       setStats({ jobsByStatus, revenueToday, revenueThisWeek, unassignedCount: jobsByStatus["unassigned"] ?? 0, aiHandledToday });
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadBriefing() {
+    if (!tenant) return;
+    const { data } = await supabase
+      .from("briefings")
+      .select("*")
+      .eq("tenant_id", tenant.id)
+      .order("generated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setBriefing((data as BriefingRow | null) ?? null);
+  }
+
+  async function handleGenerateBriefing() {
+    setGeneratingBriefing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("weekly-briefing");
+      if (error) throw error;
+      if (data?.briefing) {
+        await loadBriefing();
+        toast({ title: "Briefing generated" });
+      } else {
+        toast({ title: "No activity to summarize yet", variant: "default" });
+      }
+    } catch {
+      toast({ title: "Failed to generate briefing", variant: "destructive" });
+    } finally {
+      setGeneratingBriefing(false);
     }
   }
 
@@ -546,6 +654,15 @@ export default function DashboardPage() {
             ai
           />
         </div>
+
+        {/* Weekly Briefing */}
+        {briefing !== undefined && (
+          <BriefingCard
+            briefing={briefing}
+            onGenerate={handleGenerateBriefing}
+            generating={generatingBriefing}
+          />
+        )}
 
         {/* Tech utilization strip */}
         <div className="rounded-xl border border-line bg-paper px-5 py-4">

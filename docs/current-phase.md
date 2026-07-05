@@ -40,7 +40,7 @@ Build in this sequence:
 - [x] Job profitability analytics — margin by tech, zone, job type, customer
 - [x] Marketing campaigns — AI-drafted, operator-reviewed, scheduled sends (email/SMS)
 - [x] Google/Yelp review solicitation routing by satisfaction score
-- [ ] Weekly AI business briefing — auto-generated Monday morning summary email to owner
+- [x] Weekly AI business briefing — in-app briefing card, GitHub Actions schedule Sunday 11pm PST
 
 ## What Is NOT In Phase 3
 

@@ -19,6 +19,29 @@ highest effort-to-impact ratio in the entire product. Approved for Phase 2 sprin
 
 ## Phase 3 (Revenue Intelligence)
 
+### Weekly briefing — email delivery
+
+Deliver the Monday briefing via email in addition to (or instead of) the in-app card.
+
+- **SendGrid transactional email**: compose a styled HTML email from `briefings` row fields; send to tenant owner's email on briefing generation.
+- **Tenant preference**: owner can opt out of email and view in-app only (Settings > Notifications).
+- **Trigger**: after `weekly-briefing` edge function inserts the row, fire a `send-briefing-email` function.
+- **Template**: plain, readable — headline bold at top, highlights as bullets, watch items in amber box, recommendation in italics.
+
+Blocked on: none. Ready to build once in-app widget is validated.
+
+### Weekly briefing — in-app push notification
+
+Push a browser/PWA notification to the tenant owner when a new briefing is generated (Monday morning).
+
+- Requires `push_subscriptions` table + Supabase Realtime subscription or Web Push API.
+- Notification payload: `{ title: "Your weekly briefing is ready", body: briefing.headline }`.
+- User must grant browser push permission (prompt after first briefing generation).
+
+Blocked on: push subscription infrastructure (not yet built).
+
+---
+
 ### AI/Manual toggle switches (settings)
 
 Per-tenant settings toggles for any feature where AI auto-executes vs. requires operator approval:

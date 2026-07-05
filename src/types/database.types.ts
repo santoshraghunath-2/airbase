@@ -577,6 +577,21 @@ export interface ReviewRequestRow {
   created_at: string;
 }
 
+export interface BriefingRow {
+  id: string;
+  tenant_id: string;
+  period_start: string;
+  period_end: string;
+  headline: string;
+  highlights: string[];
+  watch_items: string[];
+  recommendation: string;
+  metrics_snapshot: Record<string, unknown>;
+  model_used: string | null;
+  generated_at: string;
+  created_at: string;
+}
+
 export interface PortalInvitationRow {
   id: string;
   tenant_id: string;
@@ -620,6 +635,7 @@ export type Opportunity = OpportunityRow;
 export type JobCrew = JobCrewRow;
 export type PortalInvitation = PortalInvitationRow;
 export type ReviewRequest = ReviewRequestRow;
+export type Briefing = BriefingRow;
 
 // ─── Join types ───────────────────────────────────────────────────────────────
 export type JobWithRelations = JobRow & {

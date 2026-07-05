@@ -20,19 +20,28 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatPhone, jobTypeLabel } from "@/lib/utils";
-import type { Customer, ServiceLocation, JobType } from "@/types/database.types";
+import type { Customer, ServiceLocation, JobType, VisitReason } from "@/types/database.types";
 
 const JOB_TYPES: JobType[] = [
   "plumbing_service", "drain_cleaning", "water_heater_repair", "water_heater_install",
   "hvac_service", "hvac_repair", "hvac_install", "hvac_maintenance",
   "electrical_service", "electrical_repair", "electrical_install",
-  "general_maintenance", "estimate_only", "warranty_call", "recall",
+  "general_maintenance", "estimate_only",
+];
+
+const VISIT_REASONS = [
+  { value: "new_request",    label: "New Request" },
+  { value: "callback",       label: "Callback — prior work failed (no charge)" },
+  { value: "parts_warranty", label: "Parts Warranty — manufacturer covers part, labor billed" },
+  { value: "labor_warranty", label: "Labor Warranty — company covers all ($0)" },
+  { value: "recall",         label: "Recall — manufacturer ($0, flag for claim)" },
 ];
 
 const schema = z.object({
   customer_id: z.string().min(1, "Select a customer"),
   location_id: z.string().min(1, "Select a service location"),
   job_type: z.string().min(1, "Select a job type"),
+  visit_reason: z.string().default("new_request"),
   priority: z.string().default("normal"),
   description: z.string().optional(),
   scheduled_start: z.string().optional(),
@@ -134,6 +143,7 @@ export default function NewJobPage() {
         customer_id:                  values.customer_id,
         location_id:                  values.location_id,
         job_type:                     values.job_type,
+        visit_reason:                 (values.visit_reason as VisitReason) ?? "new_request",
         priority:                     values.priority,
         status:                       "unassigned",
         description:                  values.description || null,
@@ -299,6 +309,27 @@ export default function NewJobPage() {
                   )}
                 />
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Visit Reason</Label>
+              <Controller
+                name="visit_reason"
+                control={control}
+                defaultValue="new_request"
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value ?? "new_request"}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {VISIT_REASONS.map((r) => (
+                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </div>
 
             <div className="space-y-1.5">

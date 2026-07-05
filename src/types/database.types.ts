@@ -29,7 +29,14 @@ export type JobType =
   | "electrical_install"
   | "general_maintenance"
   | "estimate_only"
-  | "warranty_call"
+  | "warranty_call" // @deprecated — use visit_reason: 'labor_warranty' instead
+  | "recall";       // @deprecated — use visit_reason: 'recall' instead
+
+export type VisitReason =
+  | "new_request"
+  | "callback"
+  | "parts_warranty"
+  | "labor_warranty"
   | "recall";
 export type PricebookItemType = "service" | "part" | "material" | "labor" | "fee";
 export type InvoiceStatus =
@@ -193,6 +200,8 @@ export interface JobRow {
   tech_id: string | null;
   dispatched_by: string | null;
   job_type: JobType;
+  visit_reason: VisitReason;
+  parent_job_id: string | null;
   status: JobStatus;
   priority: JobPriority;
   description: string | null;
@@ -460,7 +469,7 @@ export interface Database {
       };
       jobs: {
         Row: JobRow;
-        Insert: Omit<JobRow, "id" | "created_at" | "updated_at"> & { id?: string };
+        Insert: Omit<JobRow, "id" | "created_at" | "updated_at" | "visit_reason" | "parent_job_id"> & { id?: string; visit_reason?: VisitReason; parent_job_id?: string | null };
         Update: Partial<Omit<JobRow, "id" | "created_at">>;
       };
       pricebook_items: {
@@ -528,6 +537,7 @@ export interface Database {
       job_status: JobStatus;
       job_priority: JobPriority;
       job_type: JobType;
+      visit_reason: VisitReason;
       pricebook_item_type: PricebookItemType;
       invoice_status: InvoiceStatus;
     };

@@ -19,6 +19,22 @@ highest effort-to-impact ratio in the entire product. Approved for Phase 2 sprin
 
 ## Phase 3 (Revenue Intelligence)
 
+### AI/Manual toggle switches (settings)
+
+Per-tenant settings toggles for any feature where AI auto-executes vs. requires operator approval:
+
+| Feature | AI mode | Manual mode |
+|---|---|---|
+| Review request | Auto-send on job completion (new_request / parts_warranty) | Dispatcher clicks "Request Review" button |
+| Dispatch suggestions | AI assigns, operator can override | AI proposes, dispatcher approves every assignment |
+| Invoice auto-send | AI sends if confidence ≥ threshold | All invoices require dispatcher review |
+| Membership outreach | AI sends pre-expiry SMS automatically | Operator reviews and sends each batch |
+
+Build as `agent_config.auto_execute` boolean — this column already exists in `agent_config` table. UI needed: Settings page toggle row per agent type. Builds operator comfort during onboarding; can be loosened over time as trust is established.
+
+---
+
+
 ### AI agents — prioritized
 
 | Feature | What it does | Score | Notes |

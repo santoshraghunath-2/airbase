@@ -18,10 +18,12 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import type { JobWithRelations } from "@/types/database.types";
+import type { JobWithRelations, VisitReason } from "@/types/database.types";
 
 const schema = z.object({
   job_type:                   z.string().min(1, "Job type is required"),
+  visit_reason:               z.string().default("new_request"),
+  parent_job_id:              z.string().optional(),
   priority:                   z.string().min(1),
   description:                z.string().optional(),
   scheduled_start:            z.string().optional(),
@@ -44,8 +46,17 @@ const JOB_TYPES = [
   { value: "electrical_install",  label: "Electrical Install" },
   { value: "general_maintenance", label: "General Maintenance" },
   { value: "estimate_only",       label: "Estimate Only" },
-  { value: "warranty_call",       label: "Warranty Call" },
-  { value: "recall",              label: "Recall" },
+  // Legacy values kept for display on old records; no longer selectable for new jobs
+  { value: "warranty_call",       label: "Warranty Call (legacy)" },
+  { value: "recall",              label: "Recall (legacy)" },
+];
+
+const VISIT_REASONS = [
+  { value: "new_request",    label: "New Request" },
+  { value: "callback",       label: "Callback — prior work failed (no charge)" },
+  { value: "parts_warranty", label: "Parts Warranty — manufacturer covers part, labor billed" },
+  { value: "labor_warranty", label: "Labor Warranty — company covers all ($0)" },
+  { value: "recall",         label: "Recall — manufacturer ($0, flag for claim)" },
 ];
 
 interface Props {
@@ -62,10 +73,13 @@ interface MemberBadgeData {
   priority_dispatch: boolean;
 }
 
+interface RecentJob { id: string; description: string | null; job_type: string; scheduled_start: string | null; }
+
 export default function JobEditDialog({ open, job, onClose, onSaved }: Props) {
   const { tenant } = useAuth();
-  const [saving, setSaving]       = useState(false);
-  const [membership, setMembership] = useState<MemberBadgeData | null>(null);
+  const [saving, setSaving]           = useState(false);
+  const [membership, setMembership]   = useState<MemberBadgeData | null>(null);
+  const [recentJobs, setRecentJobs]   = useState<RecentJob[]>([]);
 
   useEffect(() => {
     if (!open || !job?.customer_id || !tenant?.id) { setMembership(null); return; }
@@ -96,6 +110,8 @@ export default function JobEditDialog({ open, job, onClose, onSaved }: Props) {
     if (open && job) {
       reset({
         job_type:                   job.job_type,
+        visit_reason:               job.visit_reason ?? "new_request",
+        parent_job_id:              job.parent_job_id ?? "",
         priority:                   job.priority ?? "normal",
         description:                job.description ?? "",
         scheduled_start:            job.scheduled_start
@@ -105,6 +121,27 @@ export default function JobEditDialog({ open, job, onClose, onSaved }: Props) {
       });
     }
   }, [open, job, reset]);
+
+  // Load customer's recent jobs when visit_reason indicates a follow-up visit
+  const visitReason = watch("visit_reason");
+  useEffect(() => {
+    if (!open || !job?.customer_id || visitReason === "new_request") {
+      setRecentJobs([]);
+      return;
+    }
+    void (async () => {
+      const { data } = await supabase
+        .from("jobs")
+        .select("id, description, job_type, scheduled_start")
+        .eq("customer_id", job.customer_id)
+        .eq("tenant_id", tenant!.id)
+        .neq("id", job.id)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(8);
+      setRecentJobs((data as RecentJob[]) ?? []);
+    })();
+  }, [open, job?.customer_id, job?.id, tenant, visitReason]);
 
   async function onSubmit(values: FormValues) {
     if (!tenant || !job) return;
@@ -125,6 +162,8 @@ export default function JobEditDialog({ open, job, onClose, onSaved }: Props) {
         .from("jobs")
         .update({
           job_type:                   values.job_type,
+          visit_reason:               (values.visit_reason as VisitReason) ?? "new_request",
+          parent_job_id:              values.parent_job_id || null,
           priority:                   values.priority,
           description:                values.description || null,
           scheduled_start:            scheduledStart,
@@ -202,6 +241,54 @@ export default function JobEditDialog({ open, job, onClose, onSaved }: Props) {
               <p className="text-xs text-destructive">{errors.job_type.message}</p>
             )}
           </div>
+
+          {/* Visit reason */}
+          <div className="space-y-1.5">
+            <Label>Visit Reason</Label>
+            <Select
+              value={watch("visit_reason") ?? "new_request"}
+              onValueChange={(v) => {
+                setValue("visit_reason", v);
+                if (v === "new_request") setValue("parent_job_id", "");
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {VISIT_REASONS.map((r) => (
+                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Prior job link — shown when this is a follow-up visit */}
+          {watch("visit_reason") !== "new_request" && (
+            <div className="space-y-1.5">
+              <Label>
+                Prior Job <span className="text-muted-foreground font-normal text-xs">(optional)</span>
+              </Label>
+              <Select
+                value={watch("parent_job_id") ?? ""}
+                onValueChange={(v) => setValue("parent_job_id", v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Link to original job…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No linked job</SelectItem>
+                  {recentJobs.map((j) => (
+                    <SelectItem key={j.id} value={j.id}>
+                      {j.job_type.replace(/_/g, " ")}
+                      {j.scheduled_start ? ` — ${format(new Date(j.scheduled_start), "MMM d")}` : ""}
+                      {j.description ? ` — ${j.description.slice(0, 40)}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Priority */}
           <div className="space-y-1.5">

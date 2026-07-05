@@ -101,6 +101,12 @@ export default function TechJobDetail() {
         await supabase.functions.invoke("close-job", {
           body: { job_id: job.id, notes: notes || null },
         });
+
+        // Auto-send review request for new_request / parts_warranty visits
+        // Fire-and-forget: don't block the UI on this
+        void supabase.functions.invoke("request-review", {
+          body: { job_id: job.id, manual: false },
+        });
       } else {
         const { error } = await supabase
           .from("jobs")

@@ -37,9 +37,9 @@ Build in this sequence:
 - [x] Operator portal management from CustomerDetailPage (generate, copy, resend)
 
 ### Sprint 4 — Analytics & Intelligence (Week 10–14)
-- [ ] Job profitability analytics — margin by tech, zone, job type, customer
-- [ ] Marketing campaigns — AI-drafted, operator-reviewed, scheduled sends (email/SMS)
-- [ ] Google/Yelp review solicitation routing by satisfaction score
+- [x] Job profitability analytics — margin by tech, zone, job type, customer
+- [x] Marketing campaigns — AI-drafted, operator-reviewed, scheduled sends (email/SMS)
+- [x] Google/Yelp review solicitation routing by satisfaction score
 - [ ] Weekly AI business briefing — auto-generated Monday morning summary email to owner
 
 ## What Is NOT In Phase 3

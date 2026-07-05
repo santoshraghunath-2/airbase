@@ -563,6 +563,20 @@ export interface OpportunityRow {
   updated_at: string;
 }
 
+export interface ReviewRequestRow {
+  id: string;
+  tenant_id: string;
+  job_id: string;
+  customer_id: string;
+  sent_at: string;
+  sent_by: string | null;
+  channel: string;
+  review_url: string | null;
+  status: string;
+  error: string | null;
+  created_at: string;
+}
+
 export interface PortalInvitationRow {
   id: string;
   tenant_id: string;
@@ -605,6 +619,7 @@ export type EstimateLineItem = EstimateLineItemRow;
 export type Opportunity = OpportunityRow;
 export type JobCrew = JobCrewRow;
 export type PortalInvitation = PortalInvitationRow;
+export type ReviewRequest = ReviewRequestRow;
 
 // ─── Join types ───────────────────────────────────────────────────────────────
 export type JobWithRelations = JobRow & {

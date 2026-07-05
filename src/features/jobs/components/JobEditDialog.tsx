@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { BadgeCheck, Loader2 } from "lucide-react";
+import { BadgeCheck, Loader2, Star } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -74,12 +74,15 @@ interface MemberBadgeData {
 }
 
 interface RecentJob { id: string; description: string | null; job_type: string; scheduled_start: string | null; }
+interface ReviewRequest { id: string; sent_at: string; sent_by: string | null; }
 
 export default function JobEditDialog({ open, job, onClose, onSaved }: Props) {
   const { tenant } = useAuth();
-  const [saving, setSaving]           = useState(false);
-  const [membership, setMembership]   = useState<MemberBadgeData | null>(null);
-  const [recentJobs, setRecentJobs]   = useState<RecentJob[]>([]);
+  const [saving, setSaving]               = useState(false);
+  const [membership, setMembership]       = useState<MemberBadgeData | null>(null);
+  const [recentJobs, setRecentJobs]       = useState<RecentJob[]>([]);
+  const [reviewRequest, setReviewRequest] = useState<ReviewRequest | null | undefined>(undefined);
+  const [sendingReview, setSendingReview] = useState(false);
 
   useEffect(() => {
     if (!open || !job?.customer_id || !tenant?.id) { setMembership(null); return; }
@@ -121,6 +124,45 @@ export default function JobEditDialog({ open, job, onClose, onSaved }: Props) {
       });
     }
   }, [open, job, reset]);
+
+  // Check if a review request was already sent for this job
+  const isComplete = job?.status === "completed" || job?.status === "invoiced";
+  useEffect(() => {
+    if (!open || !job?.id || !isComplete) { setReviewRequest(undefined); return; }
+    void (async () => {
+      const { data } = await supabase
+        .from("review_requests")
+        .select("id, sent_at, sent_by")
+        .eq("job_id", job.id)
+        .maybeSingle();
+      setReviewRequest((data as ReviewRequest | null) ?? null);
+    })();
+  }, [open, job?.id, isComplete]);
+
+  async function sendReviewRequest() {
+    if (!job) return;
+    setSendingReview(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("request-review", {
+        body: { job_id: job.id, manual: true },
+      });
+      if (error) throw error;
+      const result = data as { sent: boolean; reason?: string };
+      if (!result.sent) throw new Error(result.reason ?? "Could not send review request");
+      toast.success("Review request sent");
+      // Reload to show sent state
+      const { data: rr } = await supabase
+        .from("review_requests")
+        .select("id, sent_at, sent_by")
+        .eq("job_id", job.id)
+        .maybeSingle();
+      setReviewRequest((rr as ReviewRequest | null) ?? null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send review request");
+    } finally {
+      setSendingReview(false);
+    }
+  }
 
   // Load customer's recent jobs when visit_reason indicates a follow-up visit
   const visitReason = watch("visit_reason");
@@ -346,6 +388,47 @@ export default function JobEditDialog({ open, job, onClose, onSaved }: Props) {
               {...register("description")}
             />
           </div>
+
+          {/* Review request — only shown when job is complete/invoiced */}
+          {isComplete && reviewRequest !== undefined && (
+            <div className="rounded-lg border border-line bg-raised px-3 py-2.5 flex items-center justify-between gap-3">
+              {reviewRequest ? (
+                <div className="flex items-center gap-2 text-xs text-confirmed-text">
+                  <Star className="h-3.5 w-3.5 fill-current" />
+                  <span>
+                    Review request sent{" "}
+                    {format(new Date(reviewRequest.sent_at), "MMM d")}{" "}
+                    {reviewRequest.sent_by ? "" : "(auto)"}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-xs font-medium text-ink">Request a Review</p>
+                    <p className="text-[10px] text-ink-muted">
+                      {tenant?.google_review_url || tenant?.yelp_review_url
+                        ? "Sends a Google review link via SMS"
+                        : "Add a Google/Yelp URL in Settings first"}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs flex-shrink-0"
+                    onClick={sendReviewRequest}
+                    disabled={sendingReview || (!tenant?.google_review_url && !tenant?.yelp_review_url)}
+                  >
+                    {sendingReview
+                      ? <Loader2 className="h-3 w-3 animate-spin" />
+                      : <Star className="h-3 w-3 mr-1" />
+                    }
+                    Send
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose}>

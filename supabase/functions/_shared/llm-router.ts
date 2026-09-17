@@ -6,7 +6,7 @@ import OpenAI from "npm:openai";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type ModelProvider = "anthropic" | "openai" | "deepseek" | "kimi";
+export type ModelProvider = "anthropic" | "openai" | "deepseek";
 
 export interface ModelConfig {
   provider: ModelProvider;
@@ -50,41 +50,36 @@ export const MODEL_REGISTRY: Record<string, ModelConfig> = {
     supportsTools: true,
     costTier: "low",
   },
-  "deepseek-chat": {
+  // deepseek-flash = DeepSeek V4.1 Flash: 1M context, tool calls, $0.15/1M input
+  "deepseek-flash": {
     provider: "deepseek",
-    modelId: "deepseek-chat",
-    displayName: "DeepSeek V4",
-    maxTokensLimit: 4096,
-    supportsTools: true,
-    costTier: "low",
-  },
-  "moonshot-v1-8k": {
-    provider: "kimi",
-    modelId: "moonshot-v1-8k",
-    displayName: "Kimi K2.5 (8k)",
+    modelId: "deepseek-flash",
+    displayName: "DeepSeek V4.1 Flash",
     maxTokensLimit: 8192,
     supportsTools: true,
     costTier: "low",
   },
-  "moonshot-v1-32k": {
-    provider: "kimi",
-    modelId: "moonshot-v1-32k",
-    displayName: "Kimi K2.5 (32k)",
-    maxTokensLimit: 32768,
+  "deepseek-v4-pro": {
+    provider: "deepseek",
+    modelId: "deepseek-v4-pro",
+    displayName: "DeepSeek V4 Pro",
+    maxTokensLimit: 8192,
+    supportsTools: true,
+    costTier: "medium",
+  },
+  // Legacy alias — kept so old agent_config rows resolve
+  "deepseek-chat": {
+    provider: "deepseek",
+    modelId: "deepseek-flash",
+    displayName: "DeepSeek (legacy → Flash)",
+    maxTokensLimit: 8192,
     supportsTools: true,
     costTier: "low",
   },
-  "moonshot-v1-128k": {
-    provider: "kimi",
-    modelId: "moonshot-v1-128k",
-    displayName: "Kimi K2.5 (128k)",
-    maxTokensLimit: 131072,
-    supportsTools: false,
-    costTier: "medium",
-  },
 };
 
-export const PLATFORM_DEFAULT_MODEL = "claude-sonnet-4-6";
+// DeepSeek V4.1 Flash: 1M context, tool calls, $0.15/1M input — default for all agents.
+export const PLATFORM_DEFAULT_MODEL = "deepseek-flash";
 
 // ─── Tool schema (always declare in Anthropic format; router translates) ──────
 
@@ -137,13 +132,6 @@ function getDeepSeekClient() {
   return new OpenAI({
     apiKey: Deno.env.get("DEEPSEEK_API_KEY")!,
     baseURL: "https://api.deepseek.com/v1",
-  });
-}
-
-function getKimiClient() {
-  return new OpenAI({
-    apiKey: Deno.env.get("KIMI_API_KEY")!,
-    baseURL: "https://api.moonshot.cn/v1",
   });
 }
 
@@ -276,8 +264,6 @@ export async function callAgent(options: AgentCallOptions): Promise<AgentCallRes
       return callOpenAICompatible(getOpenAIClient(), "openai", modelConfig.modelId, options);
     case "deepseek":
       return callOpenAICompatible(getDeepSeekClient(), "deepseek", modelConfig.modelId, options);
-    case "kimi":
-      return callOpenAICompatible(getKimiClient(), "kimi", modelConfig.modelId, options);
   }
 }
 
@@ -345,9 +331,7 @@ export async function runAgentLoop(
   const client =
     modelConfig.provider === "openai"
       ? getOpenAIClient()
-      : modelConfig.provider === "deepseek"
-      ? getDeepSeekClient()
-      : getKimiClient();
+      : getDeepSeekClient();
 
   const messages: OpenAI.ChatCompletionMessageParam[] = [
     { role: "system", content: callOptions.systemPrompt },

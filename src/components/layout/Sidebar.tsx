@@ -16,6 +16,8 @@ import {
   TrendingUp,
   BarChart2,
   Megaphone,
+  AlertTriangle,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,6 +32,8 @@ const NAV_ITEMS = [
   { label: "Booking",    icon: MessageSquare,   path: "booking",    roles: null },
   { label: "Pricebook",  icon: BookOpen,        path: "pricebook",  roles: null },
   { label: "Invoices",     icon: FileText,      path: "invoices",     roles: null },
+  { label: "Invoice Review", icon: AlertTriangle, path: "invoices/review", roles: ["owner", "office_manager", "dispatcher"] },
+  { label: "Booking Agent",  icon: MessageCircle, path: "booking-agent",   roles: ["owner", "office_manager", "dispatcher"] },
   { label: "Memberships",  icon: BadgeCheck,    path: "memberships",  roles: null },
   { label: "Estimates",      icon: Calculator,   path: "estimates",      roles: null },
   { label: "Opportunities",  icon: TrendingUp,  path: "opportunities",  roles: null },

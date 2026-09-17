@@ -27,3 +27,6 @@ Thumbs.db
 # Supabase
 .supabase/
 supabase/.temp/
+
+# Nested repo clone (not a submodule)
+airbase/

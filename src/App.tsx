@@ -30,6 +30,8 @@ import OpportunitiesPage from "@/features/opportunities/OpportunitiesPage";
 import CustomerPortalPage from "@/features/portal/CustomerPortalPage";
 import ProfitabilityPage from "@/features/analytics/ProfitabilityPage";
 import CampaignsPage from "@/features/campaigns/CampaignsPage";
+import InvoiceReviewQueuePage from "@/features/invoicing/InvoiceReviewQueuePage";
+import BookingAgentDashboardPage from "@/features/booking/BookingAgentDashboardPage";
 
 function RouteGuard({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
@@ -115,6 +117,8 @@ export default function App() {
             <Route path="invoices"     element={<InvoiceListPage />} />
             <Route path="invoices/new" element={<InvoiceBuilderPage />} />
             <Route path="invoices/:invoiceId" element={<InvoiceBuilderPage />} />
+            <Route path="invoices/review" element={<InvoiceReviewQueuePage />} />
+            <Route path="booking-agent" element={<BookingAgentDashboardPage />} />
             <Route path="memberships"  element={<MembershipsPage />} />
             <Route path="estimates"    element={<EstimatesPage />} />
             <Route path="estimates/new" element={<EstimateBuilderPage />} />

@@ -115,6 +115,19 @@ serve(async (req: Request) => {
       );
     }
 
+    // Fire dispatch agent — fire-and-forget, don't block job creation response
+    void fetch(
+      `${Deno.env.get("SUPABASE_URL")}/functions/v1/dispatch-agent`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ job_id: job.id }),
+      }
+    );
+
     return new Response(JSON.stringify({ job }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

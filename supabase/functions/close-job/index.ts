@@ -95,6 +95,19 @@ serve(async (req: Request) => {
       );
     }
 
+    // Fire invoice agent — fire-and-forget, don't block response
+    void fetch(
+      `${Deno.env.get("SUPABASE_URL")}/functions/v1/invoice-agent`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ job_id: body.job_id }),
+      }
+    );
+
     return new Response(JSON.stringify({ success: true, job_id: body.job_id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

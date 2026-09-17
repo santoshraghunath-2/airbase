@@ -3,7 +3,6 @@ import { MessageSquare, CheckCircle, AlertCircle, Clock, UserX } from "lucide-re
 import { format, formatDistanceToNow } from "date-fns";
 import { supabase, realtimeClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ConversationRow } from "@/types/database.types";
@@ -150,7 +149,7 @@ export default function BookingAgentDashboardPage() {
 }
 
 function ConversationRow({ conv }: { conv: ConvWithCustomer }) {
-  const config = STATUS_CONFIG[conv.status] ?? STATUS_CONFIG.active;
+  const config = STATUS_CONFIG[conv.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.active;
   const Icon = config.icon;
 
   const msgCount = Array.isArray(conv.messages) ? (conv.messages as unknown[]).length : 0;

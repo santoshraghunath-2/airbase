@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AIBadge } from "@/components/ui/ai-badge";
 import { StatusDot } from "@/components/ui/status-dot";
 import { formatCurrency, jobTypeLabel, initials } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import type { BriefingRow, JobWithRelations } from "@/types/database.types";
 
 interface DashboardStats {
@@ -309,7 +309,6 @@ function BriefingCard({
 export default function DashboardPage() {
   const { tenant } = useAuth();
   const { tenantSlug } = useParams<{ tenantSlug: string }>();
-  const { toast } = useToast();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [todaysJobs, setTodaysJobs] = useState<JobWithRelations[]>([]);
   const [tomorrowJobs, setTomorrowJobs] = useState<JobWithRelations[]>([]);
@@ -489,12 +488,12 @@ export default function DashboardPage() {
       if (error) throw error;
       if (data?.briefing) {
         await loadBriefing();
-        toast({ title: "Briefing generated" });
+        toast.success("Briefing generated");
       } else {
-        toast({ title: "No activity to summarize yet", variant: "default" });
+        toast("No activity to summarize yet");
       }
     } catch {
-      toast({ title: "Failed to generate briefing", variant: "destructive" });
+      toast.error("Failed to generate briefing");
     } finally {
       setGeneratingBriefing(false);
     }

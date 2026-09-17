@@ -611,6 +611,32 @@ export interface JobCrewRow {
   created_at: string;
 }
 
+export interface ConversationRow {
+  id: string;
+  tenant_id: string;
+  customer_id: string | null;
+  customer_phone: string;
+  channel: "sms" | "voice";
+  status: "active" | "completed" | "escalated" | "abandoned";
+  job_id: string | null;
+  messages: Json;
+  context: Json;
+  escalation_reason: string | null;
+  last_message_at: string;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AgentProposal {
+  action_id: string;
+  tech_id: string;
+  confidence: number;
+  rationale: string;
+  alternative_tech_id?: string;
+  auto_executed: boolean;
+}
+
 // ─── Convenience aliases (matches old usage) ─────────────────────────────────
 export type Tenant = TenantRow;
 export type User = UserRow;
@@ -636,6 +662,7 @@ export type JobCrew = JobCrewRow;
 export type PortalInvitation = PortalInvitationRow;
 export type ReviewRequest = ReviewRequestRow;
 export type Briefing = BriefingRow;
+export type Conversation = ConversationRow;
 
 // ─── Join types ───────────────────────────────────────────────────────────────
 export type JobWithRelations = JobRow & {

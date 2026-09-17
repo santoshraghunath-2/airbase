@@ -301,23 +301,49 @@ async function escalateToHuman(args: {
 
 // ─── Tenant resolution ────────────────────────────────────────────────────────
 
-async function resolveTenantFromAgentId(agentId: string): Promise<string | null> {
-  // Retell agent IDs are stored in tenant settings or env
-  // Simple approach: use env mapping RETELL_AGENT_<AGENT_ID>=<TENANT_ID>
-  // Or store in agent_config table: settings->>'retell_agent_id'
-  const envKey = `RETELL_TENANT_${agentId.toUpperCase().replace(/-/g, "_")}`;
-  const fromEnv = Deno.env.get(envKey);
-  if (fromEnv) return fromEnv;
+interface TenantContext {
+  tenantId: string;
+  companyName: string;
+  timezone: string;
+}
 
-  // Fallback: look up in agent_config settings
-  const { data } = await supabase
+async function resolveTenant(agentId: string): Promise<TenantContext | null> {
+  // Primary: look up by retell_agent_id stored in agent_config.settings
+  // Each tenant's booking_voice agent_config row stores their Retell agent ID.
+  // To register a new tenant: INSERT into agent_config with
+  //   agent_type='booking_voice', settings='{"retell_agent_id":"agent_xxx"}'
+  const { data: configRow } = await supabase
     .from("agent_config")
-    .select("tenant_id")
+    .select("tenant_id, tenants(name, timezone)")
     .eq("agent_type", "booking_voice")
     .filter("settings->>'retell_agent_id'", "eq", agentId)
     .single();
 
-  return data?.tenant_id ?? null;
+  if (configRow) {
+    const tenant = configRow.tenants as { name: string; timezone: string } | null;
+    return {
+      tenantId: configRow.tenant_id as string,
+      companyName: tenant?.name ?? "Home Services",
+      timezone: tenant?.timezone ?? "America/Los_Angeles",
+    };
+  }
+
+  // Emergency fallback: env var RETELL_TENANT_DEFAULT=<tenant_uuid> for single-tenant deploys
+  const fallbackId = Deno.env.get("RETELL_TENANT_DEFAULT");
+  if (fallbackId) {
+    const { data: tenant } = await supabase
+      .from("tenants")
+      .select("name, timezone")
+      .eq("id", fallbackId)
+      .single();
+    return {
+      tenantId: fallbackId,
+      companyName: tenant?.name ?? "Home Services",
+      timezone: tenant?.timezone ?? "America/Los_Angeles",
+    };
+  }
+
+  return null;
 }
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
@@ -336,8 +362,15 @@ serve(async (req: Request) => {
 
     // ── Call lifecycle events ──────────────────────────────────────────────────
     if (event.event === "call_started") {
-      console.log(`Retell call started: ${event.call_id}`);
-      return new Response(JSON.stringify({ received: true }), {
+      // Return dynamic variables so Retell fills {{company_name}} in the system prompt.
+      // This is how multi-tenancy works with a shared agent template.
+      const ctx = await resolveTenant(event.agent_id);
+      const dynamicVars = ctx
+        ? { company_name: ctx.companyName }
+        : { company_name: "Home Services" };
+
+      console.log(`Retell call started: ${event.call_id} → ${dynamicVars.company_name}`);
+      return new Response(JSON.stringify({ dynamic_variables: dynamicVars }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -354,14 +387,15 @@ serve(async (req: Request) => {
     if (event.event === "function_call") {
       const fnEvent = event as RetellFunctionCallEvent;
 
-      const tenantId = await resolveTenantFromAgentId(fnEvent.agent_id);
-      if (!tenantId) {
-        return new Response(JSON.stringify({ result: "Configuration error: unknown agent." }), {
+      const ctx = await resolveTenant(fnEvent.agent_id);
+      if (!ctx) {
+        return new Response(JSON.stringify({ result: "Configuration error: unknown agent. Please call back." }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200, // Always 200 to Retell — errors go in result string
         });
       }
 
+      const { tenantId } = ctx;
       const callerPhone = fnEvent.from_number ?? "unknown";
       let args: Record<string, unknown>;
       try {

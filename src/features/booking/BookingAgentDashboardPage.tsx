@@ -5,16 +5,27 @@ import { supabase, realtimeClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { ConversationRow } from "@/types/database.types";
-
-type ConvWithCustomer = ConversationRow & {
+// booking_conversations is the production table (migration 015)
+type ConvWithCustomer = {
+  id: string;
+  tenant_id: string;
+  customer_id: string | null;
+  phone: string;
+  channel: string;
+  status: "active" | "resolved" | "escalated" | "abandoned";
+  job_id: string | null;
+  messages: unknown;
+  context: unknown;
+  last_message_at: string;
+  created_at: string;
+  updated_at: string;
   customers: { name: string; phone: string } | null;
   jobs: { job_type: string; scheduled_start: string | null } | null;
 };
 
 const STATUS_CONFIG = {
   active: { label: "Active", icon: MessageSquare, color: "bg-blue-100 text-blue-700" },
-  completed: { label: "Booked", icon: CheckCircle, color: "bg-green-100 text-green-700" },
+  resolved: { label: "Booked", icon: CheckCircle, color: "bg-green-100 text-green-700" },
   escalated: { label: "Escalated", icon: AlertCircle, color: "bg-red-100 text-red-700" },
   abandoned: { label: "Abandoned", icon: UserX, color: "bg-gray-100 text-gray-600" },
 } as const;
@@ -34,7 +45,7 @@ export default function BookingAgentDashboardPage() {
       .on("postgres_changes", {
         event: "*",
         schema: "public",
-        table: "conversations",
+        table: "booking_conversations",
         filter: `tenant_id=eq.${tenant.id}`,
       }, () => { void loadConversations(); })
       .subscribe();
@@ -47,22 +58,21 @@ export default function BookingAgentDashboardPage() {
     setLoading(true);
     try {
       const { data } = await supabase
-        .from("conversations")
+        .from("booking_conversations")
         .select(`
           *,
           customers(name, phone),
           jobs(job_type, scheduled_start)
         `)
         .eq("tenant_id", tenant.id)
-        .eq("channel", "sms")
-        .order("updated_at", { ascending: false })
+        .order("last_message_at", { ascending: false })
         .limit(100);
 
       const convs = (data ?? []) as ConvWithCustomer[];
       setConversations(convs);
 
       setStats({
-        booked: convs.filter((c) => c.status === "completed").length,
+        booked: convs.filter((c) => c.status === "resolved").length,
         escalated: convs.filter((c) => c.status === "escalated").length,
         abandoned: convs.filter((c) => c.status === "abandoned").length,
         active: convs.filter((c) => c.status === "active").length,
@@ -73,7 +83,7 @@ export default function BookingAgentDashboardPage() {
   }
 
   const activeConvs = conversations.filter((c) => c.status === "active");
-  const recentConvs = conversations.filter((c) => c.status !== "active").slice(0, 20);
+  const recentConvs = conversations.filter((c) => c.status !== "active" && c.status !== "abandoned").slice(0, 20);
 
   if (loading) {
     return (
@@ -153,7 +163,7 @@ function ConversationRow({ conv }: { conv: ConvWithCustomer }) {
   const Icon = config.icon;
 
   const msgCount = Array.isArray(conv.messages) ? (conv.messages as unknown[]).length : 0;
-  const lastActivity = formatDistanceToNow(new Date(conv.updated_at), { addSuffix: true });
+  const lastActivity = formatDistanceToNow(new Date(conv.last_message_at ?? conv.updated_at), { addSuffix: true });
 
   return (
     <Card className="p-4">
@@ -161,7 +171,7 @@ function ConversationRow({ conv }: { conv: ConvWithCustomer }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="font-medium text-sm truncate">
-              {conv.customers?.name ?? conv.customer_phone ?? "Unknown"}
+              {conv.customers?.name ?? conv.phone ?? "Unknown"}
             </span>
             <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${config.color}`}>
               <Icon className="h-3 w-3" />
@@ -169,16 +179,16 @@ function ConversationRow({ conv }: { conv: ConvWithCustomer }) {
             </span>
           </div>
           <div className="flex items-center gap-3 mt-0.5">
-            <span className="text-xs text-muted-foreground">{conv.customer_phone}</span>
+            <span className="text-xs text-muted-foreground">{conv.phone}</span>
             {conv.jobs && (
               <span className="text-xs text-muted-foreground">
                 → {conv.jobs.job_type.replace(/_/g, " ")}
                 {conv.jobs.scheduled_start && ` · ${format(new Date(conv.jobs.scheduled_start), "MMM d h:mma")}`}
               </span>
             )}
-            {conv.escalation_reason && (
-              <span className="text-xs text-red-600 truncate max-w-[200px]" title={conv.escalation_reason}>
-                {conv.escalation_reason.split(":")[0]}
+{conv.status === "escalated" && (
+              <span className="text-xs text-red-600 truncate max-w-[200px]">
+                Escalated
               </span>
             )}
           </div>

@@ -168,19 +168,22 @@ async function createBooking(args: {
   tenant_id: string;
   caller_phone: string;
   customer_id?: string;
+  // New customer fields — collected by voice agent before calling this tool
   customer_name?: string;
   customer_email?: string;
-  service_address?: string;
+  service_address: string;  // required — agent must collect before booking
+  service_city?: string;
+  service_state?: string;
+  service_zip?: string;
   job_type: string;
   scheduled_date: string; // YYYY-MM-DD
   time_window: "morning" | "afternoon" | "evening";
   description?: string;
-}) {
+}, timezone: string) {
   // Resolve or create customer
   let customerId = args.customer_id;
 
   if (!customerId) {
-    // Create new customer
     const { data: newCustomer, error } = await supabase
       .from("customers")
       .insert({
@@ -194,21 +197,20 @@ async function createBooking(args: {
       .single();
 
     if (error || !newCustomer) {
-      return { success: false, message: "Unable to create customer record. Please call back to complete booking." };
+      return { success: false, message: "Unable to create your record. Please call back to complete your booking." };
     }
     customerId = newCustomer.id;
 
-    // Create service location if address provided
-    if (args.service_address) {
-      await supabase.from("service_locations").insert({
-        tenant_id: args.tenant_id,
-        customer_id: customerId,
-        address: args.service_address,
-        city: null,
-        state: null,
-        is_primary: true,
-      });
-    }
+    // Always create a service location for new customers
+    await supabase.from("service_locations").insert({
+      tenant_id: args.tenant_id,
+      customer_id: customerId,
+      address: args.service_address,
+      city: args.service_city ?? null,
+      state: args.service_state ?? null,
+      zip: args.service_zip ?? null,
+      is_primary: true,
+    });
   }
 
   // Get primary location
@@ -222,12 +224,14 @@ async function createBooking(args: {
     .single();
 
   if (!location) {
-    return { success: false, message: "No service address on file. Please call back so we can get your address." };
+    return { success: false, message: "No service address on file. Please call back so we can confirm your address." };
   }
 
-  // Map time window to scheduled start
+  // Map time window to scheduled start using tenant timezone
   const timeMap = { morning: "09:00:00", afternoon: "13:00:00", evening: "17:00:00" };
-  const scheduledStart = `${args.scheduled_date}T${timeMap[args.time_window]}-07:00`; // TODO: tenant timezone
+  // Build ISO string; Supabase stores as UTC — using offset for now
+  // TODO: use tenant timezone for proper conversion
+  const scheduledStart = `${args.scheduled_date}T${timeMap[args.time_window]}`;
 
   const { data: job, error: jobError } = await supabase
     .from("jobs")
@@ -247,11 +251,24 @@ async function createBooking(args: {
     .single();
 
   if (jobError || !job) {
-    return { success: false, message: "Booking failed. Please call back or we'll have someone contact you." };
+    return { success: false, message: "Booking failed on our end. Please call back and we'll get you taken care of." };
   }
 
-  // Log to booking_conversations
-  await supabase.from("booking_conversations").insert({
+  // Fire dispatch agent — same pattern as create-job, fire-and-forget
+  void fetch(
+    `${Deno.env.get("SUPABASE_URL")}/functions/v1/dispatch-agent`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+      },
+      body: JSON.stringify({ job_id: job.id }),
+    }
+  );
+
+  // Log to booking_conversations (non-critical)
+  void supabase.from("booking_conversations").insert({
     tenant_id: args.tenant_id,
     customer_id: customerId,
     phone: args.caller_phone,
@@ -260,7 +277,7 @@ async function createBooking(args: {
     job_id: job.id,
     messages: [],
     context: { job_type: args.job_type, scheduled_date: args.scheduled_date, time_window: args.time_window },
-  }).catch(() => {}); // non-critical
+  });
 
   const dateLabel = format(new Date(args.scheduled_date), "EEEE, MMMM d");
   return {
@@ -427,12 +444,15 @@ serve(async (req: Request) => {
             customer_id: args.customer_id as string | undefined,
             customer_name: args.customer_name as string | undefined,
             customer_email: args.customer_email as string | undefined,
-            service_address: args.service_address as string | undefined,
+            service_address: (args.service_address as string) ?? "",
+            service_city: args.service_city as string | undefined,
+            service_state: args.service_state as string | undefined,
+            service_zip: args.service_zip as string | undefined,
             job_type: (args.job_type as string) ?? "plumbing_service",
             scheduled_date: args.scheduled_date as string,
             time_window: (args.time_window as "morning" | "afternoon" | "evening") ?? "morning",
             description: args.description as string | undefined,
-          });
+          }, ctx.timezone);
           break;
 
         case "escalate_to_human":

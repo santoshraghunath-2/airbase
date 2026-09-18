@@ -296,10 +296,15 @@ async function createBooking(args: {
 async function escalateToHuman(args: {
   tenant_id: string;
   caller_phone: string;
+  call_id: string;
   reason: string;
   summary: string;
 }) {
-  // Log escalated conversation
+  // Log escalated conversation. call_id is stored so the Command Center can
+  // correlate this escalation to the live Retell call.
+  // Live transfer is handled by Retell's agent configuration (transfer destination
+  // set in the Retell dashboard for this agent). The webhook just needs to return
+  // cleanly — Retell bridges the PSTN call after the function call completes.
   await supabase.from("booking_conversations").insert({
     tenant_id: args.tenant_id,
     customer_id: null,
@@ -307,7 +312,11 @@ async function escalateToHuman(args: {
     channel: "voice",
     status: "escalated",
     messages: [],
-    context: { escalation_reason: args.reason, summary: args.summary },
+    context: {
+      escalation_reason: args.reason,
+      summary: args.summary,
+      call_id: args.call_id,
+    },
   }).catch(() => {});
 
   return {
@@ -459,6 +468,7 @@ serve(async (req: Request) => {
           result = await escalateToHuman({
             tenant_id: tenantId,
             caller_phone: callerPhone,
+            call_id: fnEvent.call_id,
             reason: (args.reason as string) ?? "customer request",
             summary: (args.summary as string) ?? "",
           });

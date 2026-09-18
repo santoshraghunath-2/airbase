@@ -4,7 +4,7 @@ import {
   format, startOfDay, endOfDay, startOfWeek, endOfWeek,
   addDays, differenceInDays,
 } from "date-fns";
-import { ArrowRight, CheckCircle, MessageSquare, RefreshCw, RotateCcw } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle, MessageSquare, Phone, RefreshCw, RotateCcw, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +20,32 @@ interface DashboardStats {
   revenueThisWeek: number;
   unassignedCount: number;
   aiHandledToday: number;
+}
+
+interface BookingConversation {
+  id: string;
+  channel: "voice" | "sms";
+  status: "active" | "resolved" | "escalated" | "abandoned";
+  phone: string;
+  customer_id: string | null;
+  job_id: string | null;
+  context: Record<string, unknown> | null;
+  created_at: string;
+  customers?: { name: string } | null;
+}
+
+function timeAgo(dateStr: string): string {
+  const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (seconds < 60) return `${seconds}s ago`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  return `${Math.floor(seconds / 3600)}h ago`;
+}
+
+function formatPhone(phone: string): string {
+  const d = phone.replace(/\D/g, "");
+  if (d.length === 11 && d[0] === "1") return `+1 (${d.slice(1, 4)}) ${d.slice(4, 7)}-${d.slice(7)}`;
+  if (d.length === 10) return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+  return phone;
 }
 
 interface InvoiceAging {
@@ -98,6 +124,127 @@ function ProposalRow({ action, onConfirm, onReject, confirmed }: ProposalRowProp
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── EscalationBar ───────────────────────────────────────────────────────────
+
+function EscalationBar({
+  escalations,
+  onDismiss,
+  tenantSlug,
+}: {
+  escalations: BookingConversation[];
+  onDismiss: (id: string) => void;
+  tenantSlug: string;
+}) {
+  if (escalations.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-waiting-border bg-waiting-bg px-5 py-3.5 flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <AlertTriangle className="h-4 w-4 text-waiting-text flex-shrink-0" />
+        <span className="text-sm font-semibold text-waiting-text">
+          {escalations.length === 1 ? "Live escalation" : `${escalations.length} live escalations`} — caller transferring to your line
+        </span>
+        <Link
+          to={`/${tenantSlug}/booking`}
+          className="ml-auto text-xs font-medium text-waiting-text hover:opacity-70 flex items-center gap-1 flex-shrink-0"
+        >
+          View all <ArrowRight className="h-3 w-3" />
+        </Link>
+      </div>
+      <div className="space-y-1.5">
+        {escalations.map((esc) => {
+          const reason = esc.context?.escalation_reason as string | undefined;
+          const callerLabel = esc.customers?.name ?? formatPhone(esc.phone);
+          return (
+            <div key={esc.id} className="flex items-center gap-3 text-sm text-waiting-text">
+              <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="font-medium">{callerLabel}</span>
+              {reason && <span className="text-waiting-text opacity-70">· {reason}</span>}
+              <span className="tabular-nums text-xs opacity-60 flex-shrink-0">{timeAgo(esc.created_at)}</span>
+              <button
+                onClick={() => onDismiss(esc.id)}
+                className="ml-auto text-waiting-text hover:opacity-70 flex-shrink-0"
+                aria-label="Dismiss alert"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── BookingActivityFeed ──────────────────────────────────────────────────────
+
+function BookingActivityFeed({
+  convos,
+  loading,
+}: {
+  convos: BookingConversation[];
+  loading: boolean;
+}) {
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
+      </div>
+    );
+  }
+  if (convos.length === 0) {
+    return <p className="text-sm text-ink-muted py-4 text-center">No inbound activity today</p>;
+  }
+
+  return (
+    <div className="space-y-0">
+      {convos.map((c) => {
+        const callerLabel = c.customers?.name ?? formatPhone(c.phone);
+        const isVoice = c.channel === "voice";
+        const aiBooked = c.job_id != null;
+        const statusStyles: Record<string, { bg: string; text: string; label: string }> = {
+          active:    { bg: "#D4E6D0", text: "#3D6139", label: "Active" },
+          resolved:  { bg: "#EEF0F7", text: "#46537F", label: aiBooked ? "Booked" : "Resolved" },
+          escalated: { bg: "#F8F1E1", text: "#8A6A22", label: "Escalated" },
+          abandoned: { bg: "#F4EFE6", text: "#9A9082", label: "Abandoned" },
+        };
+        const style = statusStyles[c.status] ?? statusStyles.resolved;
+
+        return (
+          <div
+            key={c.id}
+            className="flex items-center gap-3 py-2.5 border-b border-line-2 last:border-b-0"
+          >
+            <span
+              className="h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ background: style.bg, color: style.text }}
+            >
+              {isVoice
+                ? <Phone className="h-3.5 w-3.5" />
+                : <MessageSquare className="h-3.5 w-3.5" />}
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm text-ink leading-tight truncate">{callerLabel}</p>
+                {aiBooked && (
+                  <span className="text-[10px] font-semibold text-ai-ink flex-shrink-0">✦ AI</span>
+                )}
+              </div>
+              <p className="text-xs text-ink-muted tabular-nums mt-0.5">{timeAgo(c.created_at)}</p>
+            </div>
+            <span
+              className="text-[10px] font-semibold rounded-pill px-1.5 py-0.5 flex-shrink-0"
+              style={{ background: style.bg, color: style.text }}
+            >
+              {style.label}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -316,16 +463,33 @@ export default function DashboardPage() {
   const [bookingInboxCount, setBookingInboxCount] = useState(0);
   const [invoiceAging, setInvoiceAging] = useState<InvoiceAging | null>(null);
   const [proposals, setProposals] = useState<AgentAction[]>([]);
-  const [recentActions, setRecentActions] = useState<AgentAction[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmedIds, setConfirmedIds] = useState<Set<string>>(new Set());
   const [briefing, setBriefing] = useState<BriefingRow | null | undefined>(undefined);
   const [generatingBriefing, setGeneratingBriefing] = useState(false);
+  const [bookingActivity, setBookingActivity] = useState<BookingConversation[]>([]);
+  const [inboundStats, setInboundStats] = useState<{ total: number; aiBooked: number } | null>(null);
+  const [dismissedEscalations, setDismissedEscalations] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!tenant) return;
     void loadDashboard();
     void loadBriefing();
+  }, [tenant]);
+
+  useEffect(() => {
+    if (!tenant) return;
+    void loadBookingActivity();
+    const channel = supabase
+      .channel(`booking-convos-${tenant.id}`)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "booking_conversations",
+        filter: `tenant_id=eq.${tenant.id}`,
+      }, () => { void loadBookingActivity(); })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
   }, [tenant]);
 
   async function loadDashboard() {
@@ -462,11 +626,26 @@ export default function DashboardPage() {
       ).length;
 
       setProposals(todayProposals);
-      setRecentActions(allActions.filter((a) => a.status !== "proposed").slice(0, 8));
       setStats({ jobsByStatus, revenueToday, revenueThisWeek, unassignedCount: jobsByStatus["unassigned"] ?? 0, aiHandledToday });
     } finally {
       setLoading(false);
     }
+  }
+
+  async function loadBookingActivity() {
+    if (!tenant) return;
+    const todayStart = startOfDay(new Date()).toISOString();
+    const { data } = await supabase
+      .from("booking_conversations")
+      .select("id, channel, status, phone, customer_id, job_id, context, created_at, customers(name)")
+      .eq("tenant_id", tenant.id)
+      .gte("created_at", todayStart)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    const convos = (data ?? []) as BookingConversation[];
+    setBookingActivity(convos);
+    setInboundStats({ total: convos.length, aiBooked: convos.filter((c) => c.job_id != null).length });
   }
 
   async function loadBriefing() {
@@ -527,40 +706,6 @@ export default function DashboardPage() {
     if (job.tech_id) {
       techJobMap.set(job.tech_id, [...(techJobMap.get(job.tech_id) ?? []), job]);
     }
-  }
-
-  function activityLabel(action: AgentAction): string {
-    const map: Record<string, string> = {
-      dispatch:          "Dispatched job",
-      booking:           "Booked new job",
-      invoice:           "Auto-sent invoice",
-      eta_notification:  "Sent ETA notification",
-      review_request:    "Sent review request",
-      warranty_detector: "Flagged warranty callback",
-      operator:          "Answered operator query",
-    };
-    return map[action.agent_type] ?? action.trigger_event.replace(/_/g, " ");
-  }
-
-  function activityGlyph(action: AgentAction): string {
-    const map: Record<string, string> = {
-      dispatch:          "⟶",
-      booking:           "+",
-      invoice:           "◈",
-      eta_notification:  "✉",
-      review_request:    "★",
-      warranty_detector: "⚠",
-      operator:          "?",
-    };
-    return map[action.agent_type] ?? "✦";
-  }
-
-  function activityColor(action: AgentAction): { bg: string; text: string } {
-    if (action.status === "auto_executed")     return { bg: "#EEF0F7", text: "#46537F" };
-    if (action.status === "operator_approved") return { bg: "#ECF1EC", text: "#4C6749" };
-    if (action.status === "operator_rejected") return { bg: "#F4EFE6", text: "#9A9082" };
-    if (action.status === "proposed")          return { bg: "#F8F1E1", text: "#8A6A22" };
-    return { bg: "#F4EFE6", text: "#6F6658" };
   }
 
   const visibleProposals = proposals.filter((p) => !confirmedIds.has(p.id) || confirmedIds.has(p.id));
@@ -624,6 +769,15 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Escalation bar */}
+        <EscalationBar
+          escalations={bookingActivity.filter(
+            (c) => c.status === "escalated" && !dismissedEscalations.has(c.id)
+          )}
+          onDismiss={(id) => setDismissedEscalations((s) => new Set(s).add(id))}
+          tenantSlug={tenantSlug ?? ""}
+        />
+
         {/* KPI strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <KPICard
@@ -647,9 +801,13 @@ export default function DashboardPage() {
           />
           <KPICard
             loading={loading}
-            label="AI Handled Today"
-            value={stats?.aiHandledToday.toString() ?? "0"}
-            sub="Actions without you"
+            label="Inbound Today"
+            value={inboundStats?.total.toString() ?? "0"}
+            sub={
+              inboundStats && inboundStats.aiBooked > 0
+                ? `✦ ${inboundStats.aiBooked} booked by AI`
+                : "Voice + SMS"
+            }
             ai
           />
         </div>
@@ -733,55 +891,20 @@ export default function DashboardPage() {
         {/* Two-column body */}
         <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6">
 
-          {/* Agent activity feed */}
+          {/* Booking activity feed */}
           <div className="rounded-xl border border-line bg-paper px-6 py-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-[13px] font-semibold uppercase tracking-widest text-ink-muted">
-                Agent Activity
+                Booking Activity
               </h2>
+              <Link
+                to={`/${tenantSlug}/booking`}
+                className="text-xs text-ink-muted hover:text-ink flex items-center gap-1 transition-colors"
+              >
+                Inbox <ArrowRight className="h-3 w-3" />
+              </Link>
             </div>
-            {loading ? (
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
-              </div>
-            ) : recentActions.length === 0 ? (
-              <p className="text-sm text-ink-muted py-4 text-center">No agent activity yet today</p>
-            ) : (
-              <div className="space-y-1">
-                {recentActions.map((action) => {
-                  const { bg, text } = activityColor(action);
-                  return (
-                    <div
-                      key={action.id}
-                      className="flex items-center gap-3 py-2.5 border-b border-line-2 last:border-b-0"
-                    >
-                      <span
-                        className="h-7 w-7 rounded-lg flex items-center justify-center text-sm flex-shrink-0 font-medium"
-                        style={{ background: bg, color: text }}
-                      >
-                        {activityGlyph(action)}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-ink leading-tight">{activityLabel(action)}</p>
-                        <p className="text-xs text-ink-muted tabular-nums mt-0.5">
-                          {format(new Date(action.created_at), "h:mm a")}
-                          {action.status === "auto_executed" && (
-                            <span className="ml-2 inline-flex items-center gap-0.5 text-ai-ink">
-                              <span className="text-[10px]">✦</span> Auto
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                      {action.confidence != null && (
-                        <span className="text-xs tabular-nums text-ink-muted flex-shrink-0">
-                          {Math.round(action.confidence * 100)}%
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <BookingActivityFeed convos={bookingActivity} loading={loading} />
           </div>
 
           {/* Today's jobs + tomorrow preview */}

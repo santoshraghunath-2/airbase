@@ -32,6 +32,7 @@ import ProfitabilityPage from "@/features/analytics/ProfitabilityPage";
 import CampaignsPage from "@/features/campaigns/CampaignsPage";
 import InvoiceReviewQueuePage from "@/features/invoicing/InvoiceReviewQueuePage";
 import BookingAgentDashboardPage from "@/features/booking/BookingAgentDashboardPage";
+import SuperadminPage from "@/features/superadmin/SuperadminPage";
 
 function RouteGuard({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
@@ -63,6 +64,9 @@ export default function App() {
         <Toaster richColors position="top-right" />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+
+          {/* Platform superadmin — own auth gate inside the page (role: platform_admin) */}
+          <Route path="/superadmin" element={<RouteGuard><SuperadminPage /></RouteGuard>} />
 
           {/* Customer portal — public, token-authenticated */}
           <Route path="/portal/:token" element={<CustomerPortalPage />} />

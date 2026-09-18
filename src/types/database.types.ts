@@ -2,7 +2,7 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 export type SubscriptionTier = "starter" | "growth" | "enterprise";
 export type SubscriptionStatus = "trialing" | "active" | "past_due" | "cancelled" | "paused";
-export type UserRole = "owner" | "office_manager" | "dispatcher" | "technician";
+export type UserRole = "owner" | "office_manager" | "dispatcher" | "technician" | "platform_admin";
 export type JobStatus =
   | "scheduled"
   | "unassigned"

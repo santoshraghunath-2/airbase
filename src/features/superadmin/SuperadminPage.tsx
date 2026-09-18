@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Building2, Search, ChevronRight, Save, Loader2,
-  Shield, Users, LogOut, RefreshCw, ToggleLeft, ToggleRight,
+  Shield, LogOut, RefreshCw, ToggleLeft, ToggleRight,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -10,12 +10,11 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { TenantRow, AgentConfigRow, SubscriptionTier, SubscriptionStatus } from "@/types/database.types";
+import type { TenantRow, SubscriptionTier, SubscriptionStatus } from "@/types/database.types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -81,7 +80,6 @@ export default function SuperadminPage() {
 
   const [tenants, setTenants] = useState<TenantRow[]>([]);
   const [selectedTenant, setSelectedTenant] = useState<TenantRow | null>(null);
-  const [agentConfigs, setAgentConfigs] = useState<AgentConfigRow[]>([]);
   const [agentDrafts, setAgentDrafts] = useState<AgentDrafts>({});
   const [tenantDraft, setTenantDraft] = useState<Partial<TenantRow>>({});
 
@@ -133,7 +131,6 @@ export default function SuperadminPage() {
         .eq("tenant_id", t.id);
       if (error) throw error;
       const configs = data ?? [];
-      setAgentConfigs(configs);
 
       // Initialise drafts from DB rows, with defaults for missing agent types
       const drafts: AgentDrafts = {};

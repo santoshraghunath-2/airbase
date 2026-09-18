@@ -643,7 +643,7 @@ export default function DashboardPage() {
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(20);
-    const convos = (data ?? []) as BookingConversation[];
+    const convos = (data ?? []) as unknown as BookingConversation[];
     setBookingActivity(convos);
     setInboundStats({ total: convos.length, aiBooked: convos.filter((c) => c.job_id != null).length });
   }

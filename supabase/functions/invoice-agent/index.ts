@@ -151,7 +151,18 @@ Deno.serve(async (req: Request) => {
 
   try {
     const payload = await req.json();
-    const job = payload.record as Record<string, unknown>;
+
+    // Handle trigger format ({ record }) and direct call format ({ job_id })
+    let job: Record<string, unknown>;
+    if (payload.record) {
+      job = payload.record as Record<string, unknown>;
+    } else if (payload.job_id) {
+      const { data: jobData } = await supabase.from("jobs").select("*").eq("id", payload.job_id as string).single();
+      if (!jobData) return ok({ skip: "job not found" });
+      job = jobData as Record<string, unknown>;
+    } else {
+      return ok({ skip: "no record or job_id in payload" });
+    }
 
     if (job.status !== "completed") return ok({ skip: true });
     if (job.deleted_at) return ok({ skip: true });

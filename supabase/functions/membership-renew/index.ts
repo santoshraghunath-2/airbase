@@ -116,7 +116,7 @@ Deno.serve(async (req: Request) => {
     // Load membership with plan, customer, tenant
     const { data: membership, error: memErr } = await supabase
       .from("memberships")
-      .select("id, customer_id, plan_id, billing_cycle, stripe_subscription_id, customers(id, name, email, phone, stripe_customer_id), membership_plans(name, stripe_price_id_monthly, stripe_price_id_annual), tenants(name)")
+      .select("id, customer_id, plan_id, billing_cycle, stripe_subscription_id, customers(id, name, email, phone, stripe_customer_id), membership_plans(name, stripe_price_id, stripe_price_id_annual), tenants(name)")
       .eq("id", body.membership_id)
       .eq("tenant_id", tenantId)
       .single();
@@ -135,7 +135,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const customer = membership.customers as { id: string; name: string; email: string | null; phone: string | null; stripe_customer_id: string | null } | null;
-    const plan     = membership.membership_plans as { name: string; stripe_price_id_monthly: string | null; stripe_price_id_annual: string | null } | null;
+    const plan     = membership.membership_plans as { name: string; stripe_price_id: string | null; stripe_price_id_annual: string | null } | null;
 
     if (!customer || !plan) {
       return new Response(JSON.stringify({ error: "Customer or plan not found" }), {
@@ -143,9 +143,10 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // stripe_price_id = monthly (from migration 021); stripe_price_id_annual = annual (from migration 043)
     const priceId = membership.billing_cycle === "annual"
       ? plan.stripe_price_id_annual
-      : plan.stripe_price_id_monthly;
+      : plan.stripe_price_id;
 
     if (!priceId) {
       return new Response(JSON.stringify({ error: `No Stripe price configured for ${plan.name} (${membership.billing_cycle})` }), {

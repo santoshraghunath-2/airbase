@@ -23,6 +23,7 @@ function FieldTabs({ appUser }: { appUser: NonNullable<ReturnType<typeof useAuth
     return (
       <JobDetailScreen
         jobId={selectedJobId}
+        appUser={appUser}
         onBack={() => setSelectedJobId(null)}
       />
     );

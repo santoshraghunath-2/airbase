@@ -210,14 +210,24 @@ async function notifyDispatch(
   const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceKey) return;
 
-  const payload = autoExecuted
+  // Resolve the tech's users.id from technicians.user_id (they are different tables)
+  const { data: techRecord } = await supabase
+    .from("technicians")
+    .select("user_id")
+    .eq("id", techId)
+    .single();
+
+  const techUserId = techRecord?.user_id as string | null;
+
+  const payload = autoExecuted && techUserId
     ? {
         tenant_id: tenantId,
-        user_ids:  [techId],  // tech's user_id — resolved from technician record by the push function
+        user_ids:  [techUserId],
         title:     "New job assigned",
         body:      `You've been assigned a ${jobType} job. Tap to view details.`,
         data:      { screen: "JobDetail", job_id: jobId },
       }
+    : autoExecuted ? null  // tech has no user account — skip push
     : {
         tenant_id: tenantId,
         roles:     ["admin", "dispatcher"],
@@ -225,6 +235,8 @@ async function notifyDispatch(
         body:      `AI suggested a tech for a ${jobType} job — tap to review.`,
         data:      { screen: "ApprovalQueue", job_id: jobId },
       };
+
+  if (!payload) return;
 
   await fetch(`${supabaseUrl}/functions/v1/push-notification`, {
     method:  "POST",

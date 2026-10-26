@@ -197,6 +197,42 @@ const PROPOSE_ASSIGNMENT_TOOL: NormalisedTool = {
   },
 };
 
+// ─── Push notification helper ─────────────────────────────────────────────────
+
+async function notifyDispatch(
+  tenantId: string,
+  techId: string,
+  jobId: string,
+  jobType: string,
+  autoExecuted: boolean,
+): Promise<void> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceKey) return;
+
+  const payload = autoExecuted
+    ? {
+        tenant_id: tenantId,
+        user_ids:  [techId],  // tech's user_id — resolved from technician record by the push function
+        title:     "New job assigned",
+        body:      `You've been assigned a ${jobType} job. Tap to view details.`,
+        data:      { screen: "JobDetail", job_id: jobId },
+      }
+    : {
+        tenant_id: tenantId,
+        roles:     ["admin", "dispatcher"],
+        title:     "Dispatch needs approval",
+        body:      `AI suggested a tech for a ${jobType} job — tap to review.`,
+        data:      { screen: "ApprovalQueue", job_id: jobId },
+      };
+
+  await fetch(`${supabaseUrl}/functions/v1/push-notification`, {
+    method:  "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
+    body:    JSON.stringify(payload),
+  }).catch((e) => console.warn("push-notification call failed (non-fatal):", e));
+}
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 Deno.serve(async (req: Request) => {
@@ -432,6 +468,9 @@ Deno.serve(async (req: Request) => {
         if (error) throw error;
       },
     });
+
+    // Push notification: tech gets alerted when auto-dispatched; admins when held for approval
+    void notifyDispatch(tenantId, proposal.tech_id, jobId, jobType, autoExecuted);
 
     return ok({ actionId, autoExecuted, proposedTechId: proposal.tech_id, confidence: proposal.confidence });
   } catch (e) {

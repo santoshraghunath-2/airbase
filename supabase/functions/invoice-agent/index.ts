@@ -385,6 +385,23 @@ Deno.serve(async (req: Request) => {
             : proposal.notes,
         })
         .eq("id", invoiceId);
+
+      // Notify admins that an invoice is waiting for their approval
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (supabaseUrl && serviceKey) {
+        void fetch(`${supabaseUrl}/functions/v1/push-notification`, {
+          method:  "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
+          body:    JSON.stringify({
+            tenant_id: tenantId,
+            roles:     ["admin", "dispatcher"],
+            title:     "Invoice needs review",
+            body:      `An invoice requires approval before sending. Tap to review.`,
+            data:      { screen: "ApprovalQueue", invoice_id: invoiceId },
+          }),
+        }).catch((e) => console.warn("push-notification call failed (non-fatal):", e));
+      }
     }
 
     return ok({ actionId, autoExecuted, invoiceId, recommendation: proposal.recommendation });

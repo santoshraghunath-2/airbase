@@ -372,6 +372,29 @@ async function resolveTenant(agentId: string): Promise<TenantContext | null> {
   return null;
 }
 
+// ─── Signature verification ───────────────────────────────────────────────────
+
+async function verifyRetellSignature(rawBody: string, signature: string | null, apiKey: string): Promise<boolean> {
+  if (!signature) return false;
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(apiKey),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const mac = await crypto.subtle.sign("HMAC", key, encoder.encode(rawBody));
+  const expected = btoa(String.fromCharCode(...new Uint8Array(mac)));
+  // Constant-time comparison via XOR to avoid timing attacks
+  if (expected.length !== signature.length) return false;
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) {
+    diff |= expected.charCodeAt(i) ^ signature.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 serve(async (req: Request) => {
@@ -380,11 +403,24 @@ serve(async (req: Request) => {
   }
 
   try {
-    // Retell signs webhooks with x-retell-signature — verify in production
-    // const sig = req.headers.get("x-retell-signature");
-    // TODO: verify HMAC-SHA256 with RETELL_API_KEY when ready
+    const rawBody = await req.text();
 
-    const event = await req.json() as RetellEvent;
+    const apiKey = Deno.env.get("RETELL_API_KEY");
+    if (apiKey) {
+      const signature = req.headers.get("x-retell-signature");
+      const valid = await verifyRetellSignature(rawBody, signature, apiKey);
+      if (!valid) {
+        console.warn("retell-voice-webhook: invalid signature — request rejected");
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          headers: { "Content-Type": "application/json" },
+          status: 401,
+        });
+      }
+    } else {
+      console.warn("retell-voice-webhook: RETELL_API_KEY not set — skipping signature verification");
+    }
+
+    const event = JSON.parse(rawBody) as RetellEvent;
 
     // ── Call lifecycle events ──────────────────────────────────────────────────
     if (event.event === "call_started") {

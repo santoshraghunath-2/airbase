@@ -38,6 +38,7 @@ import ContractDetailPage from "@/features/contracts/ContractDetailPage";
 import ProjectsPage from "@/features/projects/ProjectsPage";
 import ProjectDetailPage from "@/features/projects/ProjectDetailPage";
 import OwnerControlsPage from "@/features/owner-controls/OwnerControlsPage";
+import AccountingOutboxPage from "@/features/settings/AccountingOutboxPage";
 
 function RouteGuard({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
@@ -139,9 +140,10 @@ export default function App() {
             <Route path="opportunities" element={<OpportunitiesPage />} />
             <Route path="campaigns"     element={<CampaignsPage />} />
             <Route path="analytics"     element={<ProfitabilityPage />} />
-            <Route path="settings"       element={<SettingsPage />} />
-            <Route path="ai-settings"   element={<AISettingsPage />} />
-            <Route path="owner-controls" element={<OwnerControlsPage />} />
+            <Route path="settings"           element={<SettingsPage />} />
+            <Route path="ai-settings"       element={<AISettingsPage />} />
+            <Route path="owner-controls"    element={<OwnerControlsPage />} />
+            <Route path="accounting-outbox" element={<AccountingOutboxPage />} />
           </Route>
 
           <Route

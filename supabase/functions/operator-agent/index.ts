@@ -651,8 +651,53 @@ function makeToolHandlers(
         : { success: true, tier: result.tier, auto_executed: result.autoExecuted };
     },
 
-    create_invoice_for_milestone: async (_input: unknown) => {
-      return { error: "not_available", message: "Milestone invoicing is built in Phase 5." };
+    create_invoice_for_milestone: async (input: unknown) => {
+      const { project_id, payment_schedule_item_id, confidence } =
+        input as { project_id: string; payment_schedule_item_id: string; confidence: number };
+
+      // Verify PSI belongs to this project and tenant
+      const { data: psi } = await adminSupabase
+        .from("payment_schedule_items")
+        .select("id, tenant_id, milestone_name, amount_cents, status, invoice_id, contracts(projects!inner(id))")
+        .eq("id", payment_schedule_item_id)
+        .eq("tenant_id", tenantId)
+        .single();
+
+      if (!psi) return { error: "Payment schedule item not found" };
+
+      const psiProjects = (psi.contracts as { projects?: { id: string }[] } | null)?.projects;
+      const linkedProjectId = psiProjects?.[0]?.id;
+      if (linkedProjectId && linkedProjectId !== project_id) {
+        return { error: "Payment schedule item does not belong to this project" };
+      }
+      if ((psi as Record<string, unknown>).invoice_id) {
+        return { invoice_id: (psi as Record<string, unknown>).invoice_id, already_exists: true };
+      }
+
+      const milestoneAmt = (psi as { amount_cents: number }).amount_cents;
+      const milestoneName = (psi as { milestone_name: string }).milestone_name;
+
+      const result = await finalizeWithAuthority(adminSupabase, {
+        ...baseAuthorityOpts,
+        reasoning:        `Create milestone invoice for "${milestoneName}" on project ${project_id} ($${(milestoneAmt / 100).toFixed(2)})`,
+        proposedAction:   { type: "create_invoice_for_milestone", project_id, payment_schedule_item_id, milestone_name: milestoneName, amount_cents: milestoneAmt },
+        confidence,
+        actionType:       "create_invoice_for_milestone",
+        entityType:       "project",
+        entityId:         project_id,
+        amountCents:      milestoneAmt,
+        onAutoExecute: async () => {
+          // Delegate to milestone-invoice Edge Function (handles trigger verification + accounting outbox)
+          const { error: fnErr } = await adminSupabase.functions.invoke("milestone-invoice", {
+            body: { payment_schedule_item_id },
+          });
+          if (fnErr) throw new Error(`milestone-invoice failed: ${fnErr.message}`);
+        },
+      });
+
+      return result.refused
+        ? { error: "Refused by authority rules" }
+        : { success: true, tier: result.tier, auto_executed: result.autoExecuted };
     },
 
     update_opportunity_status: async (input: unknown) => {

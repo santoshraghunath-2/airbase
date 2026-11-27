@@ -26,6 +26,20 @@ interface ReportRow {
   margin_pct:   number | null;
 }
 
+interface ProjectProfRow {
+  project_id:           string;
+  project_name:         string;
+  project_status:       string;
+  contract_total_cents: number;
+  collected_cents:      number;
+  labor_cost_cents:     number;
+  material_cost_cents:  number;
+  other_cost_cents:     number;
+  total_cost_cents:     number;
+  gross_profit_cents:   number;
+  margin_pct:           number | null;
+}
+
 type GroupBy = "tech" | "zone" | "job_type" | "customer";
 
 // ─── Date range presets ───────────────────────────────────────────────────────
@@ -158,12 +172,17 @@ function BreakdownTable({ rows, loading }: { rows: ReportRow[]; loading: boolean
 
 export default function ProfitabilityPage() {
   const { tenant } = useAuth();
+  const isRemodel = (tenant as { trade?: string } | null)?.trade === "remodel";
+
   const [preset, setPreset]     = useState<Preset>("this_month");
   const [kpis, setKpis]         = useState<KPIs | null>(null);
   const [kpiLoading, setKpiLoading] = useState(true);
   const [activeTab, setActiveTab]   = useState<GroupBy>("tech");
   const [rows, setRows]             = useState<ReportRow[]>([]);
   const [rowLoading, setRowLoading] = useState(false);
+  const [projectRows, setProjectRows]       = useState<ProjectProfRow[]>([]);
+  const [projectRowLoading, setProjectRowLoading] = useState(false);
+  const [topTab, setTopTab] = useState<"jobs" | "projects">("jobs");
 
   const { start, end } = presetDates(preset);
 
@@ -208,6 +227,28 @@ export default function ProfitabilityPage() {
       setRowLoading(false);
     }
   }
+
+  async function loadProjectProfitability() {
+    if (!isRemodel) return;
+    setProjectRowLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("project_profitability")
+        .select("project_id, project_name, project_status, contract_total_cents, collected_cents, labor_cost_cents, material_cost_cents, other_cost_cents, total_cost_cents, gross_profit_cents, margin_pct")
+        .order("contract_total_cents", { ascending: false });
+      if (error) throw error;
+      setProjectRows((data as ProjectProfRow[]) ?? []);
+    } catch {
+      setProjectRows([]);
+    } finally {
+      setProjectRowLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!tenant || !isRemodel) return;
+    void loadProjectProfitability();
+  }, [tenant, isRemodel]);
 
   return (
     <div className="p-6 space-y-6">
@@ -265,21 +306,92 @@ export default function ProfitabilityPage() {
         </div>
       )}
 
-      {/* Breakdown */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as GroupBy)}>
-        <TabsList>
-          <TabsTrigger value="tech">By Tech</TabsTrigger>
-          <TabsTrigger value="zone">By Zone</TabsTrigger>
-          <TabsTrigger value="job_type">By Job Type</TabsTrigger>
-          <TabsTrigger value="customer">By Customer</TabsTrigger>
-        </TabsList>
+      {/* Top-level Jobs / Projects toggle (remodel tenants only) */}
+      {isRemodel && (
+        <Tabs value={topTab} onValueChange={(v) => setTopTab(v as "jobs" | "projects")}>
+          <TabsList>
+            <TabsTrigger value="jobs">Service jobs</TabsTrigger>
+            <TabsTrigger value="projects">Remodel projects</TabsTrigger>
+          </TabsList>
 
-        {(["tech", "zone", "job_type", "customer"] as GroupBy[]).map((tab) => (
-          <TabsContent key={tab} value={tab}>
-            <BreakdownTable rows={rows} loading={rowLoading} />
+          <TabsContent value="jobs">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as GroupBy)}>
+              <TabsList>
+                <TabsTrigger value="tech">By Tech</TabsTrigger>
+                <TabsTrigger value="zone">By Zone</TabsTrigger>
+                <TabsTrigger value="job_type">By Job Type</TabsTrigger>
+                <TabsTrigger value="customer">By Customer</TabsTrigger>
+              </TabsList>
+              {(["tech", "zone", "job_type", "customer"] as GroupBy[]).map((tab) => (
+                <TabsContent key={tab} value={tab}>
+                  <BreakdownTable rows={rows} loading={rowLoading} />
+                </TabsContent>
+              ))}
+            </Tabs>
           </TabsContent>
-        ))}
-      </Tabs>
+
+          <TabsContent value="projects">
+            {projectRowLoading ? (
+              <div className="space-y-2 mt-4">
+                {[1,2,3].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
+              </div>
+            ) : projectRows.length === 0 ? (
+              <div className="mt-4 rounded-xl border border-dashed border-line p-10 text-center text-sm text-ink-muted">
+                No project data yet.
+              </div>
+            ) : (
+              <div className="mt-4 overflow-x-auto rounded-xl border border-line">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-line bg-raised text-xs text-ink-muted">
+                      <th className="text-left px-4 py-3 font-medium">Project</th>
+                      <th className="text-right px-4 py-3 font-medium">Contract</th>
+                      <th className="text-right px-4 py-3 font-medium">Collected</th>
+                      <th className="text-right px-4 py-3 font-medium">Total cost</th>
+                      <th className="text-right px-4 py-3 font-medium">Gross profit</th>
+                      <th className="text-right px-4 py-3 font-medium">Margin</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {projectRows.map((row, i) => (
+                      <tr key={row.project_id} className={cn("border-b border-line last:border-0", i % 2 === 0 ? "" : "bg-raised/40")}>
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-ink">{row.project_name}</p>
+                          <p className="text-xs text-ink-muted capitalize">{row.project_status.replace("_", " ")}</p>
+                        </td>
+                        <td className="px-4 py-3 text-right tabular-nums">{fmtCurrency(row.contract_total_cents / 100)}</td>
+                        <td className="px-4 py-3 text-right tabular-nums text-ink-muted">{fmtCurrency(row.collected_cents / 100)}</td>
+                        <td className="px-4 py-3 text-right tabular-nums text-ink-muted">{fmtCurrency(row.total_cost_cents / 100)}</td>
+                        <td className="px-4 py-3 text-right tabular-nums">{fmtCurrency(row.gross_profit_cents / 100)}</td>
+                        <td className={cn("px-4 py-3 text-right", marginColor(row.margin_pct))}>
+                          {row.margin_pct !== null ? `${row.margin_pct}%` : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {/* Field-service only breakdown (non-remodel tenants) */}
+      {!isRemodel && (
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as GroupBy)}>
+          <TabsList>
+            <TabsTrigger value="tech">By Tech</TabsTrigger>
+            <TabsTrigger value="zone">By Zone</TabsTrigger>
+            <TabsTrigger value="job_type">By Job Type</TabsTrigger>
+            <TabsTrigger value="customer">By Customer</TabsTrigger>
+          </TabsList>
+          {(["tech", "zone", "job_type", "customer"] as GroupBy[]).map((tab) => (
+            <TabsContent key={tab} value={tab}>
+              <BreakdownTable rows={rows} loading={rowLoading} />
+            </TabsContent>
+          ))}
+        </Tabs>
+      )}
     </div>
   );
 }

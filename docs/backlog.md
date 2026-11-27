@@ -110,6 +110,39 @@ Blocked on: push subscription infrastructure (not yet built).
 
 ---
 
+## Remodel Phase 5 — BuildersBooks accounting adapter
+
+The `buildersbooks` case in `supabase/functions/_shared/buildersbooks-adapter.ts` is a stub that returns a "not configured" error. Before implementing:
+
+1. **Share the BuildersBooks API contract**: chart of accounts mapping, job dimension field, tenant/company mapping, authentication scheme (OAuth2 vs API key), and posting endpoint schemas for Invoice, Payment, and Expense.
+2. Once we have that, implement `postInvoice`, `postPayment`, `postCost` in the adapter following the same pattern as `qbo-adapter.ts`.
+3. The `accounting_target = 'buildersbooks'` value in `tenants` already routes through the registry — only the adapter body needs filling.
+
+---
+
+## Remodel Phase 5 — pg_cron job for accounting-post drainer
+
+The `accounting-post` Edge Function processes the `accounting_outbox` queue (batch size 20, up to 5 retries per row). It needs a scheduled cron job to run automatically.
+
+Run once in the Supabase SQL editor after deploying the function:
+
+```sql
+SELECT cron.schedule(
+  'accounting-post',
+  '*/15 * * * *',  -- every 15 minutes
+  $$
+    SELECT net.http_post(
+      url := 'https://ghixuuhxwtsrbfwwtybx.supabase.co/functions/v1/accounting-post',
+      headers := jsonb_build_object(
+        'Authorization', 'Bearer ' || current_setting('app.service_role_key')
+      )
+    );
+  $$
+);
+```
+
+---
+
 ### AI/Manual toggle switches (settings)
 
 Per-tenant settings toggles for any feature where AI auto-executes vs. requires operator approval:

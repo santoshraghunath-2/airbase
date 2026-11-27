@@ -76,18 +76,23 @@ function dunningMessage(
   companyName: string,
   daysTier: 7 | 14 | 30,
   paymentLink: string | null,
+  milestoneName?: string,
+  projectName?: string,
 ): string {
-  const fn  = firstName(customerName);
-  const amt = `$${total.toFixed(2)}`;
-  const pay = paymentLink ? ` Pay now: ${paymentLink}` : " Call us to pay.";
+  const fn   = firstName(customerName);
+  const amt  = `$${total.toFixed(2)}`;
+  const pay  = paymentLink ? ` Pay now: ${paymentLink}` : " Call us to pay.";
+  const what = milestoneName && projectName
+    ? `the ${milestoneName} payment for ${projectName} (${amt})`
+    : `invoice ${invoiceNumber} for ${amt}`;
 
   if (daysTier === 7) {
-    return `Hi ${fn} — a friendly reminder that invoice ${invoiceNumber} for ${amt} from ${companyName} is now past due.${pay} Reply STOP to opt out.`;
+    return `Hi ${fn} — a friendly reminder that ${what} from ${companyName} is now past due.${pay} Reply STOP to opt out.`;
   }
   if (daysTier === 14) {
-    return `Hi ${fn} — your invoice ${invoiceNumber} for ${amt} from ${companyName} is 2 weeks overdue. Please arrange payment at your earliest convenience.${pay} Questions? Call us. Reply STOP to opt out.`;
+    return `Hi ${fn} — ${what} from ${companyName} is 2 weeks overdue. Please arrange payment at your earliest convenience.${pay} Questions? Call us. Reply STOP to opt out.`;
   }
-  return `Hi ${fn} — final notice: invoice ${invoiceNumber} for ${amt} from ${companyName} is 30 days overdue. Please pay today to avoid further action.${pay} Reply STOP to opt out.`;
+  return `Hi ${fn} — final notice: ${what} from ${companyName} is 30 days overdue. Please pay today to avoid further action.${pay} Reply STOP to opt out.`;
 }
 
 // ─── Sweep ────────────────────────────────────────────────────────────────────
@@ -105,6 +110,8 @@ interface InvoiceRecord {
   dunning_sent_at_30: string | null;
   customers: { name: string; phone: string | null; email: string | null } | null;
   tenants: { name: string; twilio_phone_number: string | null } | null;
+  // Remodel milestone context (populated when invoice is linked to a payment schedule item)
+  payment_schedule_items: { milestone_name: string; contracts: { projects: { name: string }[] | null } | null }[] | null;
 }
 
 async function runDunningSweep(
@@ -120,7 +127,7 @@ async function runDunningSweep(
 
   let query = supabase
     .from("invoices")
-    .select("id,tenant_id,invoice_number,total,status,due_date,stripe_payment_link,dunning_sent_at_7,dunning_sent_at_14,dunning_sent_at_30,customers(name,phone,email),tenants(name,twilio_phone_number)")
+    .select("id,tenant_id,invoice_number,total,status,due_date,stripe_payment_link,dunning_sent_at_7,dunning_sent_at_14,dunning_sent_at_30,customers(name,phone,email),tenants(name,twilio_phone_number),payment_schedule_items!payment_schedule_items_invoice_id_fkey(milestone_name,contracts(projects(name)))")
     .in("status", ["sent", "viewed", "overdue"])
     .lt("due_date", fmt(today))    // already past due
     .gte("due_date", fmt(cutoff)); // not older than 31 days
@@ -150,6 +157,10 @@ async function runDunningSweep(
 
     if (!tier) { summary.skipped++; continue; }
 
+    const psi         = inv.payment_schedule_items?.[0] ?? null;
+    const milestoneNm = psi?.milestone_name ?? undefined;
+    const projectNm   = psi?.contracts?.projects?.[0]?.name ?? undefined;
+
     const smsBody = dunningMessage(
       customer.name,
       inv.invoice_number,
@@ -157,6 +168,8 @@ async function runDunningSweep(
       tenant.name,
       tier,
       inv.stripe_payment_link,
+      milestoneNm,
+      projectNm,
     );
 
     try {

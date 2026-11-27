@@ -12,8 +12,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { format, addDays, startOfDay, endOfDay } from "npm:date-fns";
 import { verifyRetellSignature } from "../_shared/retell-auth.ts";
-import { dispatchRemodelTool } from "../_shared/remodel-tools.ts";
-import type { RecastToolContext } from "../_shared/remodel-tools.ts";
+import { dispatchRetellTool } from "../_shared/retell-tools.ts";
+import type { RetellToolContext, RetellAgentSettings } from "../_shared/retell-tools.ts";
 
 // ─── Supabase (lazy) ──────────────────────────────────────────────────────────
 
@@ -67,31 +67,29 @@ interface TenantContext {
   tenantId: string;
   companyName: string;
   timezone: string;
-  trade: "field_service" | "remodel";
+  agentType: string;
+  agentSettings: RetellAgentSettings;
 }
 
 async function resolveTenant(agentId: string): Promise<TenantContext | null> {
   const supabase = getSupabase();
 
-  // Check both field_service (booking_voice) and remodel (remodel_voice) agent types
+  // booking_voice = Steward field service; retell_voice = any tenant using the Retell platform voice agent
   const { data: configRow } = await supabase
     .from("agent_config")
-    .select("tenant_id, agent_type, tenants(name, timezone, trade)")
-    .in("agent_type", ["booking_voice", "remodel_voice"])
+    .select("tenant_id, agent_type, settings, tenants(name, timezone)")
+    .in("agent_type", ["booking_voice", "retell_voice"])
     .filter("settings->>'retell_agent_id'", "eq", agentId)
     .single();
 
   if (configRow) {
-    const tenant = configRow.tenants as {
-      name: string;
-      timezone: string;
-      trade: string;
-    } | null;
+    const tenant = configRow.tenants as { name: string; timezone: string } | null;
     return {
       tenantId: configRow.tenant_id as string,
       companyName: tenant?.name ?? "Home Services",
       timezone: tenant?.timezone ?? "America/Los_Angeles",
-      trade: (tenant?.trade as "field_service" | "remodel") ?? "field_service",
+      agentType: configRow.agent_type as string,
+      agentSettings: (configRow.settings ?? {}) as RetellAgentSettings,
     };
   }
 
@@ -100,14 +98,15 @@ async function resolveTenant(agentId: string): Promise<TenantContext | null> {
   if (fallbackId) {
     const { data: tenant } = await supabase
       .from("tenants")
-      .select("name, timezone, trade")
+      .select("name, timezone")
       .eq("id", fallbackId)
       .single();
     return {
       tenantId: fallbackId,
       companyName: tenant?.name ?? "Home Services",
       timezone: tenant?.timezone ?? "America/Los_Angeles",
-      trade: (tenant?.trade as "field_service" | "remodel") ?? "field_service",
+      agentType: "booking_voice",
+      agentSettings: {} as RetellAgentSettings,
     };
   }
 
@@ -468,16 +467,17 @@ export async function handler(req: Request): Promise<Response> {
 
       let result: unknown;
 
-      if (ctx.trade === "remodel") {
-        // Route to remodel tools — tenantId comes from resolved context, not tool args
-        const remodelCtx: RecastToolContext = {
+      if (ctx.agentType === "retell_voice") {
+        // Platform Retell tools — tenantId from resolved context, settings drive qualifying logic
+        const retellCtx: RetellToolContext = {
           tenantId: ctx.tenantId,
           callerPhone,
           interactionId: fnEvent.call_id,
           interactionType: "voice",
+          settings: ctx.agentSettings,
           supabase: getSupabase(),
         };
-        result = await dispatchRemodelTool(fnEvent.name, args, remodelCtx);
+        result = await dispatchRetellTool(fnEvent.name, args, retellCtx);
       } else {
         // Field service tools (Steward unchanged)
         switch (fnEvent.name) {

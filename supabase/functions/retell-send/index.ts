@@ -142,12 +142,11 @@ Deno.serve(async (req: Request) => {
     // Load tenant info
     const { data: tenant } = await getSupabase()
       .from("tenants")
-      .select("name, timezone, retell_phone_number, trade")
+      .select("name, timezone, retell_phone_number")
       .eq("id", body.tenant_id)
       .single();
 
     if (!tenant) return err(`Tenant ${body.tenant_id} not found`);
-    if (tenant.trade !== "remodel") return err("retell-send is for remodel tenants only");
     if (!tenant.retell_phone_number) return err("Tenant has no retell_phone_number configured");
 
     // Contact window guard

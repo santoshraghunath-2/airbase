@@ -63,15 +63,25 @@ Deno.serve(async (req: Request) => {
     const now = new Date();
     const cutoffHours = 264; // 11 days — no touches after this
 
-    // Find all remodel opportunities that need a cadence touch
+    // Find all opportunities needing a cadence touch, for any tenant
+    // that has a retell_voice or retell_sms agent configured
+    const { data: retellTenantIds } = await getSupabase()
+      .from("agent_config")
+      .select("tenant_id")
+      .in("agent_type", ["retell_voice", "retell_sms"])
+      .eq("enabled", true);
+
+    const tenantIds = [...new Set((retellTenantIds ?? []).map((r: { tenant_id: string }) => r.tenant_id))];
+    if (tenantIds.length === 0) return ok({ processed: 0, skipped: 0, sent: 0 });
+
     const { data: opps } = await getSupabase()
       .from("opportunities")
       .select(`
         id, tenant_id, lead_phone, lead_name,
         retell_chat_id, retell_call_id, ai_notes, created_at,
-        tenants!inner(trade, retell_phone_number, timezone)
+        tenants!inner(retell_phone_number, timezone)
       `)
-      .eq("tenants.trade", "remodel")
+      .in("tenant_id", tenantIds)
       .in("status", ["new", "contacted"])
       .is("deleted_at", null)
       .not("lead_phone", "is", null)

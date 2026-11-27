@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, FileText, Upload, CheckCircle2, Clock, XCircle, AlertTriangle } from "lucide-react";
+import { ArrowLeft, FileText, Upload, CheckCircle2, Clock, XCircle, AlertTriangle, Link, ExternalLink } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -90,11 +90,13 @@ export default function ContractDetailPage() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [contract,    setContract]    = useState<ContractDetail | null>(null);
-  const [loading,     setLoading]     = useState(true);
-  const [uploading,   setUploading]   = useState(false);
-  const [signerName,  setSignerName]  = useState("");
-  const [signedAt,    setSignedAt]    = useState(() => new Date().toISOString().slice(0, 16));
+  const [contract,       setContract]       = useState<ContractDetail | null>(null);
+  const [loading,        setLoading]        = useState(true);
+  const [uploading,      setUploading]      = useState(false);
+  const [signerName,     setSignerName]     = useState("");
+  const [signedAt,       setSignedAt]       = useState(() => new Date().toISOString().slice(0, 16));
+  const [depositLoading, setDepositLoading] = useState(false);
+  const [depositUrl,     setDepositUrl]     = useState<string | null>(null);
 
   useEffect(() => {
     if (!tenant || !contractId) return;
@@ -170,6 +172,32 @@ export default function ContractDetailPage() {
       toast.error(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function createDepositLink() {
+    if (!contract) return;
+    setDepositLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-deposit-link`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token ?? ""}`,
+          },
+          body: JSON.stringify({ contract_id: contract.id }),
+        },
+      );
+      const data = await res.json() as { url?: string; error?: string };
+      if (!res.ok || !data.url) throw new Error(data.error ?? "Failed to create deposit link");
+      setDepositUrl(data.url);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not create deposit link");
+    } finally {
+      setDepositLoading(false);
     }
   }
 
@@ -381,15 +409,55 @@ export default function ContractDetailPage() {
           </div>
         )}
 
-        {/* Signed — awaiting deposit hint */}
+        {/* Signed — collect deposit */}
         {contract.status === "signed" && (
           <div className="rounded-xl border border-line bg-paper px-6 py-5">
             <h2 className="text-sm font-semibold text-ink mb-1">Next step: collect deposit</h2>
-            <p className="text-xs text-ink-muted">
-              The contract is signed. Once the deposit payment is recorded the contract will
-              automatically become effective (after the cancellation window closes).
-              Send the customer a Stripe payment link or collect in person with Stripe Terminal.
+            <p className="text-xs text-ink-muted mb-4">
+              Send the customer a secure Stripe payment link for the deposit. The contract becomes
+              effective automatically once the deposit is paid and the cancellation window closes.
             </p>
+
+            {depositUrl ? (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2 rounded-lg border border-line bg-bone px-3 py-2">
+                  <Link className="h-3.5 w-3.5 text-ink-muted shrink-0" />
+                  <span className="flex-1 text-xs text-ink truncate font-mono">{depositUrl}</span>
+                  <button
+                    onClick={() => { void navigator.clipboard.writeText(depositUrl); toast.success("Link copied"); }}
+                    className="text-xs text-ai-ink hover:underline shrink-0"
+                  >
+                    Copy
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <a
+                    href={depositUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-ink text-paper text-xs font-semibold hover:bg-ink/90 transition-colors"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    Open payment page
+                  </a>
+                  <button
+                    onClick={() => setDepositUrl(null)}
+                    className="text-xs text-ink-muted hover:text-ink transition-colors"
+                  >
+                    Generate new link
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => void createDepositLink()}
+                disabled={depositLoading}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-ink text-paper text-xs font-semibold hover:bg-ink/90 disabled:opacity-50 transition-colors"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                {depositLoading ? "Creating link…" : "Create deposit link"}
+              </button>
+            )}
           </div>
         )}
       </div>

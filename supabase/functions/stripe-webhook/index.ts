@@ -1,14 +1,15 @@
 /**
  * stripe-webhook
  *
- * Handles Stripe webhook events for membership subscription lifecycle.
+ * Handles Stripe webhook events for membership and contract deposit flows.
  * Configure in Stripe Dashboard → Developers → Webhooks, pointing to:
  *   https://<project>.supabase.co/functions/v1/stripe-webhook
  *
  * Required secrets: STRIPE_WEBHOOK_SECRET, STRIPE_SECRET_KEY
  *
  * Handled events:
- *   checkout.session.completed     → link subscription to membership
+ *   checkout.session.completed     → membership: link subscription
+ *                                  → contract deposit: mark paid, check effectivity
  *   customer.subscription.deleted  → mark membership lapsed
  *   invoice.payment_succeeded      → renew membership expires_at
  *   invoice.payment_failed         → mark payment_failed, send SMS alert
@@ -67,7 +68,34 @@ async function verifyStripeSignature(
 // ─── Event handlers ───────────────────────────────────────────────────────────
 
 async function handleCheckoutCompleted(session: Record<string, unknown>): Promise<void> {
-  const membershipId = (session.metadata as Record<string, string>)?.airbase_membership_id;
+  const meta = (session.metadata as Record<string, string>) ?? {};
+
+  // ── Contract deposit path ─────────────────────────────────────────────────
+  const psiId      = meta.airbase_payment_schedule_item_id;
+  const contractId = meta.airbase_contract_id;
+  const tenantId   = meta.airbase_tenant_id;
+
+  if (psiId && contractId && tenantId) {
+    const now = new Date().toISOString();
+    const paymentIntentId = session.payment_intent as string | null;
+
+    await supabase
+      .from("payment_schedule_items")
+      .update({
+        status:                    "paid",
+        paid_at:                   now,
+        stripe_payment_intent_id:  paymentIntentId ?? session.id as string,
+      })
+      .eq("id", psiId)
+      .eq("tenant_id", tenantId);
+
+    // Check if contract can now be set effective (cancel window already passed)
+    await checkAndSetContractEffective(contractId, tenantId);
+    return;
+  }
+
+  // ── Membership path ───────────────────────────────────────────────────────
+  const membershipId   = meta.airbase_membership_id;
   const subscriptionId = session.subscription as string | null;
   if (!membershipId || !subscriptionId) return;
 
@@ -75,6 +103,41 @@ async function handleCheckoutCompleted(session: Record<string, unknown>): Promis
     .from("memberships")
     .update({ stripe_subscription_id: subscriptionId, stripe_checkout_session_id: null, auto_renew: true })
     .eq("id", membershipId);
+}
+
+async function checkAndSetContractEffective(contractId: string, tenantId: string): Promise<void> {
+  const { data: contract } = await supabase
+    .from("contracts")
+    .select("id, status, cancel_by_date, opportunity_id")
+    .eq("id", contractId)
+    .eq("tenant_id", tenantId)
+    .single();
+
+  if (!contract || contract.status !== "signed") return;
+
+  const cancelBy = contract.cancel_by_date ? new Date(contract.cancel_by_date as string) : null;
+  if (cancelBy && new Date() < cancelBy) {
+    // Still inside cancellation window — deposit is paid but we wait
+    console.log(`stripe-webhook: deposit paid for contract ${contractId}, waiting for cancel window (${contract.cancel_by_date})`);
+    return;
+  }
+
+  const now = new Date().toISOString();
+  await supabase
+    .from("contracts")
+    .update({ status: "effective", effective_at: now })
+    .eq("id", contractId)
+    .eq("tenant_id", tenantId);
+
+  if (contract.opportunity_id) {
+    await supabase
+      .from("opportunities")
+      .update({ status: "won", won_at: now })
+      .eq("id", contract.opportunity_id as string)
+      .eq("tenant_id", tenantId);
+  }
+
+  console.log(`stripe-webhook: contract ${contractId} set to effective`);
 }
 
 async function handleSubscriptionDeleted(subscription: Record<string, unknown>): Promise<void> {

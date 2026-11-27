@@ -138,6 +138,19 @@ async function checkAndSetContractEffective(contractId: string, tenantId: string
   }
 
   console.log(`stripe-webhook: contract ${contractId} set to effective`);
+
+  // Trigger project creation
+  await fetch(
+    `${Deno.env.get("SUPABASE_URL")}/functions/v1/project-create`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+      },
+      body: JSON.stringify({ contract_id: contractId }),
+    },
+  ).catch((e) => console.error("stripe-webhook: project-create call failed:", e));
 }
 
 async function handleSubscriptionDeleted(subscription: Record<string, unknown>): Promise<void> {

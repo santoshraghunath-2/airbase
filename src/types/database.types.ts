@@ -759,6 +759,208 @@ export type PackageComponent = PackageComponentRow;
 export type Contract = ContractRow;
 export type PaymentScheduleItem = PaymentScheduleItemRow;
 
+// ─── Phase 3: Project production types ───────────────────────────────────────
+
+export type ProjectStatus =
+  | "pending_start"
+  | "scheduled"
+  | "in_progress"
+  | "punch_list"
+  | "complete"
+  | "on_hold"
+  | "cancelled";
+
+export type PhaseStatus = "not_started" | "in_progress" | "complete" | "skipped";
+
+export type PermitStatus =
+  | "not_required"
+  | "needs_review"
+  | "pending"
+  | "submitted"
+  | "issued"
+  | "failed";
+
+export type PermitRequired = "yes" | "no" | "unknown";
+
+export type MaterialOrderStatus =
+  | "draft"
+  | "ordered"
+  | "partial"
+  | "received"
+  | "cancelled";
+
+export type ChangeOrderStatus =
+  | "draft"
+  | "needs_pricing"
+  | "sent"
+  | "signed"
+  | "declined"
+  | "void";
+
+export interface ProjectRow {
+  id: string;
+  tenant_id: string;
+  contract_id: string;
+  customer_id: string;
+  name: string;
+  status: ProjectStatus;
+  target_start: string | null;
+  target_completion: string | null;
+  actual_start: string | null;
+  actual_completion: string | null;
+  commitment_days: number | null;
+  commitment_clock_start: string | null;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectPhaseRow {
+  id: string;
+  tenant_id: string;
+  project_id: string;
+  template_item_id: string | null;
+  sort_order: number;
+  name: string;
+  planned_start: string | null;
+  planned_end: string | null;
+  actual_start: string | null;
+  actual_end: string | null;
+  status: PhaseStatus;
+  crew_size: number;
+  job_type: string;
+  required_evidence: string[] | null;
+  closed_by: string | null;
+  closed_at: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PhaseTemplateRow {
+  id: string;
+  tenant_id: string;
+  pricebook_item_id: string;
+  name: string;
+  total_commitment_days: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PhaseTemplateItemRow {
+  id: string;
+  tenant_id: string;
+  template_id: string;
+  sort_order: number;
+  name: string;
+  day_offset: number;
+  duration_days: number;
+  crew_size: number;
+  job_type: string;
+  required_evidence: string[] | null;
+  evidence_notes: string | null;
+  created_at: string;
+}
+
+export interface MaterialOrderRow {
+  id: string;
+  tenant_id: string;
+  project_id: string;
+  vendor: string;
+  status: MaterialOrderStatus;
+  promised_date: string | null;
+  received_date: string | null;
+  total_cost_cents: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MaterialOrderLineRow {
+  id: string;
+  tenant_id: string;
+  order_id: string;
+  package_component_id: string | null;
+  description: string;
+  quantity: number;
+  unit: string;
+  unit_cost_cents: number;
+  total_cost_cents: number;
+  status: MaterialOrderStatus;
+  created_at: string;
+}
+
+export interface PermitRow {
+  id: string;
+  tenant_id: string;
+  project_id: string;
+  jurisdiction: string;
+  permit_type: string;
+  status: PermitStatus;
+  submitted_at: string | null;
+  issued_at: string | null;
+  permit_number: string | null;
+  fee_cents: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChangeOrderRow {
+  id: string;
+  tenant_id: string;
+  project_id: string;
+  contract_id: string;
+  title: string;
+  description: string;
+  reported_by: string | null;
+  photo_urls: string[];
+  amount_cents: number;
+  status: ChangeOrderStatus;
+  sent_at: string | null;
+  signed_at: string | null;
+  signer_name: string | null;
+  void_reason: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChangeOrderLineRow {
+  id: string;
+  tenant_id: string;
+  change_order_id: string;
+  pricebook_item_id: string | null;
+  description: string;
+  quantity: number;
+  unit_price_cents: number;
+  total_cents: number;
+  created_at: string;
+}
+
+export interface WarrantyRow {
+  id: string;
+  tenant_id: string;
+  project_id: string;
+  customer_id: string;
+  starts_at: string;
+  expires_at: string | null;
+  terms_text: string;
+  voided_at: string | null;
+  void_reason: string | null;
+  created_at: string;
+}
+
+export type Project = ProjectRow;
+export type ProjectPhase = ProjectPhaseRow;
+export type PhaseTemplate = PhaseTemplateRow;
+export type PhaseTemplateItem = PhaseTemplateItemRow;
+export type MaterialOrder = MaterialOrderRow;
+export type MaterialOrderLine = MaterialOrderLineRow;
+export type Permit = PermitRow;
+export type ChangeOrder = ChangeOrderRow;
+export type ChangeOrderLine = ChangeOrderLineRow;
+export type Warranty = WarrantyRow;
+
 // ─── Join types ───────────────────────────────────────────────────────────────
 export type JobWithRelations = JobRow & {
   customers: Pick<CustomerRow, "id" | "name" | "phone" | "email"> | null;

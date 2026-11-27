@@ -409,6 +409,73 @@ ON CONFLICT (id) DO UPDATE SET
   material_description = EXCLUDED.material_description,
   expected_cost_cents  = EXCLUDED.expected_cost_cents;
 
+-- ─── Phase 3: Phase templates (tub-to-shower) ───────────────────────────────
+-- Template for pricebook item 00000000-0000-0000-0003-000000000001 (Tub-to-Shower)
+
+INSERT INTO phase_templates (id, tenant_id, pricebook_item_id, name, total_commitment_days)
+VALUES (
+  '00000000-0000-0000-0005-000000000001',
+  '00000000-0000-0000-0000-000000000002',
+  '00000000-0000-0000-0003-000000000001',
+  'Standard Tub-to-Shower',
+  10
+)
+ON CONFLICT (tenant_id, pricebook_item_id, name) DO NOTHING;
+
+-- Phase template items — 6 work phases + 4 buffer days
+INSERT INTO phase_template_items
+  (id, tenant_id, template_id, sort_order, name, day_offset, duration_days, crew_size, job_type, required_evidence)
+VALUES
+  -- Day 1: Demo + protection + rough-in (2 crew)
+  (
+    '00000000-0000-0000-0006-000000000001',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0005-000000000001',
+    10, 'Demo & Rough-In', 1, 1, 2, 'remodel_install',
+    ARRAY['before_photo', 'demo_complete_photo']
+  ),
+  -- Day 2: Rough plumbing + waterproofing + base set (1 crew)
+  (
+    '00000000-0000-0000-0006-000000000002',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0005-000000000001',
+    20, 'Rough Plumbing & Base', 2, 1, 1, 'remodel_install',
+    ARRAY['rough_plumbing_photo', 'waterproofing_photo']
+  ),
+  -- Day 3: Inspection (no crew — inspector only)
+  (
+    '00000000-0000-0000-0006-000000000003',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0005-000000000001',
+    30, 'Rough Inspection', 3, 1, 0, 'remodel_inspection',
+    ARRAY['inspection_card_photo']
+  ),
+  -- Day 4: Wall panels (2 crew)
+  (
+    '00000000-0000-0000-0006-000000000004',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0005-000000000001',
+    40, 'Wall Panels', 4, 1, 2, 'remodel_install',
+    ARRAY['panels_complete_photo']
+  ),
+  -- Day 5: Glass door + trim + fixtures (2 crew)
+  (
+    '00000000-0000-0000-0006-000000000005',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0005-000000000001',
+    50, 'Glass Door & Fixtures', 5, 1, 2, 'remodel_install',
+    ARRAY['door_installed_photo', 'fixtures_photo']
+  ),
+  -- Day 6: Punch list + final clean (2 crew)
+  (
+    '00000000-0000-0000-0006-000000000006',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0005-000000000001',
+    60, 'Punch List & Clean', 6, 1, 2, 'remodel_punch_list',
+    ARRAY['punch_list_complete_photo', 'final_photo']
+  )
+ON CONFLICT (id) DO NOTHING;
+
 -- ─── Post-seed checklist ──────────────────────────────────────────────────────
 -- After running this seed:
 --

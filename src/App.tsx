@@ -35,6 +35,8 @@ import BookingAgentDashboardPage from "@/features/booking/BookingAgentDashboardP
 import SuperadminPage from "@/features/superadmin/SuperadminPage";
 import ContractsPage from "@/features/contracts/ContractsPage";
 import ContractDetailPage from "@/features/contracts/ContractDetailPage";
+import ProjectsPage from "@/features/projects/ProjectsPage";
+import ProjectDetailPage from "@/features/projects/ProjectDetailPage";
 
 function RouteGuard({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
@@ -131,6 +133,8 @@ export default function App() {
             <Route path="estimates/:estimateId" element={<EstimateBuilderPage />} />
             <Route path="contracts"      element={<ContractsPage />} />
             <Route path="contracts/:contractId" element={<ContractDetailPage />} />
+            <Route path="projects"       element={<ProjectsPage />} />
+            <Route path="projects/:projectId" element={<ProjectDetailPage />} />
             <Route path="opportunities" element={<OpportunitiesPage />} />
             <Route path="campaigns"     element={<CampaignsPage />} />
             <Route path="analytics"     element={<ProfitabilityPage />} />

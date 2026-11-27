@@ -117,6 +117,17 @@ Deno.serve(async (req: Request) => {
     const tenantId = opp.tenant_id as string;
     const oppId    = opp.id as string;
 
+    // ── Remodel guard: Phase 3 creates projects, not single-visit install jobs ──
+    const { data: tenant } = await supabase
+      .from("tenants")
+      .select("trade")
+      .eq("id", tenantId)
+      .single();
+    if (tenant?.trade === "remodel") {
+      console.log(`install-crew-agent: skipping remodel opportunity ${oppId} (Phase 3 handles project creation)`);
+      return ok({ skip: "remodel tenant — project creation handled in Phase 3" });
+    }
+
     // ── Agent config ─────────────────────────────────────────────────────────
     const ctx = await loadAgentContext(supabase, tenantId, "dispatch");
     if (!ctx.config.enabled) return ok({ skip: "agent disabled" });

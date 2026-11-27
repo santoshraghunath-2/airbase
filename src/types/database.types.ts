@@ -349,8 +349,10 @@ export interface EstimateRow {
   converted_job_id: string | null;
   ai_generated: boolean;
   ai_upsell_suggestions: Array<{ description: string; reason: string; price_cents: number }>;
-  wisetack_application_id: string | null;
-  wisetack_offer_url: string | null;
+  financing_application_id: string | null;
+  financing_offer_url: string | null;
+  financing_provider: string | null;
+  contract_id: string | null;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
@@ -671,6 +673,91 @@ export type PortalInvitation = PortalInvitationRow;
 export type ReviewRequest = ReviewRequestRow;
 export type Briefing = BriefingRow;
 export type Conversation = ConversationRow;
+
+// ─── Phase 2: Remodel sale-to-contract types ──────────────────────────────────
+
+export type ContractStatus =
+  | "draft"
+  | "sent"
+  | "signed"
+  | "effective"
+  | "cancelled"
+  | "void";
+
+export type CancellationNoticeType = "three_day" | "five_day";
+
+export type PaymentTriggerType =
+  | "contract_signed"
+  | "materials_delivered"
+  | "phase_closed"
+  | "completion";
+
+export type PaymentScheduleStatus = "pending" | "invoiced" | "paid";
+
+export interface PackageComponentRow {
+  id: string;
+  tenant_id: string;
+  pricebook_item_id: string;
+  option: "base" | "good" | "better" | "best";
+  material_description: string;
+  quantity: number;
+  unit: string;
+  expected_cost_cents: number;
+  labor_phase_name: string | null;
+  labor_hours: number | null;
+  crew_size: number | null;
+  crew_days: number | null;
+  commitment_days: number | null;
+  target_margin_percent: number | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ContractRow {
+  id: string;
+  tenant_id: string;
+  customer_id: string;
+  opportunity_id: string | null;
+  status: ContractStatus;
+  total_cents: number;
+  template_version: string;
+  cancellation_notice_type: CancellationNoticeType;
+  cancel_by_date: string | null;
+  customer_65_or_older: boolean;
+  esign_provider: string | null;
+  esign_envelope_id: string | null;
+  pdf_path: string | null;
+  signed_pdf_path: string | null;
+  signed_at: string | null;
+  signer_name: string | null;
+  effective_at: string | null;
+  void_reason: string | null;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PaymentScheduleItemRow {
+  id: string;
+  contract_id: string;
+  tenant_id: string;
+  sort_order: number;
+  description: string;
+  trigger_type: PaymentTriggerType;
+  amount_cents: number;
+  status: PaymentScheduleStatus;
+  due_date: string | null;
+  invoiced_at: string | null;
+  paid_at: string | null;
+  stripe_payment_intent_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type PackageComponent = PackageComponentRow;
+export type Contract = ContractRow;
+export type PaymentScheduleItem = PaymentScheduleItemRow;
 
 // ─── Join types ───────────────────────────────────────────────────────────────
 export type JobWithRelations = JobRow & {

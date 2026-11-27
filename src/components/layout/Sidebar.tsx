@@ -36,6 +36,7 @@ const NAV_ITEMS = [
   { label: "Booking Agent",  icon: MessageCircle, path: "booking-agent",   roles: ["owner", "office_manager", "dispatcher"] },
   { label: "Memberships",  icon: BadgeCheck,    path: "memberships",  roles: null },
   { label: "Estimates",      icon: Calculator,   path: "estimates",      roles: null },
+  { label: "Contracts",      icon: FileText,     path: "contracts",      roles: null },
   { label: "Opportunities",  icon: TrendingUp,  path: "opportunities",  roles: null },
   { label: "Campaigns",      icon: Megaphone,   path: "campaigns",      roles: null },
   { label: "Analytics",     icon: BarChart2,   path: "analytics",      roles: null },

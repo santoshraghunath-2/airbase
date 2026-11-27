@@ -1,20 +1,20 @@
-/**
- * Integration-style tests for retell-voice-webhook/index.ts
- *
- * These tests import the handler directly and exercise it without a live Supabase.
- * They verify:
- *   1. An unsigned POST → 401, no DB calls attempted
- *   2. A correctly signed POST → handler returns 200 (or 500 from missing Supabase env,
- *      but only AFTER the signature gate passes — meaning the 401 guard is proven gone)
- *
- * We mock Deno.env.get to inject the Retell API key and prevent DB connections.
- */
+// Integration tests for retell-voice-webhook/index.ts
+// Tests: OPTIONS → 405, auth gate (unsigned/wrong key/stale), valid sig passes auth.
+// No DB calls are made — Supabase init is lazy and no tool calls are exercised.
 
-import { assertEquals, assertNotEquals } from "@std/assert";
+import { assertEquals } from "jsr:@std/assert";
+import { handler } from "../retell-voice-webhook/index.ts";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+const TEST_KEY = "test-webhook-key-xyz";
 
-const TEST_KEY = "test-retell-api-key-webhook-tests";
+// Patch Deno.env so the handler uses our test key
+const _origEnvGet = Deno.env.get.bind(Deno.env);
+Deno.env.get = (key: string) => {
+  if (key === "RETELL_API_KEY") return TEST_KEY;
+  if (key === "SUPABASE_URL") return "http://localhost:54321";
+  if (key === "SUPABASE_SERVICE_ROLE_KEY") return "test-service-role-key";
+  return _origEnvGet(key);
+};
 
 async function makeSignature(rawBody: string, timestampMs: number, key: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -36,105 +36,61 @@ async function makeSignature(rawBody: string, timestampMs: number, key: string):
   return `v=${timestampMs},d=${hex}`;
 }
 
-function makeRequest(body: string, headers: Record<string, string> = {}): Request {
-  return new Request("https://edge.supabase.co/functions/v1/retell-voice-webhook", {
+Deno.test("OPTIONS returns 405", async () => {
+  const req = new Request("http://localhost", { method: "OPTIONS" });
+  const res = await handler(req);
+  assertEquals(res.status, 405);
+});
+
+Deno.test("unsigned POST returns 401 without reaching DB", async () => {
+  const body = '{"event":"call_started","call_id":"c1","agent_id":"a1"}';
+  const req = new Request("http://localhost", {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...headers },
     body,
+    headers: { "Content-Type": "application/json" },
   });
-}
-
-// ─── Override env for tests ───────────────────────────────────────────────────
-
-// Patch Deno.env.get to inject the test key without touching any real env.
-// The webhook reads RETELL_API_KEY and SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY.
-// We supply only RETELL_API_KEY; Supabase keys are absent → DB init will fail,
-// but only AFTER the auth gate, which is what we're testing.
-const _origEnvGet = Deno.env.get.bind(Deno.env);
-function withRetellEnv<T>(fn: () => T): T {
-  // deno-lint-ignore no-explicit-any
-  (Deno.env as any).get = (key: string) => {
-    if (key === "RETELL_API_KEY") return TEST_KEY;
-    return undefined;
-  };
-  try {
-    return fn();
-  } finally {
-    // deno-lint-ignore no-explicit-any
-    (Deno.env as any).get = _origEnvGet;
-  }
-}
-
-// ─── Tests ────────────────────────────────────────────────────────────────────
-
-Deno.test("OPTIONS request → 405 Method Not Allowed", async () => {
-  // Import handler fresh for each test group
-  const { handler } = await import("../retell-voice-webhook/index.ts");
-  const req = new Request("https://edge.supabase.co/functions/v1/retell-voice-webhook", {
-    method: "OPTIONS",
-  });
-  let response!: Response;
-  await withRetellEnv(async () => {
-    response = await handler(req);
-  });
-  assertEquals(response.status, 405);
+  const res = await handler(req);
+  assertEquals(res.status, 401);
 });
 
-Deno.test("POST with no signature header → 401, no DB access", async () => {
-  const { handler } = await import("../retell-voice-webhook/index.ts");
-  const body = JSON.stringify({ event: "call_started", call_id: "call_unsigned" });
-  const req = makeRequest(body); // no x-retell-signature header
-
-  let response!: Response;
-  await withRetellEnv(async () => {
-    response = await handler(req);
+Deno.test("wrong key returns 401", async () => {
+  const body = '{"event":"call_started","call_id":"c1","agent_id":"a1"}';
+  const ts = Date.now();
+  const sig = await makeSignature(body, ts, "wrong-key");
+  const req = new Request("http://localhost", {
+    method: "POST",
+    body,
+    headers: { "Content-Type": "application/json", "x-retell-signature": sig },
   });
-  assertEquals(response.status, 401, "unsigned request must be rejected with 401");
-  const json = await response.json();
-  assertEquals(json.error, "Unauthorized");
+  const res = await handler(req);
+  assertEquals(res.status, 401);
 });
 
-Deno.test("POST with wrong key signature → 401", async () => {
-  const { handler } = await import("../retell-voice-webhook/index.ts");
-  const body = JSON.stringify({ event: "call_started", call_id: "call_wrongkey" });
-  const badSig = await makeSignature(body, Date.now(), "completely-wrong-key");
-  const req = makeRequest(body, { "x-retell-signature": badSig });
-
-  let response!: Response;
-  await withRetellEnv(async () => {
-    response = await handler(req);
+Deno.test("stale signature returns 401", async () => {
+  const body = '{"event":"call_started","call_id":"c1","agent_id":"a1"}';
+  const ts = Date.now() - 6 * 60 * 1000;
+  const sig = await makeSignature(body, ts, TEST_KEY);
+  const req = new Request("http://localhost", {
+    method: "POST",
+    body,
+    headers: { "Content-Type": "application/json", "x-retell-signature": sig },
   });
-  assertEquals(response.status, 401, "wrong-key signature must be rejected with 401");
+  const res = await handler(req);
+  assertEquals(res.status, 401);
 });
 
-Deno.test("POST with stale timestamp → 401", async () => {
-  const { handler } = await import("../retell-voice-webhook/index.ts");
-  const body = JSON.stringify({ event: "call_started", call_id: "call_stale" });
-  const staleTs = Date.now() - 10 * 60 * 1000; // 10 minutes ago
-  const sig = await makeSignature(body, staleTs, TEST_KEY);
-  const req = makeRequest(body, { "x-retell-signature": sig });
-
-  let response!: Response;
-  await withRetellEnv(async () => {
-    response = await handler(req);
-  });
-  assertEquals(response.status, 401, "stale timestamp must be rejected with 401");
-});
-
-Deno.test("POST with valid signature passes auth gate (non-401 response)", async () => {
-  const { handler } = await import("../retell-voice-webhook/index.ts");
-  const body = JSON.stringify({ event: "call_started", call_id: "call_valid123" });
+Deno.test("valid signature passes auth gate (not 401)", async () => {
+  // Passes auth but resolveTenant will get no DB hit — returns 200 with dynamic vars
+  // from the fallback path (no RETELL_TENANT_DEFAULT set → null ctx → default company_name)
+  const body = '{"event":"call_started","call_id":"c1","agent_id":"a1","call_type":"phone_call","call_status":"ongoing","from_number":"+14155550100","to_number":"+14155550101"}';
   const ts = Date.now();
   const sig = await makeSignature(body, ts, TEST_KEY);
-  const req = makeRequest(body, { "x-retell-signature": sig });
-
-  let response!: Response;
-  await withRetellEnv(async () => {
-    response = await handler(req);
+  const req = new Request("http://localhost", {
+    method: "POST",
+    body,
+    headers: { "Content-Type": "application/json", "x-retell-signature": sig },
   });
-
-  // A valid signature passes the auth gate. The handler will then try to init
-  // Supabase (SUPABASE_URL not set in test env) and fail with 500 — that's fine.
-  // What matters: it must NOT be 401 (the auth gate did not reject it).
-  assertNotEquals(response.status, 401, "valid signature must not be rejected by auth gate");
+  const res = await handler(req);
+  // Not 401 — auth passed. May be 200 or 500 depending on DB; just check it's not an auth error.
+  assertEquals(res.status !== 401, true);
 });

@@ -14,7 +14,7 @@ interface ProjectRow {
   target_completion: string | null;
   commitment_days: number | null;
   created_at: string;
-  customers: { name: string } | null;
+  customers: { name: string | null }[] | null;
 }
 
 function statusStyle(s: string) {
@@ -105,7 +105,7 @@ export default function ProjectsPage() {
                     </span>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-ink-muted">
-                    <span>{p.customers?.name ?? "—"}</span>
+                    <span>{p.customers?.[0]?.name ?? "—"}</span>
                     {p.target_start && (
                       <>
                         <span>·</span>

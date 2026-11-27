@@ -7,7 +7,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -61,8 +60,8 @@ interface ProjectDetail {
   commitment_days: number | null;
   commitment_clock_start: string | null;
   created_at: string;
-  customers: { id: string; name: string; phone: string | null } | null;
-  contracts: { id: string; total_cents: number } | null;
+  customers: { id: string; name: string | null; phone: string | null }[] | null;
+  contracts: { id: string; total_cents: number }[] | null;
   project_phases: Phase[];
   material_orders: MaterialOrder[];
   permits: Permit[];
@@ -173,7 +172,6 @@ export default function ProjectDetailPage() {
     (a, b) => a.sort_order - b.sort_order,
   );
 
-  const activePhases = sortedPhases.filter((p) => p.status !== "complete" && p.status !== "skipped");
   const hasGateIssues =
     project.permits.some((p) => ["needs_review", "pending", "submitted"].includes(p.status)) ||
     project.material_orders.some((m) => ["draft", "ordered", "partial"].includes(m.status));
@@ -195,12 +193,12 @@ export default function ProjectDetailPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-lg font-semibold text-ink">{project.name}</h1>
-              <p className="text-xs text-ink-muted mt-0.5">{project.customers?.name ?? "—"}</p>
+              <p className="text-xs text-ink-muted mt-0.5">{project.customers?.[0]?.name ?? "—"}</p>
             </div>
             <div className="text-right shrink-0">
-              {project.contracts && (
+              {project.contracts?.[0] && (
                 <div className="text-base font-semibold text-ink tabular-nums">
-                  {centsDisplay(project.contracts.total_cents)}
+                  {centsDisplay(project.contracts[0].total_cents)}
                 </div>
               )}
               <div className="text-xs text-ink-muted capitalize">{project.status.replace("_", " ")}</div>

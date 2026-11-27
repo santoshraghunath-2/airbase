@@ -42,6 +42,14 @@ interface OppWithRelations {
   service_locations: Pick<ServiceLocationRow, "id" | "address" | "city" | "state"> | null;
   assigned: { id: string; name: string } | null;
   source_tech: { id: string; name: string } | null;
+  // Remodel lead qualification fields
+  lead_name: string | null;
+  lead_phone: string | null;
+  project_summary: string | null;
+  budget_range: string | null;
+  timeline: string | null;
+  service_area_zip: string | null;
+  disqualify_reason: string | null;
 }
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
@@ -84,6 +92,23 @@ const SOURCE_LABELS: Record<LeadSource, string> = {
   referral:      "Referral",
   portal:        "Portal",
   manual:        "Manual",
+  web_form:      "Web form",
+  retell_chat:   "SMS / AI chat",
+};
+
+const BUDGET_LABELS: Record<string, string> = {
+  under_8k:  "Under $8K",
+  "8k_12k":  "$8K–$12K",
+  "12k_20k": "$12K–$20K",
+  "20k_plus": "$20K+",
+};
+
+const TIMELINE_LABELS: Record<string, string> = {
+  asap:          "ASAP",
+  "1_3_months":  "1–3 months",
+  "3_6_months":  "3–6 months",
+  "6_plus_months": "6+ months",
+  flexible:      "Flexible",
 };
 
 // ─── New Lead dialog ──────────────────────────────────────────────────────────
@@ -355,6 +380,25 @@ function OppCard({ opp, onStatusChange }: { opp: OppWithRelations; onStatusChang
         {opp.source_tech && (
           <div className="flex items-center gap-1.5 text-xs text-ink-muted">
             <span>Flagged by {opp.source_tech.name}</span>
+          </div>
+        )}
+        {/* Remodel lead qualification fields */}
+        {opp.project_summary && (
+          <div className="flex items-start gap-1.5 text-xs text-ink-muted">
+            <span className="font-medium text-ink-muted min-w-0 flex-shrink-0">Project:</span>
+            <span className="line-clamp-2">{opp.project_summary}</span>
+          </div>
+        )}
+        {(opp.budget_range || opp.timeline) && (
+          <div className="flex items-center gap-3 text-xs text-ink-muted">
+            {opp.budget_range && <span>{BUDGET_LABELS[opp.budget_range] ?? opp.budget_range}</span>}
+            {opp.timeline && <span>· {TIMELINE_LABELS[opp.timeline] ?? opp.timeline}</span>}
+            {opp.service_area_zip && <span>· {opp.service_area_zip}</span>}
+          </div>
+        )}
+        {opp.disqualify_reason && (
+          <div className="flex items-center gap-1.5 text-xs text-destructive">
+            <span>Disqualified: {opp.disqualify_reason.replace(/_/g, " ")}</span>
           </div>
         )}
       </div>

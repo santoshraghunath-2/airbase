@@ -20,6 +20,8 @@ export interface BookingConversation {
   context: Record<string, unknown>;
   last_message_at: string;
   created_at: string;
+  retell_call_id: string | null;
+  retell_chat_id: string | null;
 }
 
 type StatusFilter = "all" | "active" | "escalated" | "resolved";
@@ -245,6 +247,8 @@ export default function BookingInboxPage() {
     const role = lastMessageRole(conv);
     const channelIcon = conv.channel === "voice" ? (
       <Phone className="h-3.5 w-3.5" />
+    ) : conv.retell_chat_id ? (
+      <MessageSquare className="h-3.5 w-3.5 text-ai" />
     ) : (
       <MessageSquare className="h-3.5 w-3.5" />
     );

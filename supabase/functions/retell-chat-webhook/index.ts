@@ -17,8 +17,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { verifyRetellSignature } from "../_shared/retell-auth.ts";
-import { dispatchRemodelTool } from "../_shared/remodel-tools.ts";
-import type { RecastToolContext } from "../_shared/remodel-tools.ts";
+import { dispatchRetellTool } from "../_shared/retell-tools.ts";
+import type { RetellToolContext, RetellAgentSettings } from "../_shared/retell-tools.ts";
 
 // ─── Supabase (lazy) ──────────────────────────────────────────────────────────
 
@@ -67,29 +67,26 @@ type RetellChatEvent = RetellChatLifecycleEvent | RetellChatFunctionCallEvent;
 
 // ─── Tenant resolution ────────────────────────────────────────────────────────
 
-interface RecastTenantCtx {
+interface RetellTenantCtx {
   tenantId: string;
   companyName: string;
+  agentSettings: RetellAgentSettings;
 }
 
-async function resolveTenant(agentId: string): Promise<RecastTenantCtx | null> {
+async function resolveTenant(agentId: string): Promise<RetellTenantCtx | null> {
   const { data: configRow } = await getSupabase()
     .from("agent_config")
-    .select("tenant_id, tenants(name, trade)")
-    .eq("agent_type", "remodel_sms")
+    .select("tenant_id, settings, tenants(name)")
+    .eq("agent_type", "retell_sms")
     .filter("settings->>'retell_agent_id'", "eq", agentId)
     .single();
 
   if (!configRow) return null;
-  const tenant = configRow.tenants as { name: string; trade: string } | null;
-  if (tenant?.trade !== "remodel") {
-    // Chat webhook is remodel-only; field-service tenants use booking-agent
-    console.warn(`retell-chat-webhook: non-remodel tenant ${configRow.tenant_id} — ignoring`);
-    return null;
-  }
+  const tenant = configRow.tenants as { name: string } | null;
   return {
     tenantId: configRow.tenant_id as string,
-    companyName: tenant?.name ?? "RECAST California",
+    companyName: tenant?.name ?? "Home Services",
+    agentSettings: (configRow.settings ?? {}) as RetellAgentSettings,
   };
 }
 
@@ -142,7 +139,6 @@ export async function handler(req: Request): Promise<Response> {
       if (event.event === "chat_analyzed" && chatEvent.chat_analysis) {
         const ctx = await resolveTenant(event.agent_id);
         if (ctx) {
-          // Update booking_conversation with final analysis if one exists
           await getSupabase()
             .from("booking_conversations")
             .update({
@@ -188,15 +184,16 @@ export async function handler(req: Request): Promise<Response> {
       }
 
       // tenantId comes from resolved agent context — never from tool arguments
-      const remodelCtx: RecastToolContext = {
+      const retellCtx: RetellToolContext = {
         tenantId: ctx.tenantId,
         callerPhone,
         interactionId: fnEvent.chat_id,
         interactionType: "chat",
+        settings: ctx.agentSettings,
         supabase: getSupabase(),
       };
 
-      const result = await dispatchRemodelTool(fnEvent.name, args, remodelCtx);
+      const result = await dispatchRetellTool(fnEvent.name, args, retellCtx);
 
       return new Response(JSON.stringify({ result: JSON.stringify(result) }), {
         headers: { "Content-Type": "application/json" },

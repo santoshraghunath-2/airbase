@@ -1,22 +1,60 @@
-// Remodel tenant tool implementations for Retell voice and chat agents.
-// All tools receive tenantId from the resolved Retell agent context — never from tool arguments.
-// Tool schemas exposed to the LLM contain no tenant_id field.
+// Retell AI tool implementations — platform capability for all tenants.
+// Qualifying logic (budget gate, service area) and booking config are driven by
+// agent_config.settings, not hardcoded per-tenant branches.
+//
+// All tools receive tenantId from the resolved Retell agent context — never from
+// tool arguments. Tool schemas exposed to the LLM contain no tenant_id field.
 
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 
+// ─── Settings (stored in agent_config.settings JSONB) ────────────────────────
+
+export interface RetellAgentSettings {
+  retell_agent_id: string;
+  retell_phone_number?: string;
+
+  // Qualifying gates — omit a gate entirely to skip it
+  qualifying?: {
+    // budget_range enum values that fail the gate (e.g. ["under_8k"])
+    budget_disqualify_values?: string[];
+    // ZIPs that are within service area; empty/absent = no area restriction
+    service_area_zips?: string[];
+    // If false, commercial_property disqualify reason is enforced by the agent prompt
+    commercial_allowed?: boolean;
+  };
+
+  // Booking parameters
+  booking?: {
+    job_type?: string;         // default: "remodel_consult"
+    max_per_day?: number;      // default: 4
+    morning_time?: string;     // "HH:MM:SS", default: "09:00:00"
+    afternoon_time?: string;   // "HH:MM:SS", default: "13:00:00"
+  };
+
+  // Outbound contact window
+  contact_window?: {
+    timezone?: string;         // IANA tz, default: tenant timezone
+    start_hour?: number;       // 0–23, default: 8
+    end_hour?: number;         // 0–23 exclusive, default: 20
+    // JS weekday numbers (0=Sun). Default: [1,2,3,4,5,6] (Mon–Sat)
+    days?: number[];
+  };
+}
+
 // ─── Context ──────────────────────────────────────────────────────────────────
 
-export interface RecastToolContext {
+export interface RetellToolContext {
   tenantId: string;
   callerPhone: string;
   interactionId: string;    // retell call_id or chat_id
   interactionType: "voice" | "chat";
+  settings: RetellAgentSettings;
   supabase: SupabaseClient;
 }
 
-// ─── Tool schemas (Anthropic format; llm-router translates for other providers) ──
+// ─── Tool schemas (Anthropic format; llm-router translates for other providers) ─
 
-export const REMODEL_TOOL_DEFINITIONS = [
+export const RETELL_TOOL_DEFINITIONS = [
   {
     name: "lookup_customer",
     description: "Look up a customer by their phone number. Call this first on every inbound contact.",
@@ -39,7 +77,7 @@ export const REMODEL_TOOL_DEFINITIONS = [
       properties: {
         name: { type: "string", description: "Caller's full name." },
         email: { type: "string", description: "Caller's email address (optional)." },
-        project_summary: { type: "string", description: "Brief description of the remodel project." },
+        project_summary: { type: "string", description: "Brief description of the project." },
         budget_range: {
           type: "string",
           enum: ["under_8k", "8k_12k", "12k_20k", "20k_plus"],
@@ -57,7 +95,7 @@ export const REMODEL_TOOL_DEFINITIONS = [
   },
   {
     name: "check_consult_availability",
-    description: "Check available in-home consultation slots for a given date.",
+    description: "Check available consultation slots for a given date.",
     input_schema: {
       type: "object",
       properties: {
@@ -71,7 +109,7 @@ export const REMODEL_TOOL_DEFINITIONS = [
   },
   {
     name: "book_consultation",
-    description: "Book an in-home consultation. Requires customer_id and opportunity_id from qualify_lead.",
+    description: "Book a consultation. Requires customer_id and opportunity_id from qualify_lead.",
     input_schema: {
       type: "object",
       properties: {
@@ -90,7 +128,7 @@ export const REMODEL_TOOL_DEFINITIONS = [
   },
   {
     name: "save_lead",
-    description: "Save a lead that cannot be booked right now — budget too low, out of service area, not ready, or caller hung up. Always call this instead of ending without saving.",
+    description: "Save a lead that cannot be booked — budget too low, out of area, not ready, or caller hung up. Always call this instead of ending without saving.",
     input_schema: {
       type: "object",
       properties: {
@@ -123,26 +161,10 @@ export const REMODEL_TOOL_DEFINITIONS = [
   },
 ] as const;
 
-// ─── Service area check ───────────────────────────────────────────────────────
-
-async function getServiceZips(supabase: SupabaseClient, tenantId: string): Promise<string[]> {
-  const { data } = await supabase
-    .from("tenants")
-    .select("service_area_zips")
-    .eq("id", tenantId)
-    .single();
-  return (data?.service_area_zips as string[]) ?? [];
-}
-
-function isInServiceArea(zip: string, serviceZips: string[]): boolean {
-  if (serviceZips.length === 0) return true; // no restriction configured
-  return serviceZips.includes(zip.trim());
-}
-
 // ─── Tool implementations ─────────────────────────────────────────────────────
 
 export async function lookupCustomer(
-  ctx: RecastToolContext,
+  ctx: RetellToolContext,
   args: { phone: string },
 ): Promise<Record<string, unknown>> {
   const normalized = args.phone.replace(/\D/g, "");
@@ -156,7 +178,7 @@ export async function lookupCustomer(
     .is("deleted_at", null)
     .order("created_at", { referencedTable: "opportunities", ascending: false })
     .limit(3, { referencedTable: "opportunities" })
-    .single();
+    .maybeSingle();
 
   if (!customer) {
     return { found: false, message: "New contact — no existing record." };
@@ -179,7 +201,7 @@ export async function lookupCustomer(
 }
 
 export async function qualifyLead(
-  ctx: RecastToolContext,
+  ctx: RetellToolContext,
   args: {
     name: string;
     email?: string;
@@ -189,23 +211,26 @@ export async function qualifyLead(
     service_area_zip: string;
   },
 ): Promise<Record<string, unknown>> {
-  // Budget gate: under_8k is below minimum project size
-  if (args.budget_range === "under_8k") {
+  const q = ctx.settings.qualifying ?? {};
+
+  // Budget gate — only applied if budget_disqualify_values is configured
+  if (q.budget_disqualify_values?.includes(args.budget_range)) {
     return {
       qualified: false,
       disqualify_reason: "budget_too_low",
-      message: "Project budget below our minimum. Saving as a lead for future reference.",
+      message: "Project budget is below our minimum. Saving as a lead for future reference.",
     };
   }
 
-  // Service area gate
-  const serviceZips = await getServiceZips(ctx.supabase, ctx.tenantId);
-  if (!isInServiceArea(args.service_area_zip, serviceZips)) {
-    return {
-      qualified: false,
-      disqualify_reason: "out_of_service_area",
-      message: "ZIP code outside our current service area. Saving as a lead.",
-    };
+  // Service area gate — only applied if service_area_zips is configured
+  if (q.service_area_zips && q.service_area_zips.length > 0) {
+    if (!q.service_area_zips.includes(args.service_area_zip.trim())) {
+      return {
+        qualified: false,
+        disqualify_reason: "out_of_service_area",
+        message: "ZIP code is outside our current service area. Saving as a lead.",
+      };
+    }
   }
 
   // Find or create customer
@@ -218,7 +243,7 @@ export async function qualifyLead(
     .eq("tenant_id", ctx.tenantId)
     .or(`phone.eq.${ctx.callerPhone},phone.eq.+1${normalized},phone.eq.${normalized}`)
     .is("deleted_at", null)
-    .single();
+    .maybeSingle();
 
   if (existing) {
     customerId = existing.id as string;
@@ -284,9 +309,12 @@ export async function qualifyLead(
 }
 
 export async function checkConsultAvailability(
-  ctx: RecastToolContext,
+  ctx: RetellToolContext,
   args: { date: string },
 ): Promise<Record<string, unknown>> {
+  const jobType = ctx.settings.booking?.job_type ?? "remodel_consult";
+  const maxPerDay = ctx.settings.booking?.max_per_day ?? 4;
+
   let targetDate: Date;
   const today = new Date();
   if (args.date === "today") {
@@ -298,14 +326,13 @@ export async function checkConsultAvailability(
     targetDate = new Date(args.date);
   }
 
-  // Skip weekends
   const dow = targetDate.getDay();
   if (dow === 0 || dow === 6) {
     const next = new Date(targetDate);
     next.setDate(targetDate.getDate() + (dow === 6 ? 2 : 1));
     return {
       available: false,
-      message: `We don't do consultations on weekends. The next available day is ${next.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}.`,
+      message: `We don't schedule consultations on weekends. The next available day is ${next.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}.`,
       suggested_date: next.toISOString().slice(0, 10),
     };
   }
@@ -315,25 +342,21 @@ export async function checkConsultAvailability(
   const dayEnd = new Date(targetDate);
   dayEnd.setHours(23, 59, 59, 999);
 
-  // Count remodel_consult jobs already scheduled that day for this tenant
   const { data: scheduled } = await ctx.supabase
     .from("jobs")
-    .select("id")
+    .select("id, scheduled_start")
     .eq("tenant_id", ctx.tenantId)
-    .eq("job_type", "remodel_consult")
+    .eq("job_type", jobType)
     .gte("scheduled_start", dayStart.toISOString())
     .lte("scheduled_start", dayEnd.toISOString())
     .not("status", "in", "(cancelled,no_show)");
 
-  const bookedCount = (scheduled ?? []).length;
+  const bookedList = scheduled ?? [];
   const dateLabel = targetDate.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
+    weekday: "long", month: "long", day: "numeric",
   });
 
-  // Allow up to 4 consults per day (2 morning + 2 afternoon)
-  if (bookedCount >= 4) {
+  if (bookedList.length >= maxPerDay) {
     const nextDay = new Date(targetDate);
     nextDay.setDate(targetDate.getDate() + 1);
     while (nextDay.getDay() === 0 || nextDay.getDay() === 6) {
@@ -346,8 +369,14 @@ export async function checkConsultAvailability(
     };
   }
 
-  const morningBooked = (scheduled ?? []).length >= 2;
-  const afternoonBooked = (scheduled ?? []).length >= 4;
+  const halfDay = Math.floor(maxPerDay / 2);
+  const morningBooked = bookedList.filter((j) =>
+    new Date(j.scheduled_start as string).getHours() < 12
+  ).length >= halfDay;
+  const afternoonBooked = bookedList.filter((j) =>
+    new Date(j.scheduled_start as string).getHours() >= 12
+  ).length >= halfDay;
+
   const slots: Array<{ label: string; value: string }> = [];
   if (!morningBooked) slots.push({ label: "morning (9am–12pm)", value: "morning" });
   if (!afternoonBooked) slots.push({ label: "afternoon (1pm–5pm)", value: "afternoon" });
@@ -362,7 +391,7 @@ export async function checkConsultAvailability(
 }
 
 export async function bookConsultation(
-  ctx: RecastToolContext,
+  ctx: RetellToolContext,
   args: {
     customer_id: string;
     opportunity_id: string;
@@ -371,7 +400,11 @@ export async function bookConsultation(
     notes?: string;
   },
 ): Promise<Record<string, unknown>> {
-  // Verify these IDs belong to this tenant (security: prevent cross-tenant booking)
+  const jobType = ctx.settings.booking?.job_type ?? "remodel_consult";
+  const morningTime = ctx.settings.booking?.morning_time ?? "09:00:00";
+  const afternoonTime = ctx.settings.booking?.afternoon_time ?? "13:00:00";
+
+  // Verify IDs belong to this tenant (cross-tenant protection)
   const { data: opp } = await ctx.supabase
     .from("opportunities")
     .select("id, customer_id")
@@ -392,7 +425,7 @@ export async function bookConsultation(
 
   if (!customer) return { success: false, message: "Customer not found. Please try again." };
 
-  const timeMap = { morning: "09:00:00", afternoon: "13:00:00" };
+  const timeMap = { morning: morningTime, afternoon: afternoonTime };
   const scheduledStart = `${args.date}T${timeMap[args.time_window]}`;
 
   const { data: job, error: jobError } = await ctx.supabase
@@ -400,7 +433,7 @@ export async function bookConsultation(
     .insert({
       tenant_id: ctx.tenantId,
       customer_id: args.customer_id,
-      job_type: "remodel_consult",
+      job_type: jobType,
       status: "scheduled",
       priority: "normal",
       scheduled_start: scheduledStart,
@@ -416,17 +449,12 @@ export async function bookConsultation(
 
   const jobId = (job as Record<string, string>).id;
 
-  // Update opportunity
   await ctx.supabase
     .from("opportunities")
-    .update({
-      status: "visit_scheduled",
-      visit_job_id: jobId,
-    })
+    .update({ status: "visit_scheduled", visit_job_id: jobId })
     .eq("id", args.opportunity_id)
     .eq("tenant_id", ctx.tenantId);
 
-  // Log to booking_conversations
   const retellField =
     ctx.interactionType === "voice"
       ? { retell_call_id: ctx.interactionId }
@@ -441,12 +469,7 @@ export async function bookConsultation(
       status: "resolved",
       job_id: jobId,
       messages: [],
-      context: {
-        job_type: "remodel_consult",
-        scheduled_date: args.date,
-        time_window: args.time_window,
-        opportunity_id: args.opportunity_id,
-      },
+      context: { job_type: jobType, scheduled_date: args.date, time_window: args.time_window, opportunity_id: args.opportunity_id },
       ...retellField,
     },
     {
@@ -456,25 +479,19 @@ export async function bookConsultation(
   );
 
   const dateLabel = new Date(args.date).toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
+    weekday: "long", month: "long", day: "numeric",
   });
 
   return {
     success: true,
     job_id: jobId,
-    message: `Booked! Your in-home consultation is confirmed for ${dateLabel} in the ${args.time_window}. You'll receive a confirmation shortly.`,
-    confirmation: {
-      job_id: jobId,
-      date: dateLabel,
-      time_window: args.time_window,
-    },
+    message: `Booked! Your consultation is confirmed for ${dateLabel} in the ${args.time_window}. You'll receive a confirmation shortly.`,
+    confirmation: { job_id: jobId, date: dateLabel, time_window: args.time_window },
   };
 }
 
 export async function saveLead(
-  ctx: RecastToolContext,
+  ctx: RetellToolContext,
   args: {
     disqualify_reason: string;
     name?: string;
@@ -485,7 +502,6 @@ export async function saveLead(
     notes?: string;
   },
 ): Promise<Record<string, unknown>> {
-  // Find or create customer
   const normalized = ctx.callerPhone.replace(/\D/g, "");
   const { data: existing } = await ctx.supabase
     .from("customers")
@@ -537,12 +553,12 @@ export async function saveLead(
 
   return {
     saved: true,
-    message: "Got it — I've saved your information. We'll keep you in mind for future projects.",
+    message: "Got it — I've saved your information. We'll keep you in mind for the future.",
   };
 }
 
 export async function escalateToHuman(
-  ctx: RecastToolContext,
+  ctx: RetellToolContext,
   args: { reason: string; summary: string },
 ): Promise<Record<string, unknown>> {
   const retellField =
@@ -583,10 +599,10 @@ export async function escalateToHuman(
 
 // ─── Tool dispatcher ──────────────────────────────────────────────────────────
 
-export async function dispatchRemodelTool(
+export async function dispatchRetellTool(
   toolName: string,
   toolArgs: Record<string, unknown>,
-  ctx: RecastToolContext,
+  ctx: RetellToolContext,
 ): Promise<unknown> {
   switch (toolName) {
     case "lookup_customer":

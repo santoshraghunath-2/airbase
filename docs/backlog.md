@@ -7,7 +7,7 @@ Features not yet in scope. Do not build these until the phase is activated.
 ## Remodel tenant — Retell setup (manual, one-time)
 
 Do these in the Retell dashboard before the remodel lead responder can go live.
-All tool schemas are in `supabase/functions/_shared/remodel-tools.ts`.
+All tool schemas are in `supabase/functions/_shared/retell-tools.ts`.
 All agent prompts are in `prompts/remodel-voice-agent.md` and `prompts/remodel-sms-agent.md`.
 
 ### 1. Create the Voice Agent

@@ -477,6 +477,31 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- ─── Post-seed checklist ──────────────────────────────────────────────────────
+-- ─── Phase 4: Authority rules ─────────────────────────────────────────────────
+-- Dollar limits are PLACEHOLDER — confirm with Santosh before going live.
+-- Row-for-row from the Authority matrix in docs/remodel-tenant-spec.md Phase 4 prompt.
+
+INSERT INTO authority_rules (
+  id, tenant_id, action_type, tier, limit_cents, approver_role
+) VALUES
+  -- Operator write tools
+  (gen_random_uuid(), '00000000-0000-0000-0000-000000000002', 'reschedule_job',          'act_and_report', NULL,  'owner'),
+  (gen_random_uuid(), '00000000-0000-0000-0000-000000000002', 'reassign_crew',            'act_and_report', NULL,  'owner'),
+  (gen_random_uuid(), '00000000-0000-0000-0000-000000000002', 'create_change_order_draft','act',            NULL,  NULL),
+  -- send_change_order: act_and_report up to $750 (PLACEHOLDER), ask_first above
+  (gen_random_uuid(), '00000000-0000-0000-0000-000000000002', 'send_change_order',        'act_and_report', 75000, 'owner'),
+  (gen_random_uuid(), '00000000-0000-0000-0000-000000000002', 'send_change_order',        'ask_first',      NULL,  'owner'),
+  (gen_random_uuid(), '00000000-0000-0000-0000-000000000002', 'send_customer_message',    'act',            NULL,  NULL),
+  (gen_random_uuid(), '00000000-0000-0000-0000-000000000002', 'send_staff_message',       'act',            NULL,  NULL),
+  -- place_material_order: act_and_report up to $500 (PLACEHOLDER), ask_first above
+  (gen_random_uuid(), '00000000-0000-0000-0000-000000000002', 'place_material_order',     'act_and_report', 50000, 'owner'),
+  (gen_random_uuid(), '00000000-0000-0000-0000-000000000002', 'place_material_order',     'ask_first',      NULL,  'owner'),
+  -- create_invoice_for_milestone: ask_first for discretionary amounts up to $500 (PLACEHOLDER)
+  (gen_random_uuid(), '00000000-0000-0000-0000-000000000002', 'create_invoice_for_milestone', 'ask_first',  50000, 'owner'),
+  (gen_random_uuid(), '00000000-0000-0000-0000-000000000002', 'update_opportunity_status','act_and_report', NULL,  'owner'),
+  (gen_random_uuid(), '00000000-0000-0000-0000-000000000002', 'book_consultation',        'act_and_report', NULL,  'owner'),
+  (gen_random_uuid(), '00000000-0000-0000-0000-000000000002', 'escalate',                 'act',            NULL,  NULL);
+
 -- After running this seed:
 --
 -- 1. Replace every PLACEHOLDER_ value with real data

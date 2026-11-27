@@ -434,6 +434,68 @@ export interface AgentActionRow {
   provider_used: string | null;
   input_tokens: number | null;
   output_tokens: number | null;
+  // Phase 4 additions
+  entity_type: string | null;
+  entity_id: string | null;
+  amount_cents: number | null;
+  authority_tier: AuthorityTier | null;
+  actor_user_id: string | null;
+  reversal: Json | null;
+  created_at: string;
+}
+
+// ─── Phase 4 types ────────────────────────────────────────────────────────────
+
+export type AuthorityTier = "act" | "act_and_report" | "ask_first" | "never";
+export type SweepSeverity = "critical" | "warning" | "info";
+
+export interface AuthorityRuleRow {
+  id: string;
+  tenant_id: string;
+  action_type: string;
+  tier: AuthorityTier;
+  limit_cents: number | null;
+  condition: Json | null;
+  approver_role: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OnCallRow {
+  id: string;
+  tenant_id: string;
+  role: string;
+  user_id: string;
+  start_at: string;
+  end_at: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface PageRow {
+  id: string;
+  tenant_id: string;
+  reason: string;
+  urgency: string;
+  summary: string;
+  target_user_id: string | null;
+  sent_at: string;
+  acknowledged_at: string | null;
+  rolled_to_id: string | null;
+  created_at: string;
+}
+
+export interface SweepFindingRow {
+  id: string;
+  tenant_id: string;
+  check_name: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  severity: SweepSeverity;
+  first_seen: string;
+  last_seen: string;
+  resolved_at: string | null;
+  action_id: string | null;
   created_at: string;
 }
 

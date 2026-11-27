@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -39,7 +39,6 @@ function fmtDate(d: string) {
 
 export default function AccountingOutboxPage() {
   const { tenant } = useAuth();
-  const { toast } = useToast();
   const [rows, setRows]           = useState<OutboxRow[]>([]);
   const [loading, setLoading]     = useState(true);
   const [retrying, setRetrying]   = useState(false);
@@ -66,7 +65,7 @@ export default function AccountingOutboxPage() {
     // Reset failed rows back to pending so the drainer picks them up
     const failedIds = rows.filter((r) => r.status === "failed").map((r) => r.id);
     if (!failedIds.length) {
-      toast({ title: "No failed rows to retry" });
+      toast("No failed rows to retry");
       setRetrying(false);
       return;
     }
@@ -78,7 +77,7 @@ export default function AccountingOutboxPage() {
     // Trigger the drainer
     await supabase.functions.invoke("accounting-post", { body: { tenant_id: tenant!.id } });
 
-    toast({ title: `Retrying ${failedIds.length} failed row${failedIds.length === 1 ? "" : "s"}` });
+    toast(`Retrying ${failedIds.length} failed row${failedIds.length === 1 ? "" : "s"}`);
     setRetrying(false);
     setTimeout(() => void load(), 2000);
   }

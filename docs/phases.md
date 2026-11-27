@@ -3,6 +3,8 @@
 All five phases. Build in order. Do not skip ahead.
 Current active phase is always in `current-phase.md`.
 
+> **Remodel track** runs alongside Phase 3 and beyond. See [docs/remodel-tenant-spec.md](remodel-tenant-spec.md) for the full spec and phase prompts. Work on the remodel track is never out-of-phase.
+
 ---
 
 ## Phase 1 — Core Loop (Months 1–4)

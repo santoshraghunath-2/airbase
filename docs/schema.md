@@ -42,9 +42,21 @@ CREATE TABLE tenants (
   -- MSO / franchise linkage (Phase 4)
   parent_tenant_id UUID REFERENCES tenants(id), -- NULL = root tenant
 
+  -- Migration 046: entity, brand, and trade (remodel tenant track)
+  -- trade drives agent and tool selection; branches must use this column, never tenant name.
+  legal_entity_name  TEXT,                -- e.g. "Good Guy Builders" (legal contracting entity)
+  license_number     TEXT,                -- CSLB or equivalent contractor license number
+  license_state      TEXT,                -- two-letter state code, e.g. 'CA'
+  brand_name         TEXT,                -- customer-facing brand, e.g. "RECAST California"
+  trade              tenant_trade NOT NULL DEFAULT 'field_service',  -- 'field_service' | 'remodel'
+  retell_phone_number TEXT,               -- E.164 number registered in the Retell dashboard
+
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- tenant_trade ENUM (migration 046)
+-- CREATE TYPE tenant_trade AS ENUM ('field_service', 'remodel');
 ```
 
 ### users

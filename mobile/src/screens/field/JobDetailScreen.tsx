@@ -4,6 +4,9 @@ import {
   Linking, Alert, ActivityIndicator,
 } from "react-native";
 import { supabase } from "../../lib/supabase";
+import SignatureScreen from "./SignatureScreen";
+import PhotoCaptureScreen from "./PhotoCaptureScreen";
+import type { AppUser } from "../../hooks/useAuth";
 
 interface JobDetail {
   id: string;
@@ -31,15 +34,19 @@ const NEXT_LABEL: Record<string, string> = {
   on_site:    "Complete Job →",
 };
 
+type SubScreen = "detail" | "signature" | "photos";
+
 interface Props {
   jobId: string;
+  appUser: AppUser;
   onBack: () => void;
 }
 
-export default function JobDetailScreen({ jobId, onBack }: Props) {
-  const [job, setJob]       = useState<JobDetail | null>(null);
-  const [loading, setLoading]     = useState(true);
+export default function JobDetailScreen({ jobId, appUser, onBack }: Props) {
+  const [job, setJob]           = useState<JobDetail | null>(null);
+  const [loading, setLoading]   = useState(true);
   const [advancing, setAdvancing] = useState(false);
+  const [subScreen, setSubScreen] = useState<SubScreen>("detail");
 
   useEffect(() => { void loadJob(); }, [jobId]);
 
@@ -113,9 +120,34 @@ export default function JobDetailScreen({ jobId, onBack }: Props) {
     );
   }
 
-  const customer = job.customers as JobDetail["customers"];
-  const location = job.service_locations as JobDetail["service_locations"];
+  const customer   = job.customers as JobDetail["customers"];
+  const location   = job.service_locations as JobDetail["service_locations"];
   const nextStatus = STATUS_FLOW[job.status];
+  const isOnSite   = job.status === "on_site";
+
+  if (subScreen === "signature") {
+    return (
+      <SignatureScreen
+        jobId={jobId}
+        tenantId={appUser.tenant_id}
+        appUser={appUser}
+        customerName={customer?.name ?? "Customer"}
+        onSaved={() => { setSubScreen("detail"); void loadJob(); }}
+        onCancel={() => setSubScreen("detail")}
+      />
+    );
+  }
+
+  if (subScreen === "photos") {
+    return (
+      <PhotoCaptureScreen
+        jobId={jobId}
+        tenantId={appUser.tenant_id}
+        appUser={appUser}
+        onDone={() => setSubScreen("detail")}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -172,9 +204,21 @@ export default function JobDetailScreen({ jobId, onBack }: Props) {
         )}
       </ScrollView>
 
-      {/* Status advance CTA */}
-      {nextStatus && (
-        <View style={styles.footer}>
+      <View style={styles.footer}>
+        {/* Media capture buttons — visible on_site only */}
+        {isOnSite && (
+          <View style={styles.mediaRow}>
+            <TouchableOpacity style={styles.mediaBtn} onPress={() => setSubScreen("photos")}>
+              <Text style={styles.mediaBtnText}>📷  Photos</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.mediaBtn} onPress={() => setSubScreen("signature")}>
+              <Text style={styles.mediaBtnText}>✍  Signature</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Status advance CTA */}
+        {nextStatus && (
           <TouchableOpacity
             style={[styles.ctaBtn, advancing && styles.ctaBtnDisabled]}
             onPress={advanceStatus}
@@ -185,8 +229,8 @@ export default function JobDetailScreen({ jobId, onBack }: Props) {
               : <Text style={styles.ctaBtnText}>{NEXT_LABEL[job.status]}</Text>
             }
           </TouchableOpacity>
-        </View>
-      )}
+        )}
+      </View>
     </View>
   );
 }
@@ -204,7 +248,14 @@ const styles = StyleSheet.create({
   sectionValue:   { fontSize: 15, color: "#1a1a2e", lineHeight: 22 },
   actionBtn:      { marginTop: 10, borderTopWidth: 1, borderTopColor: "#f3f4f6", paddingTop: 10 },
   actionBtnText:  { fontSize: 14, color: "#2563eb", fontWeight: "500" },
-  footer:         { padding: 20, backgroundColor: "#fff", borderTopWidth: 1, borderTopColor: "#f3f4f6" },
+  footer:         { padding: 16, gap: 10, backgroundColor: "#fff", borderTopWidth: 1, borderTopColor: "#f3f4f6" },
+  mediaRow:       { flexDirection: "row", gap: 10 },
+  mediaBtn:       {
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 6, backgroundColor: "#eff6ff", borderRadius: 10,
+    paddingVertical: 12, borderWidth: 1, borderColor: "#bfdbfe",
+  },
+  mediaBtnText:   { fontSize: 14, fontWeight: "600", color: "#2563eb" },
   ctaBtn:         { backgroundColor: "#2563eb", borderRadius: 12, paddingVertical: 16, alignItems: "center" },
   ctaBtnDisabled: { backgroundColor: "#93c5fd" },
   ctaBtnText:     { color: "#fff", fontSize: 16, fontWeight: "700" },

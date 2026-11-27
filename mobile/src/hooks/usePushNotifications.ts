@@ -51,8 +51,8 @@ async function registerToken(userId: string, tenantId: string) {
     return;
   }
 
-  const { data: tokenData } = await Notifications.getExpoPushTokenAsync({ projectId });
-  const token    = tokenData.data;
+  const tokenResponse = await Notifications.getExpoPushTokenAsync({ projectId });
+  const token    = tokenResponse.data;
   const platform = Platform.OS === "ios" ? "ios" : "android";
   const deviceId = Constants.deviceId ?? Constants.sessionId ?? "unknown";
 

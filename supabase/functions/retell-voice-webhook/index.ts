@@ -5,20 +5,32 @@
 //   - Set Custom Function webhook URL → this function
 //   - Call events webhook → same URL
 //   - Functions to register: lookup_customer, check_availability, create_booking, escalate_to_human
+//
+// This endpoint is server-to-server only. CORS headers are intentionally absent.
+// OPTIONS requests are rejected with 405.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js";
 import { format, addDays, startOfDay, endOfDay } from "npm:date-fns";
+import { verifyRetellSignature } from "../_shared/retell-auth.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Lazy init so the module can be imported in tests without env vars present.
+let _supabase: ReturnType<typeof createClient> | null = null;
+function getSupabase() {
+  if (!_supabase) {
+    _supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    );
+  }
+  return _supabase;
+}
 
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-);
+const json = (body: unknown, status: number) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
 
 // ─── Retell payload types ─────────────────────────────────────────────────────
 
@@ -58,7 +70,7 @@ type RetellEvent = RetellFunctionCallEvent | RetellCallEvent;
 async function lookupCustomer(args: { phone: string; tenant_id: string }) {
   const normalized = args.phone.replace(/\D/g, "");
 
-  const { data: customer } = await supabase
+  const { data: customer } = await getSupabase()
     .from("customers")
     .select(`
       id, name, phone, email, notes,
@@ -78,7 +90,7 @@ async function lookupCustomer(args: { phone: string; tenant_id: string }) {
   const location = (customer.service_locations as Array<{ address: string; city: string; state: string }> | null)?.[0];
 
   // Last 3 jobs for context
-  const { data: recentJobs } = await supabase
+  const { data: recentJobs } = await getSupabase()
     .from("jobs")
     .select("job_type, status, scheduled_start, description")
     .eq("tenant_id", args.tenant_id)
@@ -119,7 +131,7 @@ async function checkAvailability(args: {
   const dayEnd = endOfDay(targetDate).toISOString();
 
   // Count jobs already scheduled that day
-  const { data: scheduledJobs } = await supabase
+  const { data: scheduledJobs } = await getSupabase()
     .from("jobs")
     .select("tech_id, scheduled_start, scheduled_end, estimated_duration_minutes")
     .eq("tenant_id", args.tenant_id)
@@ -128,7 +140,7 @@ async function checkAvailability(args: {
     .not("status", "in", "(cancelled,no_show)");
 
   // Count active techs
-  const { data: techs } = await supabase
+  const { data: techs } = await getSupabase()
     .from("technicians")
     .select("id, name")
     .eq("tenant_id", args.tenant_id)
@@ -184,7 +196,7 @@ async function createBooking(args: {
   let customerId = args.customer_id;
 
   if (!customerId) {
-    const { data: newCustomer, error } = await supabase
+    const { data: newCustomer, error } = await getSupabase()
       .from("customers")
       .insert({
         tenant_id: args.tenant_id,
@@ -202,7 +214,7 @@ async function createBooking(args: {
     customerId = newCustomer.id;
 
     // Always create a service location for new customers
-    await supabase.from("service_locations").insert({
+    await getSupabase().from("service_locations").insert({
       tenant_id: args.tenant_id,
       customer_id: customerId,
       address: args.service_address,
@@ -214,7 +226,7 @@ async function createBooking(args: {
   }
 
   // Get primary location
-  const { data: location } = await supabase
+  const { data: location } = await getSupabase()
     .from("service_locations")
     .select("id")
     .eq("customer_id", customerId)
@@ -233,7 +245,7 @@ async function createBooking(args: {
   // TODO: use tenant timezone for proper conversion
   const scheduledStart = `${args.scheduled_date}T${timeMap[args.time_window]}`;
 
-  const { data: job, error: jobError } = await supabase
+  const { data: job, error: jobError } = await getSupabase()
     .from("jobs")
     .insert({
       tenant_id: args.tenant_id,
@@ -268,7 +280,7 @@ async function createBooking(args: {
   );
 
   // Log to booking_conversations (non-critical)
-  void supabase.from("booking_conversations").insert({
+  void getSupabase().from("booking_conversations").insert({
     tenant_id: args.tenant_id,
     customer_id: customerId,
     phone: args.caller_phone,
@@ -305,7 +317,7 @@ async function escalateToHuman(args: {
   // Live transfer is handled by Retell's agent configuration (transfer destination
   // set in the Retell dashboard for this agent). The webhook just needs to return
   // cleanly — Retell bridges the PSTN call after the function call completes.
-  await supabase.from("booking_conversations").insert({
+  await getSupabase().from("booking_conversations").insert({
     tenant_id: args.tenant_id,
     customer_id: null,
     phone: args.caller_phone,
@@ -338,7 +350,7 @@ async function resolveTenant(agentId: string): Promise<TenantContext | null> {
   // Each tenant's booking_voice agent_config row stores their Retell agent ID.
   // To register a new tenant: INSERT into agent_config with
   //   agent_type='booking_voice', settings='{"retell_agent_id":"agent_xxx"}'
-  const { data: configRow } = await supabase
+  const { data: configRow } = await getSupabase()
     .from("agent_config")
     .select("tenant_id, tenants(name, timezone)")
     .eq("agent_type", "booking_voice")
@@ -357,7 +369,7 @@ async function resolveTenant(agentId: string): Promise<TenantContext | null> {
   // Emergency fallback: env var RETELL_TENANT_DEFAULT=<tenant_uuid> for single-tenant deploys
   const fallbackId = Deno.env.get("RETELL_TENANT_DEFAULT");
   if (fallbackId) {
-    const { data: tenant } = await supabase
+    const { data: tenant } = await getSupabase()
       .from("tenants")
       .select("name, timezone")
       .eq("id", fallbackId)
@@ -374,17 +386,36 @@ async function resolveTenant(agentId: string): Promise<TenantContext | null> {
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
-serve(async (req: Request) => {
+// Exported for unit tests. `serve` calls it in production.
+export async function handler(req: Request): Promise<Response> {
+  // Server-to-server only — no CORS.
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("Method Not Allowed", { status: 405 });
+  }
+
+  if (req.method !== "POST") {
+    return new Response("Method Not Allowed", { status: 405 });
+  }
+
+  // Read body once as text before any parsing.
+  const rawBody = await req.text();
+
+  // Hard-enforce signature verification. No bypass.
+  const apiKey = Deno.env.get("RETELL_API_KEY");
+  if (!apiKey) {
+    console.error("retell-voice-webhook: RETELL_API_KEY secret is not set");
+    return json({ error: "Unauthorized" }, 401);
+  }
+
+  const signature = req.headers.get("x-retell-signature");
+  const valid = await verifyRetellSignature(rawBody, signature, apiKey);
+  if (!valid) {
+    console.warn("retell-voice-webhook: invalid or missing signature — request rejected");
+    return json({ error: "Unauthorized" }, 401);
   }
 
   try {
-    // Retell signs webhooks with x-retell-signature — verify in production
-    // const sig = req.headers.get("x-retell-signature");
-    // TODO: verify HMAC-SHA256 with RETELL_API_KEY when ready
-
-    const event = await req.json() as RetellEvent;
+    const event = JSON.parse(rawBody) as RetellEvent;
 
     // ── Call lifecycle events ──────────────────────────────────────────────────
     if (event.event === "call_started") {
@@ -397,7 +428,7 @@ serve(async (req: Request) => {
 
       console.log(`Retell call started: ${event.call_id} → ${dynamicVars.company_name}`);
       return new Response(JSON.stringify({ dynamic_variables: dynamicVars }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -405,7 +436,7 @@ serve(async (req: Request) => {
       const callEvent = event as RetellCallEvent;
       console.log(`Retell call ${event.event}: ${event.call_id}, duration: ${callEvent.duration_ms}ms`);
       return new Response(JSON.stringify({ received: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -416,7 +447,7 @@ serve(async (req: Request) => {
       const ctx = await resolveTenant(fnEvent.agent_id);
       if (!ctx) {
         return new Response(JSON.stringify({ result: "Configuration error: unknown agent. Please call back." }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json" },
           status: 200, // Always 200 to Retell — errors go in result string
         });
       }
@@ -479,21 +510,23 @@ serve(async (req: Request) => {
       }
 
       return new Response(JSON.stringify({ result: JSON.stringify(result) }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         status: 200,
       });
     }
 
     return new Response(JSON.stringify({ received: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("retell-voice-webhook error:", message);
     // Always 200 to Retell so it doesn't retry
     return new Response(JSON.stringify({ result: "System error. Please hold while I connect you with our team." }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
       status: 200,
     });
   }
-});
+}
+
+serve(handler);

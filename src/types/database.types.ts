@@ -59,6 +59,7 @@ export type EstimateStatus = "draft" | "sent" | "accepted" | "declined" | "expir
 export type EstimatePresentationMode = "single" | "good_better_best";
 export type EstimateOption = "good" | "better" | "best" | "base";
 export type TechType = "service" | "install" | "install_lead" | "comfort_advisor";
+export type TenantTrade = "field_service" | "remodel";
 export type LeadSource = "service_call" | "inbound_call" | "marketing" | "referral" | "portal" | "manual";
 export type OpportunityStatus =
   | "new"
@@ -98,6 +99,13 @@ export interface TenantRow {
   service_area_radius_miles: number | null;
   service_area_zips: string[] | null;
   after_hours_mode: AfterHoursMode;
+  // Migration 046: entity, brand, and trade columns
+  legal_entity_name: string | null;
+  license_number: string | null;
+  license_state: string | null;
+  brand_name: string | null;
+  trade: TenantTrade;
+  retell_phone_number: string | null;
   created_at: string;
   updated_at: string;
 }

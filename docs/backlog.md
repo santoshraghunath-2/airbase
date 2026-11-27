@@ -4,6 +4,74 @@ Features not yet in scope. Do not build these until the phase is activated.
 
 ---
 
+## Remodel tenant — Retell setup (manual, one-time)
+
+Do these in the Retell dashboard before the remodel lead responder can go live.
+All tool schemas are in `supabase/functions/_shared/remodel-tools.ts`.
+All agent prompts are in `prompts/remodel-voice-agent.md` and `prompts/remodel-sms-agent.md`.
+
+### 1. Create the Voice Agent
+- Agent type: **Custom LLM**
+- Webhook URL: `https://ghixuuhxwtsrbfwwtybx.supabase.co/functions/v1/retell-voice-webhook`
+- Dynamic variables: `company_name`
+- Add all 6 tools: `lookup_customer`, `qualify_lead`, `check_consult_availability`, `book_consultation`, `save_lead`, `escalate_to_human`
+- Paste system prompt from `prompts/remodel-voice-agent.md`
+- Copy the **Agent ID** → update `supabase/seed/remodel-tenant.sql` (voice PLACEHOLDER)
+
+### 2. Create the SMS Agent
+- Agent type: **Custom LLM (SMS)**
+- Webhook URL: `https://ghixuuhxwtsrbfwwtybx.supabase.co/functions/v1/retell-chat-webhook`
+- Dynamic variables: `company_name`
+- Same 6 tools as voice agent
+- Paste system prompt from `prompts/remodel-sms-agent.md`
+- Copy the **Agent ID** → update `supabase/seed/remodel-tenant.sql` (SMS PLACEHOLDER)
+
+### 3. Purchase a phone number
+- Buy a number in Retell and assign it to the Voice Agent
+- Copy the number → update `supabase/seed/remodel-tenant.sql` (`retell_phone_number` PLACEHOLDER)
+
+### 4. Seed the tenant
+After filling all PLACEHOLDERs in `supabase/seed/remodel-tenant.sql`:
+```
+supabase db query --linked --file supabase/seed/remodel-tenant.sql
+```
+
+### 5. Register the pg_cron job for lead follow-up
+Run once in the Supabase SQL editor (dashboard → SQL editor):
+```sql
+SELECT cron.schedule(
+  'lead-follow-up',
+  '0 */2 * * *',
+  $$
+    SELECT net.http_post(
+      url := 'https://ghixuuhxwtsrbfwwtybx.supabase.co/functions/v1/lead-follow-up',
+      headers := jsonb_build_object(
+        'Authorization', 'Bearer ' || current_setting('app.service_role_key')
+      )
+    );
+  $$
+);
+```
+
+### 6. Wire up the web form intake
+- After seeding, the `lead_intake_sources` row for `web-main` will have its `hmac_secret`
+- Configure the website form to `POST` to:
+  `https://ghixuuhxwtsrbfwwtybx.supabase.co/functions/v1/lead-intake?source=web-main`
+- Include header `x-intake-signature` using the HMAC scheme from `_shared/retell-auth.ts`
+
+### 7. Regenerate TypeScript types
+```
+supabase gen types typescript --project-id ghixuuhxwtsrbfwwtybx > src/types/database.types.ts
+```
+
+### 8. Verify the Retell chat function_call format (assumption check)
+- Send a test SMS that triggers a tool call (e.g. say "I want to book a consultation")
+- Check Retell dashboard webhook logs to confirm whether custom tool calls during chat
+  emit a `function_call` event (the current implementation assumes they do)
+- If they do NOT, update `retell-chat-webhook/index.ts` to handle the actual format
+
+---
+
 ## Phase 2 — Quick Win AI bolt-ons (add before Phase 2 closes)
 
 These reuse existing Phase 2 infra (Twilio SMS + job status triggers) and have the

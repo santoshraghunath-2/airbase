@@ -292,15 +292,6 @@ export default function EstimateBuilderPage() {
     (i) => i.description.trim() && (!i.pricebook_item_id || i.unit_price_cents < 0),
   );
 
-  // ── Remodel: commitment date preview (uses package's commitment_days if available) ──
-  // Simple estimate: total commitment_days is the max across all packages in the selected option.
-  // Actual value comes from package_components; default shown here is informational.
-  const commitmentDaysByOption = useCallback((_opt: typeof options[0]) => {
-    // TODO Phase 3: query package_components for the selected pricebook items
-    // For now surface the placeholder value from the pricebook item name
-    return null as number | null;
-  }, []);
-
   // ────────────────────────────────────────────────────────────────────────────
 
   const newTempId = () => `_${++tempCounter.current}`;

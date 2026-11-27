@@ -17,8 +17,8 @@ interface ContractRow {
   signed_at: string | null;
   cancel_by_date: string | null;
   esign_provider: string | null;
-  customers: { name: string } | null;
-  estimates: { title: string } | null;
+  customers: { name: string }[] | null;
+  estimates: { title: string }[] | null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ export default function ContractsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className="text-sm font-medium text-ink truncate">
-                      {c.customers?.name ?? "Unknown customer"}
+                      {c.customers?.[0]?.name ?? "Unknown customer"}
                     </span>
                     <span className={cn(
                       "inline-flex items-center text-[10px] font-semibold uppercase tracking-wide rounded-pill px-2 py-0.5 border",
@@ -128,7 +128,7 @@ export default function ContractsPage() {
                     </span>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-ink-muted">
-                    <span>{c.estimates?.title ?? "—"}</span>
+                    <span>{c.estimates?.[0]?.title ?? "—"}</span>
                     <span>·</span>
                     <span className="tabular-nums">{centsDisplay(c.total_cents)}</span>
                     <span>·</span>

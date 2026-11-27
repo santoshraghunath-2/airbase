@@ -181,6 +181,70 @@ Full membership lifecycle — the single highest-margin recurring revenue stream
 
 ---
 
+## Job milestone billing (field service — all trades)
+
+Operator-driven payment milestone support for any field service job, mirroring the
+remodel milestone flow. Used when a job is large enough that the company does not
+want to absorb the full non-payment risk (e.g., a $25k repipe vs. a $1,500 repair).
+CSLB rules apply to any California home improvement job, so the milestone structure
+must comply: deposit ≤ min(10%, $1,000); progress payments tied to defined work
+stages; final payment on completion.
+
+### What to build
+
+#### Database
+- `job_milestones` table:
+  - `id UUID PK`, `tenant_id UUID`, `job_id UUID REFERENCES jobs(id)`, `name TEXT`
+    (e.g., "Deposit", "Demo complete", "Rough-in", "Final")
+  - `amount_cents INTEGER NOT NULL` — the payment amount for this milestone
+  - `due_trigger TEXT` — `'immediately'` | `'on_start'` | `'on_phase_complete'` | `'on_completion'`
+  - `position SMALLINT` — display order
+  - `status TEXT` — `'pending'` | `'sent'` | `'paid'` | `'waived'`
+  - `stripe_payment_intent_id TEXT`, `stripe_checkout_session_id TEXT`
+  - `payment_link TEXT` — Stripe hosted payment link URL
+  - `sent_at TIMESTAMPTZ`, `paid_at TIMESTAMPTZ`
+  - Standard: `tenant_id`, `created_at`, `updated_at`, soft-delete
+  - RLS: tenant-scoped
+
+#### Edge Functions
+- `job-milestone-link`: creates a Stripe Checkout Session for one milestone;
+  returns `checkout_url`; updates `job_milestones.payment_link + status=sent`
+- `stripe-webhook`: extend existing handler to listen for
+  `checkout.session.completed` with `airbase_job_milestone_id` metadata →
+  mark milestone `paid`, check if all milestones paid → trigger job close or
+  invoice generation
+
+#### UI
+- **Job detail page**: "Milestones" card — shows only when milestones exist;
+  add milestone button (name + amount + trigger); each row shows status badge,
+  amount, "Send payment link" button (calls `job-milestone-link`), paid date
+- **New Job / job estimate page**: "Add milestone billing" toggle; when on,
+  auto-suggests CSLB-compliant split (deposit = min(10%, $1,000), balance on
+  completion) based on estimate total; operator can customize splits
+- **Invoice agent**: if a job has unpaid milestones, do NOT auto-generate a
+  final invoice; instead, generate the final milestone payment link; only
+  generate the full invoice once all milestones are paid (or waived)
+
+#### Operator agent tools (extend)
+- `create_job_milestone(job_id, name, amount_cents, due_trigger)` — adds a
+  milestone row; tier: `act_and_report` for all tenants
+- `send_milestone_link(milestone_id)` — calls `job-milestone-link`; tier: `act`
+
+### Design notes
+- No new "contract" abstraction for field service — milestones attach directly
+  to the job, not to a separate contract document
+- CSLB deposit rule enforced as a soft warning in the UI when deposit > $1,000
+  or > 10% of total — operator can override with confirmation
+- The remodel track's `payment_schedule_items` (on contracts) and this table
+  are separate; do not merge them — remodel milestones are contract-driven,
+  field service milestones are job-driven
+- Suggested default templates per job type (configurable):
+  - Repipe: 10% deposit, 40% rough-in, 50% completion
+  - HVAC install: $1,000 deposit, 50% equipment delivery, 50% completion
+  - Large electrical: 25% deposit, 75% completion
+
+---
+
 ## Phase 4 — Remodel track: manual production setup
 
 ### pg_cron jobs (run once in Supabase SQL editor after applying migrations)

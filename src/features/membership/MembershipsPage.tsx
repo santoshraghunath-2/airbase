@@ -31,9 +31,10 @@ function daysUntil(dateStr: string): number {
 }
 
 function statusBadge(status: MembershipRow["status"], expiresAt: string) {
-  if (status === "cancelled") return { label: "Cancelled", cls: "bg-muted text-muted-foreground border-border" };
-  if (status === "lapsed")    return { label: "Lapsed",    cls: "bg-blocked-bg text-blocked-text border-blocked-border" };
-  if (status === "pending")   return { label: "Pending",   cls: "bg-waiting-bg text-waiting-text border-waiting-border" };
+  if (status === "cancelled")     return { label: "Cancelled",     cls: "bg-muted text-muted-foreground border-border" };
+  if (status === "lapsed")        return { label: "Lapsed",        cls: "bg-blocked-bg text-blocked-text border-blocked-border" };
+  if (status === "payment_failed") return { label: "Payment failed", cls: "bg-blocked-bg text-blocked-text border-blocked-border" };
+  if (status === "pending")       return { label: "Pending payment", cls: "bg-waiting-bg text-waiting-text border-waiting-border" };
   const days = daysUntil(expiresAt);
   if (days <= 30) return { label: `Exp. in ${days}d`, cls: "bg-waiting-bg text-waiting-text border-waiting-border" };
   return { label: "Active", cls: "bg-confirmed-bg text-confirmed-text border-confirmed-border" };
@@ -292,27 +293,48 @@ function EnrollForm({
     } else {
       expiresAt.setMonth(expiresAt.getMonth() + 1);
     }
-    const { error } = await supabase.from("memberships").insert({
-      tenant_id:     tenantId,
-      customer_id:   selectedCustomer.id,
-      plan_id:       selectedPlanId,
-      status:        "active",
-      billing_cycle: billingCycle,
-      started_at:    today.toISOString().split("T")[0],
-      expires_at:    expiresAt.toISOString().split("T")[0],
-      auto_renew:    true,
-    });
+    const { data: newMembership, error } = await supabase
+      .from("memberships")
+      .insert({
+        tenant_id:     tenantId,
+        customer_id:   selectedCustomer.id,
+        plan_id:       selectedPlanId,
+        status:        "pending",
+        billing_cycle: billingCycle,
+        started_at:    today.toISOString().split("T")[0],
+        expires_at:    expiresAt.toISOString().split("T")[0],
+        auto_renew:    true,
+      })
+      .select("id")
+      .single();
+
     if (error) {
       if (error.code === "23505") {
         toast.error("Customer already has an active membership");
       } else {
         toast.error("Failed to enroll", { description: error.message });
       }
-    } else {
-      toast.success(`${selectedCustomer.name} enrolled`);
-      onDone();
+      setSaving(false);
+      return;
     }
+
+    // Open Stripe Checkout in a new tab so the customer can pay
+    try {
+      const { data: renewData } = await supabase.functions.invoke("membership-renew", {
+        body: { membership_id: newMembership.id },
+      });
+      if (renewData?.checkout_url) {
+        window.open(renewData.checkout_url as string, "_blank", "noopener");
+        toast.success(`${selectedCustomer.name} enrolled — Stripe checkout opened in new tab`);
+      } else {
+        toast.success(`${selectedCustomer.name} enrolled — send them the payment link to activate`);
+      }
+    } catch {
+      toast.success(`${selectedCustomer.name} enrolled — set up billing to activate`);
+    }
+
     setSaving(false);
+    onDone();
   }
 
   const activePlans = plans.filter((p) => p.is_active);
@@ -469,12 +491,20 @@ export default function MembershipsPage() {
   });
 
   async function cancelMembership(m: MembershipWithRelations) {
-    const { error } = await supabase
-      .from("memberships")
-      .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
-      .eq("id", m.id);
-    if (error) toast.error("Failed to cancel");
-    else { toast.success("Membership cancelled"); await load(); }
+    const { error } = await supabase.functions.invoke("membership-cancel", {
+      body: { membership_id: m.id },
+    });
+    if (error) {
+      toast.error("Failed to cancel", { description: String(error) });
+    } else {
+      const isAnnual = m.billing_cycle === "annual";
+      toast.success(
+        isAnnual
+          ? "Membership will cancel at period end — benefits remain active until then"
+          : "Membership cancelled",
+      );
+      await load();
+    }
   }
 
   async function renewMembership(m: MembershipWithRelations) {
@@ -679,11 +709,37 @@ export default function MembershipsPage() {
                                 )}
                               </td>
                               <td className="px-4 py-3">
-                                <span className="text-xs capitalize text-ink-muted">{m.billing_cycle}</span>
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="text-xs capitalize text-ink-muted">{m.billing_cycle}</span>
+                                  {m.stripe_subscription_id ? (
+                                    <span className="text-[10px] text-confirmed-text font-medium">↻ Auto-renew</span>
+                                  ) : (
+                                    <span className="text-[10px] text-waiting-text font-medium">No billing set up</span>
+                                  )}
+                                </div>
                               </td>
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-1 justify-end">
-                                  {(m.status === "lapsed" || (m.status === "active" && days <= 30)) && (
+                                  {(m.status === "pending" || (!m.stripe_subscription_id && m.status === "active")) && (
+                                    <button
+                                      onClick={async () => {
+                                        const { data } = await supabase.functions.invoke("membership-renew", {
+                                          body: { membership_id: m.id },
+                                        });
+                                        if (data?.checkout_url) {
+                                          window.open(data.checkout_url as string, "_blank", "noopener");
+                                        } else if (data?.already_active) {
+                                          toast.info("Subscription already active");
+                                        } else {
+                                          toast.error("Could not generate payment link");
+                                        }
+                                      }}
+                                      className="text-xs text-ai-ink hover:text-ai-ink/80 font-medium px-2 py-1 rounded-lg hover:bg-ai-tint transition-colors"
+                                    >
+                                      Send payment link
+                                    </button>
+                                  )}
+                                  {(m.status === "lapsed" || m.status === "payment_failed" || (m.status === "active" && days <= 30)) && (
                                     <button
                                       onClick={() => void renewMembership(m)}
                                       className="text-xs text-confirmed-text hover:text-confirmed-text/80 font-medium px-2 py-1 rounded-lg hover:bg-confirmed-bg transition-colors"
@@ -691,7 +747,7 @@ export default function MembershipsPage() {
                                       Renew
                                     </button>
                                   )}
-                                  {m.status === "active" && (
+                                  {(m.status === "active" || m.status === "pending" || m.status === "payment_failed") && (
                                     <button
                                       onClick={() => void cancelMembership(m)}
                                       className="text-xs text-ink-muted hover:text-blocked-text font-medium px-2 py-1 rounded-lg hover:bg-blocked-bg transition-colors"

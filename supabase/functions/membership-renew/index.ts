@@ -60,6 +60,38 @@ function flattenStripeParams(obj: Record<string, unknown>, prefix = ""): Record<
   return result;
 }
 
+async function getOrCreateStripePriceId(
+  planId: string,
+  planName: string,
+  priceCents: number,
+  billingCycle: "monthly" | "annual",
+): Promise<string> {
+  // Create a Stripe Product for this plan
+  const productRes = await stripeRequest("/products", "POST", {
+    name: planName,
+    metadata: { airbase_plan_id: planId },
+  });
+  if (!productRes.ok) throw new Error(`Stripe product creation failed: ${await productRes.text()}`);
+  const product = await productRes.json() as { id: string };
+
+  // Create a recurring Price on that Product
+  const priceRes = await stripeRequest("/prices", "POST", {
+    product: product.id,
+    unit_amount: priceCents,
+    currency: "usd",
+    recurring: { interval: billingCycle === "annual" ? "year" : "month" },
+    metadata: { airbase_plan_id: planId, billing_cycle: billingCycle },
+  });
+  if (!priceRes.ok) throw new Error(`Stripe price creation failed: ${await priceRes.text()}`);
+  const price = await priceRes.json() as { id: string };
+
+  // Persist the new Price ID back to the plan row
+  const column = billingCycle === "annual" ? "stripe_price_id_annual" : "stripe_price_id";
+  await supabase.from("membership_plans").update({ [column]: price.id }).eq("id", planId);
+
+  return price.id;
+}
+
 async function getOrCreateStripeCustomer(
   customerId: string,
   name: string,
@@ -116,7 +148,7 @@ Deno.serve(async (req: Request) => {
     // Load membership with plan, customer, tenant
     const { data: membership, error: memErr } = await supabase
       .from("memberships")
-      .select("id, customer_id, plan_id, billing_cycle, stripe_subscription_id, customers(id, name, email, phone, stripe_customer_id), membership_plans(name, stripe_price_id, stripe_price_id_annual), tenants(name)")
+      .select("id, customer_id, plan_id, billing_cycle, stripe_subscription_id, customers(id, name, email, phone, stripe_customer_id), membership_plans(id, name, price_cents, stripe_price_id, stripe_price_id_annual), tenants(name)")
       .eq("id", body.membership_id)
       .eq("tenant_id", tenantId)
       .single();
@@ -135,7 +167,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const customer = membership.customers as { id: string; name: string; email: string | null; phone: string | null; stripe_customer_id: string | null } | null;
-    const plan     = membership.membership_plans as { name: string; stripe_price_id: string | null; stripe_price_id_annual: string | null } | null;
+    const plan     = membership.membership_plans as { id: string; name: string; price_cents: number; stripe_price_id: string | null; stripe_price_id_annual: string | null } | null;
 
     if (!customer || !plan) {
       return new Response(JSON.stringify({ error: "Customer or plan not found" }), {
@@ -143,16 +175,18 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // stripe_price_id = monthly (from migration 021); stripe_price_id_annual = annual (from migration 043)
-    const priceId = membership.billing_cycle === "annual"
+    // stripe_price_id = monthly; stripe_price_id_annual = annual (migration 043)
+    // Lazily create Stripe Product+Price if the plan has never been synced to Stripe.
+    const rawPriceId = membership.billing_cycle === "annual"
       ? plan.stripe_price_id_annual
       : plan.stripe_price_id;
 
-    if (!priceId) {
-      return new Response(JSON.stringify({ error: `No Stripe price configured for ${plan.name} (${membership.billing_cycle})` }), {
-        status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-      });
-    }
+    const priceId = rawPriceId ?? await getOrCreateStripePriceId(
+      plan.id,
+      plan.name,
+      plan.price_cents,
+      membership.billing_cycle as "monthly" | "annual",
+    );
 
     // Get or create Stripe customer
     const stripeCustomerId = await getOrCreateStripeCustomer(

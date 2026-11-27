@@ -60,7 +60,7 @@ export type EstimatePresentationMode = "single" | "good_better_best";
 export type EstimateOption = "good" | "better" | "best" | "base";
 export type TechType = "service" | "install" | "install_lead" | "comfort_advisor";
 export type TenantTrade = "field_service" | "remodel";
-export type LeadSource = "service_call" | "inbound_call" | "marketing" | "referral" | "portal" | "manual";
+export type LeadSource = "service_call" | "inbound_call" | "marketing" | "referral" | "portal" | "manual" | "web_form" | "retell_chat";
 export type OpportunityStatus =
   | "new"
   | "assigned"

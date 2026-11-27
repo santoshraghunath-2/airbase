@@ -181,6 +181,82 @@ Full membership lifecycle — the single highest-margin recurring revenue stream
 
 ---
 
+## Phase 4 — Remodel track: manual production setup
+
+### pg_cron jobs (run once in Supabase SQL editor after applying migrations)
+
+#### 1. Ops sweep — hourly 7am–8pm PST
+```sql
+SELECT cron.schedule(
+  'ops-sweep-hourly',
+  '0 15-23,0-4 * * *',
+  $$ SELECT net.http_post(
+       url     := current_setting('app.settings.supabase_url') || '/functions/v1/ops-sweep',
+       headers := jsonb_build_object('Authorization', 'Bearer ' || current_setting('app.settings.service_role_key')),
+       body    := '{}'::jsonb
+     ) $$
+);
+```
+
+#### 2. Ops sweep — every 4 hours overnight (PST midnight–7am)
+```sql
+SELECT cron.schedule(
+  'ops-sweep-overnight',
+  '0 5,9 * * *',
+  $$ SELECT net.http_post(
+       url     := current_setting('app.settings.supabase_url') || '/functions/v1/ops-sweep',
+       headers := jsonb_build_object('Authorization', 'Bearer ' || current_setting('app.settings.service_role_key')),
+       body    := '{}'::jsonb
+     ) $$
+);
+```
+
+#### 3. Page-on-call rollover — every 11 minutes
+```sql
+SELECT cron.schedule(
+  'page-on-call-rollover',
+  '*/11 * * * *',
+  $$ SELECT net.http_post(
+       url     := current_setting('app.settings.supabase_url') || '/functions/v1/page-on-call',
+       headers := jsonb_build_object('Authorization', 'Bearer ' || current_setting('app.settings.service_role_key')),
+       body    := '{"mode":"rollover"}'::jsonb
+     ) $$
+);
+```
+
+> All three go in the **Supabase dashboard → SQL editor** after migrations 063–066 are applied.
+> `app.settings.supabase_url` and `app.settings.service_role_key` must already be set as app settings in your Supabase project (they are set by Supabase Cloud automatically on managed projects).
+
+---
+
+### PLACEHOLDER values to confirm before going live
+
+All are in `supabase/seed/remodel-tenant.sql`. Run `grep -n PLACEHOLDER supabase/seed/remodel-tenant.sql` to find exact line numbers.
+
+| # | File / location | Placeholder | What to put there |
+|---|---|---|---|
+| 1 | `seed/remodel-tenant.sql` line ~24 | `00000000-0000-0000-0000-000000000002` (tenant UUID) | Keep as-is for dev; replace with `gen_random_uuid()` for production |
+| 2 | `seed/remodel-tenant.sql` | `PLACEHOLDER_CSLB_LICENSE` | RECAST California's CSLB license number (e.g. `1012345`) |
+| 3 | `seed/remodel-tenant.sql` | `PLACEHOLDER_E164_RETELL_NUMBER` | Retell-purchased phone number in E.164 format (e.g. `+14155550100`) |
+| 4 | `seed/remodel-tenant.sql` | `PLACEHOLDER_CONTACT_EMAIL` | Tenant contact email (e.g. `hello@recastcalifornia.com`) |
+| 5 | `seed/remodel-tenant.sql` | `PLACEHOLDER_CONTACT_PHONE` | Tenant contact phone in E.164 (e.g. `+14155550101`) |
+| 6 | `seed/remodel-tenant.sql` | `PLACEHOLDER_WEBSITE` | Tenant website URL (e.g. `https://recastcalifornia.com`) |
+| 7 | `seed/remodel-tenant.sql` | `PLACEHOLDER_CONSULTANT_1_NAME` | First comfort advisor's display name |
+| 8 | `seed/remodel-tenant.sql` | `PLACEHOLDER_CONSULTANT_1_PHONE` | First comfort advisor's phone (E.164) |
+| 9 | `seed/remodel-tenant.sql` | `PLACEHOLDER_CONSULTANT_1_EMAIL` | First comfort advisor's email |
+| 10 | `seed/remodel-tenant.sql` | `PLACEHOLDER_CONSULTANT_2_NAME/PHONE/EMAIL` | Second comfort advisor's details |
+| 11 | `seed/remodel-tenant.sql` | `PLACEHOLDER_RETELL_VOICE_AGENT_ID` | Retell dashboard → Agents → voice agent → Agent ID |
+| 12 | `seed/remodel-tenant.sql` | `PLACEHOLDER_RETELL_SMS_AGENT_ID` | Retell dashboard → Agents → SMS/chat agent → Agent ID |
+| 13 | `seed/remodel-tenant.sql` | `PLACEHOLDER_HMAC_SECRET_32_CHARS_MIN` | Generate with `openssl rand -hex 32` |
+| 14 | `seed/remodel-tenant.sql` | Vanity line item price (`0`) | Set per-quote; update seed or insert a real price if a standard starting price is agreed |
+| 15 | `seed/remodel-tenant.sql` (Phase 4 authority rules) | `send_change_order` limit `75000` cents | Confirm $750 limit with Santosh; update row if different |
+| 16 | `seed/remodel-tenant.sql` (Phase 4 authority rules) | `place_material_order` limit `50000` cents | Confirm $500 limit with Santosh; update row if different |
+| 17 | `seed/remodel-tenant.sql` (Phase 4 authority rules) | `create_invoice_for_milestone` limit `50000` cents | Confirm $500 limit with Santosh; update row if different |
+
+> Items 15–17 also need to be updated directly in the `authority_rules` production table row if the seed is not re-run.
+
+---
+
 ## Phase 4 (Enterprise)
 
 ### AI agents

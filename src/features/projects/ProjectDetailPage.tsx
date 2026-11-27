@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -136,7 +136,6 @@ export default function ProjectDetailPage() {
   const { tenantSlug, projectId } = useParams<{ tenantSlug: string; projectId: string }>();
   const { tenant } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const [project,     setProject]     = useState<ProjectDetail | null>(null);
   const [loading,     setLoading]     = useState(true);
@@ -202,7 +201,7 @@ export default function ProjectDetailPage() {
   async function submitCost() {
     const amountCents = Math.round(parseFloat(newCostForm.amount) * 100);
     if (!newCostForm.description.trim() || isNaN(amountCents) || amountCents <= 0) {
-      toast({ title: "Fill in description and a valid amount.", variant: "destructive" });
+      toast.error("Fill in description and a valid amount.");
       return;
     }
     const { error } = await supabase.from("project_costs").insert({
@@ -214,12 +213,12 @@ export default function ProjectDetailPage() {
       occurred_at: newCostForm.occurred_at,
     });
     if (error) {
-      toast({ title: "Failed to log cost", description: error.message, variant: "destructive" });
+      toast.error(`Failed to log cost: ${error.message}`);
       return;
     }
     setAddingCost(false);
     setNewCostForm({ cost_type: "other", description: "", amount: "", occurred_at: new Date().toISOString().slice(0, 10) });
-    toast({ title: "Cost logged" });
+    toast.success("Cost logged");
     void loadCosts();
   }
 

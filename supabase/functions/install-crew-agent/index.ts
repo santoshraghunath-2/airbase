@@ -117,15 +117,25 @@ Deno.serve(async (req: Request) => {
     const tenantId = opp.tenant_id as string;
     const oppId    = opp.id as string;
 
-    // ── Remodel guard: Phase 3 creates projects, not single-visit install jobs ──
-    const { data: tenant } = await supabase
-      .from("tenants")
-      .select("trade")
-      .eq("id", tenantId)
-      .single();
-    if (tenant?.trade === "remodel") {
-      console.log(`install-crew-agent: skipping remodel opportunity ${oppId} (Phase 3 handles project creation)`);
-      return ok({ skip: "remodel tenant — project creation handled in Phase 3" });
+    // ── Remodel tenants: delegate to project-based scheduling path ───────────
+    // project-create creates the project + phases; install-crew-agent is called
+    // by project-create for remodel tenants to schedule the phase jobs.
+    // For remodel, the payload has project_id set (not an opportunity trigger).
+    const isProjectSchedule = !!(payload.record as Record<string, unknown>).project_id;
+
+    if (!isProjectSchedule) {
+      // This is an opportunity-won trigger. Check if it's a remodel tenant.
+      const { data: tenant } = await supabase
+        .from("tenants")
+        .select("trade")
+        .eq("id", tenantId)
+        .single();
+      if (tenant?.trade === "remodel") {
+        // Remodel: opportunity won alone does not trigger scheduling.
+        // project-create will call us with a project_id once gates are clear.
+        console.log(`install-crew-agent: remodel opp ${oppId} won — waiting for project gates`);
+        return ok({ skip: "remodel tenant — scheduling deferred to project gates" });
+      }
     }
 
     // ── Agent config ─────────────────────────────────────────────────────────

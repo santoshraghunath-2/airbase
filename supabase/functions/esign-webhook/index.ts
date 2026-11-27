@@ -140,6 +140,19 @@ async function checkAndSetEffective(contractId: string, tenantId: string): Promi
     }
 
     console.log(`esign-webhook: contract ${contractId} set to effective`);
+
+    // Trigger project creation
+    await fetch(
+      `${Deno.env.get("SUPABASE_URL")}/functions/v1/project-create`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ contract_id: contractId }),
+      },
+    ).catch((e) => console.error("esign-webhook: project-create call failed:", e));
   }
 }
 

@@ -1,12 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft, CheckCircle2, Clock, AlertTriangle, Package,
-  FileText, Wrench, Camera, ChevronDown, ChevronUp,
+  FileText, Wrench, Camera, ChevronDown, ChevronUp, DollarSign, Plus, TrendingUp,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -47,6 +51,14 @@ interface ChangeOrder {
   status: string;
   amount_cents: number;
   created_at: string;
+}
+
+interface ProjectCost {
+  id: string;
+  cost_type: "labor" | "material" | "other";
+  description: string;
+  amount_cents: number;
+  occurred_at: string;
 }
 
 interface ProjectDetail {
@@ -113,14 +125,38 @@ function businessDaysRemaining(clockStart: string | null, commitmentDays: number
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+function marginColor(pct: number | null) {
+  if (pct === null) return "text-ink-muted";
+  if (pct >= 60)   return "text-confirmed-text font-semibold";
+  if (pct >= 35)   return "text-warned-text font-semibold";
+  return "text-blocked-text font-semibold";
+}
+
 export default function ProjectDetailPage() {
   const { tenantSlug, projectId } = useParams<{ tenantSlug: string; projectId: string }>();
   const { tenant } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const [project,  setProject]  = useState<ProjectDetail | null>(null);
-  const [loading,  setLoading]  = useState(true);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [project,     setProject]     = useState<ProjectDetail | null>(null);
+  const [loading,     setLoading]     = useState(true);
+  const [expanded,    setExpanded]    = useState<Record<string, boolean>>({});
+  const [costs,       setCosts]       = useState<ProjectCost[]>([]);
+  const [addingCost,  setAddingCost]  = useState(false);
+  const [costLoading, setCostLoading] = useState(false);
+
+  const newCostType  = useRef<HTMLButtonElement>(null);
+  const [newCostForm, setNewCostForm] = useState<{
+    cost_type: "labor" | "material" | "other";
+    description: string;
+    amount: string;
+    occurred_at: string;
+  }>({
+    cost_type:   "other",
+    description: "",
+    amount:      "",
+    occurred_at: new Date().toISOString().slice(0, 10),
+  });
 
   useEffect(() => {
     if (!tenant || !projectId) return;
@@ -144,6 +180,48 @@ export default function ProjectDetailPage() {
       setLoading(false);
     })();
   }, [tenant, projectId]);
+
+  useEffect(() => {
+    if (!tenant || !projectId) return;
+    void loadCosts();
+  }, [tenant, projectId]);
+
+  async function loadCosts() {
+    setCostLoading(true);
+    const { data } = await supabase
+      .from("project_costs")
+      .select("id, cost_type, description, amount_cents, occurred_at")
+      .eq("project_id", projectId)
+      .eq("tenant_id", tenant!.id)
+      .is("deleted_at", null)
+      .order("occurred_at", { ascending: false });
+    setCosts((data as ProjectCost[]) ?? []);
+    setCostLoading(false);
+  }
+
+  async function submitCost() {
+    const amountCents = Math.round(parseFloat(newCostForm.amount) * 100);
+    if (!newCostForm.description.trim() || isNaN(amountCents) || amountCents <= 0) {
+      toast({ title: "Fill in description and a valid amount.", variant: "destructive" });
+      return;
+    }
+    const { error } = await supabase.from("project_costs").insert({
+      tenant_id:   tenant!.id,
+      project_id:  projectId,
+      cost_type:   newCostForm.cost_type,
+      description: newCostForm.description.trim(),
+      amount_cents: amountCents,
+      occurred_at: newCostForm.occurred_at,
+    });
+    if (error) {
+      toast({ title: "Failed to log cost", description: error.message, variant: "destructive" });
+      return;
+    }
+    setAddingCost(false);
+    setNewCostForm({ cost_type: "other", description: "", amount: "", occurred_at: new Date().toISOString().slice(0, 10) });
+    toast({ title: "Cost logged" });
+    void loadCosts();
+  }
 
   if (loading) {
     return (
@@ -371,6 +449,155 @@ export default function ProjectDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Profitability summary */}
+        {(() => {
+          const contractTotal = project.contracts?.[0]?.total_cents ?? 0;
+          const matCost = project.material_orders
+            .filter((m) => m.status === "received")
+            .reduce((s, m) => s + m.total_cost_cents, 0);
+          const laborCost   = costs.filter((c) => c.cost_type === "labor").reduce((s, c) => s + c.amount_cents, 0);
+          const matCostLogs = costs.filter((c) => c.cost_type === "material").reduce((s, c) => s + c.amount_cents, 0);
+          const otherCost   = costs.filter((c) => c.cost_type === "other").reduce((s, c) => s + c.amount_cents, 0);
+          const totalCost   = matCost + matCostLogs + laborCost + otherCost;
+          const grossProfit = contractTotal - totalCost;
+          const marginPct   = contractTotal > 0 ? Math.round((grossProfit / contractTotal) * 1000) / 10 : null;
+
+          return (
+            <div className="rounded-xl border border-line bg-paper px-6 py-5 mb-4">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="h-4 w-4 text-ink-muted" />
+                <h2 className="text-sm font-semibold text-ink">Profitability</h2>
+                {marginPct !== null && (
+                  <span className={cn("ml-auto text-sm tabular-nums font-semibold", marginColor(marginPct))}>
+                    {marginPct}% margin
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <div>
+                  <p className="text-ink-muted">Contract</p>
+                  <p className="font-semibold text-ink tabular-nums">{centsDisplay(contractTotal)}</p>
+                </div>
+                <div>
+                  <p className="text-ink-muted">Materials</p>
+                  <p className="font-semibold text-ink tabular-nums">{centsDisplay(matCost + matCostLogs)}</p>
+                </div>
+                <div>
+                  <p className="text-ink-muted">Labor</p>
+                  <p className="font-semibold text-ink tabular-nums">{centsDisplay(laborCost)}</p>
+                </div>
+                <div>
+                  <p className="text-ink-muted">Gross profit</p>
+                  <p className={cn("font-semibold tabular-nums", grossProfit >= 0 ? "text-confirmed-text" : "text-blocked-text")}>
+                    {centsDisplay(grossProfit)}
+                  </p>
+                </div>
+              </div>
+              {totalCost === 0 && (
+                <p className="mt-3 text-xs text-ink-muted">
+                  Log labor and other costs below to see true margin.
+                </p>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* Project costs */}
+        <div className="rounded-xl border border-line bg-paper px-6 py-5">
+          <div className="flex items-center gap-2 mb-4">
+            <DollarSign className="h-4 w-4 text-ink-muted" />
+            <h2 className="text-sm font-semibold text-ink">Costs</h2>
+            <Button
+              size="sm"
+              variant="outline"
+              className="ml-auto text-xs h-7"
+              onClick={() => setAddingCost((v) => !v)}
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              Log cost
+            </Button>
+          </div>
+
+          {addingCost && (
+            <div className="mb-4 rounded-lg bg-raised border border-line p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-ink-muted mb-1 block">Type</label>
+                  <Select
+                    value={newCostForm.cost_type}
+                    onValueChange={(v) => setNewCostForm((f) => ({ ...f, cost_type: v as "labor" | "material" | "other" }))}
+                  >
+                    <SelectTrigger className="h-8 text-xs" ref={newCostType}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="labor">Labor</SelectItem>
+                      <SelectItem value="material">Material</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-xs text-ink-muted mb-1 block">Date</label>
+                  <Input
+                    type="date"
+                    className="h-8 text-xs"
+                    value={newCostForm.occurred_at}
+                    onChange={(e) => setNewCostForm((f) => ({ ...f, occurred_at: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-ink-muted mb-1 block">Description</label>
+                <Input
+                  className="h-8 text-xs"
+                  placeholder="e.g. Tile removal labor — 4 hrs"
+                  value={newCostForm.description}
+                  onChange={(e) => setNewCostForm((f) => ({ ...f, description: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-ink-muted mb-1 block">Amount ($)</label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="h-8 text-xs"
+                  placeholder="0.00"
+                  value={newCostForm.amount}
+                  onChange={(e) => setNewCostForm((f) => ({ ...f, amount: e.target.value }))}
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setAddingCost(false)}>Cancel</Button>
+                <Button size="sm" className="h-7 text-xs" onClick={() => void submitCost()}>Save</Button>
+              </div>
+            </div>
+          )}
+
+          {costLoading ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 rounded-lg" />)}
+            </div>
+          ) : costs.length === 0 ? (
+            <p className="text-xs text-ink-muted">No costs logged yet.</p>
+          ) : (
+            <div className="flex flex-col divide-y divide-line">
+              {costs.map((cost) => (
+                <div key={cost.id} className="flex items-center justify-between py-2.5 text-xs">
+                  <div>
+                    <p className="text-ink font-medium">{cost.description}</p>
+                    <p className="text-ink-muted mt-0.5 capitalize">
+                      {cost.cost_type} · {new Date(cost.occurred_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </p>
+                  </div>
+                  <span className="tabular-nums font-medium text-ink shrink-0">{centsDisplay(cost.amount_cents)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

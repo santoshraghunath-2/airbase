@@ -18,7 +18,8 @@ INSERT INTO tenants (
   contact_phone,
   website,
   service_area_zips,
-  sms_sender_name
+  sms_sender_name,
+  accounting_target
 )
 VALUES (
   '00000000-0000-0000-0000-000000000002',  -- PLACEHOLDER: replace with actual UUID or use gen_random_uuid()
@@ -49,13 +50,15 @@ VALUES (
     '94805','94806','94901','94903','94904','94920','94925','94930',
     '94941','94945','94947','94949','94952','94954','94960','94965'
   ],
-  'RECAST CA'
+  'RECAST CA',
+  NULL  -- PLACEHOLDER_ACCOUNTING_TARGET: set to 'quickbooks' or 'buildersbooks' once connected
 )
 ON CONFLICT (id) DO UPDATE SET
-  legal_entity_name  = EXCLUDED.legal_entity_name,
-  brand_name         = EXCLUDED.brand_name,
-  trade              = EXCLUDED.trade,
-  retell_phone_number = EXCLUDED.retell_phone_number;
+  legal_entity_name   = EXCLUDED.legal_entity_name,
+  brand_name          = EXCLUDED.brand_name,
+  trade               = EXCLUDED.trade,
+  retell_phone_number = EXCLUDED.retell_phone_number,
+  accounting_target   = EXCLUDED.accounting_target;
 
 -- ─── Business hours ───────────────────────────────────────────────────────────
 -- Monday–Saturday 8am–6pm PT; closed Sundays
@@ -76,7 +79,7 @@ ON CONFLICT (tenant_id, day_of_week) DO UPDATE SET
 
 -- ─── Design consultants (comfort_advisor type for remodel) ───────────────────
 
-INSERT INTO technicians (id, tenant_id, name, phone, email, tech_type, is_active)
+INSERT INTO technicians (id, tenant_id, name, phone, email, tech_type, is_active, loaded_hourly_cost_cents)
 VALUES
   (
     '00000000-0000-0000-0001-000000000001',
@@ -85,7 +88,8 @@ VALUES
     'PLACEHOLDER_CONSULTANT_1_PHONE', -- e.g. '+14155550201'
     'PLACEHOLDER_CONSULTANT_1_EMAIL', -- e.g. 'alex@recastcalifornia.com'
     'comfort_advisor',
-    true
+    true,
+    0  -- PLACEHOLDER_LOADED_HOURLY_COST_CENTS: set to fully-loaded hourly cost in cents (e.g. 7500 = $75/hr)
   ),
   (
     '00000000-0000-0000-0001-000000000002',
@@ -94,12 +98,14 @@ VALUES
     'PLACEHOLDER_CONSULTANT_2_PHONE',
     'PLACEHOLDER_CONSULTANT_2_EMAIL',
     'comfort_advisor',
-    true
+    true,
+    0  -- PLACEHOLDER_LOADED_HOURLY_COST_CENTS
   )
 ON CONFLICT (id) DO UPDATE SET
-  name       = EXCLUDED.name,
-  tech_type  = EXCLUDED.tech_type,
-  is_active  = EXCLUDED.is_active;
+  name                    = EXCLUDED.name,
+  tech_type               = EXCLUDED.tech_type,
+  is_active               = EXCLUDED.is_active,
+  loaded_hourly_cost_cents = EXCLUDED.loaded_hourly_cost_cents;
 
 -- ─── Agent config ─────────────────────────────────────────────────────────────
 -- retell_voice: Retell voice agent for inbound calls (platform capability, any tenant)

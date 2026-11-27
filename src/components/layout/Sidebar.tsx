@@ -20,6 +20,7 @@ import {
   MessageCircle,
   Hammer,
   ShieldCheck,
+  Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,9 +44,10 @@ const NAV_ITEMS = [
   { label: "Opportunities",  icon: TrendingUp,  path: "opportunities",  roles: null },
   { label: "Campaigns",      icon: Megaphone,   path: "campaigns",      roles: null },
   { label: "Analytics",     icon: BarChart2,   path: "analytics",      roles: null },
-  { label: "AI Settings",     icon: Bot,          path: "ai-settings",     roles: ["owner"] },
-  { label: "Owner Controls",  icon: ShieldCheck,  path: "owner-controls",  roles: ["owner"] },
-  { label: "Settings",        icon: Settings,     path: "settings",        roles: ["owner"] },
+  { label: "AI Settings",        icon: Bot,          path: "ai-settings",        roles: ["owner"] },
+  { label: "Owner Controls",     icon: ShieldCheck,  path: "owner-controls",     roles: ["owner"] },
+  { label: "Accounting Outbox",  icon: Inbox,        path: "accounting-outbox",  roles: ["owner"] },
+  { label: "Settings",           icon: Settings,     path: "settings",           roles: ["owner"] },
 ] as const;
 
 interface SidebarProps {

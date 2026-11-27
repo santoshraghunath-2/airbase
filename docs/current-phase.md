@@ -42,6 +42,16 @@ Build in this sequence:
 - [x] Google/Yelp review solicitation routing by satisfaction score
 - [x] Weekly AI business briefing — in-app briefing card, GitHub Actions schedule Sunday 11pm PST
 
+## Remodel Track (runs alongside Phase 3)
+
+The remodel tenant build is a parallel track that does **not** replace or block Phase 3 field-service work. Features added under this track are **not** out-of-phase.
+
+The full spec and all phase prompts live in **[docs/remodel-tenant-spec.md](remodel-tenant-spec.md)**.
+
+Build order: Phase 0 (hardening) → Phase 1 (lead responder) → Phase 2 (sale to contract) → Phase 3 (project production) → Phase 4 (operator brain) → Phase 5 (billing and books).
+
+---
+
 ## What Is NOT In Phase 3
 
 - Multi-location hierarchy → Phase 4

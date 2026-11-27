@@ -1,15 +1,17 @@
 # Airbase — Project Constitution
 
-> AI-native field service management for plumbing, HVAC, and electrical companies.
+> AI-native field service management for plumbing, HVAC, electrical, and home remodel companies.
 > This file is read by Claude Code at the start of every session. Keep it loaded.
 
 ---
 
 ## What Airbase Is
 
-Airbase is an AI-first operating system for trades companies (plumbing, HVAC, electrical).
+Airbase is an AI-first operating system for trades companies (plumbing, HVAC, electrical) and home remodel contractors.
 It replaces ServiceTitan's manually-operated workflows with autonomous AI agents.
 Every function a dispatcher, CSR, or office manager does today — Airbase infers, proposes, and executes.
+
+Each tenant has a `trade` field: `'field_service'` for plumbing/HVAC/electrical (the original Steward track) and `'remodel'` for bathroom and home improvement contractors. Any code that branches on tenant type must use `tenants.trade`, never a hard-coded tenant name.
 
 **The company running on it:** Steward Home Services (plumbing/home services, Bay Area).
 Steward is the production pilot. Every feature must work for Steward before it ships to anyone else.
@@ -30,7 +32,7 @@ Steward is the production pilot. Every feature must work for Steward before it s
 | Mobile (tech app) | PWA first (Phase 1–2), React Native in Phase 4 |
 | Backend / DB | Supabase (Postgres + Edge Functions + Realtime + RLS) |
 | AI / Agents | Multi-provider LLM router (`llm-router.ts`) — Anthropic Claude *(default)*, OpenAI, DeepSeek, Kimi |
-| Voice/SMS | Twilio (Voice + SMS + Conversations) |
+| Voice/SMS | Retell AI (voice + messaging — active). Twilio code kept as legacy; new tenants use Retell. |
 | Payments | Stripe + Stripe Terminal |
 | Accounting sync | QuickBooks Online API |
 | Routing/Maps | Google Maps Platform (Distance Matrix, Geocoding) |
@@ -96,7 +98,7 @@ Model resolution order per call:
 1. `options.model` (explicit call-time override — for A/B tests or one-off use)
 2. `agent_config.model_id` for this tenant + agent type
 3. `tenants.default_model_id`
-4. Platform default: `claude-sonnet-4-6`
+4. Platform default: `claude-sonnet-4-6` (hardcoded as `PLATFORM_DEFAULT_MODEL` in `supabase/functions/_shared/llm-router.ts`)
 
 **Recommended default routing by agent (configurable per tenant):**
 | Agent | Recommended model | Reason |
@@ -207,5 +209,12 @@ airbase/
 
 Before marking any feature complete, ask:
 > "Can the Steward Home Services dispatcher use this to book, dispatch, and close a real plumbing job right now?"
+
+If yes → done. If no → what's blocking it?
+
+## The Remodel Test
+
+For any feature touching the remodel track, also ask:
+> "Can the bathroom remodel tenant (Good Guy Builders / RECAST California) take a lead from first contact to a signed, scheduled, and paid project right now?"
 
 If yes → done. If no → what's blocking it?

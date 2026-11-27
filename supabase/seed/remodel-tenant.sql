@@ -209,6 +209,206 @@ ON CONFLICT (id) DO UPDATE SET
   hmac_secret = EXCLUDED.hmac_secret,
   is_active   = EXCLUDED.is_active;
 
+-- ─── Phase 2: Pricebook items ─────────────────────────────────────────────────
+-- Remodel packages. Prices are list/sell price; costs are in package_components below.
+
+INSERT INTO pricebook_items (id, tenant_id, name, description, unit_price_cents, category, is_active)
+VALUES
+  -- Tub-to-shower conversion
+  (
+    '00000000-0000-0000-0003-000000000001',
+    '00000000-0000-0000-0000-000000000002',
+    'Tub-to-Shower Conversion',
+    'Full conversion: demo existing tub, install shower base, walls, door, fixtures, and plumbing.',
+    1600000,  -- $16,000
+    'bathroom_remodel',
+    true
+  ),
+  -- Tub replacement
+  (
+    '00000000-0000-0000-0003-000000000002',
+    '00000000-0000-0000-0000-000000000002',
+    'Tub Replacement',
+    'Remove existing tub, install new freestanding or drop-in tub, update plumbing and surround.',
+    1700000,  -- $17,000
+    'bathroom_remodel',
+    true
+  ),
+  -- LVP flooring
+  (
+    '00000000-0000-0000-0003-000000000003',
+    '00000000-0000-0000-0000-000000000002',
+    'LVP Flooring (bathroom)',
+    'Luxury vinyl plank flooring installation including subfloor prep and transitions.',
+    450000,   -- $4,500
+    'flooring',
+    true
+  ),
+  -- Paint
+  (
+    '00000000-0000-0000-0003-000000000004',
+    '00000000-0000-0000-0000-000000000002',
+    'Interior Paint (bathroom)',
+    'Full bathroom repaint: walls, ceiling, trim. Includes primer and two coats.',
+    100000,   -- $1,000
+    'painting',
+    true
+  ),
+  -- Vanity (variable — PLACEHOLDER price)
+  (
+    '00000000-0000-0000-0003-000000000005',
+    '00000000-0000-0000-0000-000000000002',
+    'Vanity Installation',
+    'Supply and install vanity, mirror, and fixtures. Price varies by selection.',
+    0,        -- PLACEHOLDER: set per-quote based on customer selection
+    'bathroom_remodel',
+    true
+  )
+ON CONFLICT (id) DO UPDATE SET
+  name            = EXCLUDED.name,
+  unit_price_cents = EXCLUDED.unit_price_cents,
+  is_active       = EXCLUDED.is_active;
+
+-- ─── Phase 2: Package components (tub-to-shower) ──────────────────────────────
+-- Materials and labor for the tub-to-shower conversion.
+-- option='base' rows apply to all tiers.
+-- option='good'/'better'/'best' rows are additive overrides for that tier.
+
+INSERT INTO package_components (
+  id, tenant_id, pricebook_item_id, option,
+  material_description, quantity, unit, expected_cost_cents,
+  labor_phase_name, labor_hours, crew_size, crew_days,
+  sort_order
+)
+VALUES
+  -- Base: shared materials across all tiers
+  (
+    '00000000-0000-0000-0004-000000000001',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0003-000000000001',
+    'base',
+    'Plumbing supplies', 1, 'lot', 30000,
+    'rough plumbing', 2.0, 1, 1, 10
+  ),
+  (
+    '00000000-0000-0000-0004-000000000002',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0003-000000000001',
+    'base',
+    'Misc materials and disposal', 1, 'lot', 30000,
+    NULL, NULL, NULL, NULL, 20
+  ),
+  (
+    '00000000-0000-0000-0004-000000000003',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0003-000000000001',
+    'base',
+    'Crew labor (demo, waterproofing, install)', 1, 'lot', 400000,
+    'install', 32.0, 2, 4, 30
+  ),
+  -- Good: standard acrylic wall panels + basic shower door + standard base
+  (
+    '00000000-0000-0000-0004-000000000004',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0003-000000000001',
+    'good',
+    'Acrylic wall panels (standard)', 1, 'set', 80000,
+    'walls', 4.0, 2, 1, 10
+  ),
+  (
+    '00000000-0000-0000-0004-000000000005',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0003-000000000001',
+    'good',
+    'Shower door (standard frameless)', 1, 'each', 60000,
+    'door', 2.0, 1, 1, 20
+  ),
+  (
+    '00000000-0000-0000-0004-000000000006',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0003-000000000001',
+    'good',
+    'Shower base (standard acrylic)', 1, 'each', 25000,
+    NULL, NULL, NULL, NULL, 30
+  ),
+  (
+    '00000000-0000-0000-0004-000000000007',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0003-000000000001',
+    'good',
+    'Shower fixtures (standard)', 1, 'set', 10000,
+    NULL, NULL, NULL, NULL, 40
+  ),
+  -- Better: tile walls + upgraded door + upgraded base + upgraded fixtures
+  (
+    '00000000-0000-0000-0004-000000000008',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0003-000000000001',
+    'better',
+    'Ceramic tile walls (mid-range)', 1, 'set', 100000,
+    'tile', 8.0, 2, 2, 10
+  ),
+  (
+    '00000000-0000-0000-0004-000000000009',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0003-000000000001',
+    'better',
+    'Shower door (frameless glass, mid-range)', 1, 'each', 70000,
+    'door', 3.0, 1, 1, 20
+  ),
+  (
+    '00000000-0000-0000-0004-000000000010',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0003-000000000001',
+    'better',
+    'Shower base (stone resin)', 1, 'each', 35000,
+    NULL, NULL, NULL, NULL, 30
+  ),
+  (
+    '00000000-0000-0000-0004-000000000011',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0003-000000000001',
+    'better',
+    'Shower fixtures (upgraded)', 1, 'set', 15000,
+    NULL, NULL, NULL, NULL, 40
+  ),
+  -- Best: premium tile + custom glass door + niche + premium fixtures
+  (
+    '00000000-0000-0000-0004-000000000012',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0003-000000000001',
+    'best',
+    'Large-format porcelain tile walls (premium)', 1, 'set', 100000,
+    'tile', 12.0, 2, 3, 10
+  ),
+  (
+    '00000000-0000-0000-0004-000000000013',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0003-000000000001',
+    'best',
+    'Custom glass shower door (heavy glass)', 1, 'each', 80000,
+    'door', 4.0, 1, 1, 20
+  ),
+  (
+    '00000000-0000-0000-0004-000000000014',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0003-000000000001',
+    'best',
+    'Shower base (tile-ready Schluter system)', 1, 'each', 35000,
+    'waterproofing', 4.0, 1, 1, 30
+  ),
+  (
+    '00000000-0000-0000-0004-000000000015',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0003-000000000001',
+    'best',
+    'Premium fixtures + built-in niche', 1, 'set', 15000,
+    NULL, NULL, NULL, NULL, 40
+  )
+ON CONFLICT (id) DO UPDATE SET
+  material_description = EXCLUDED.material_description,
+  expected_cost_cents  = EXCLUDED.expected_cost_cents;
+
 -- ─── Post-seed checklist ──────────────────────────────────────────────────────
 -- After running this seed:
 --

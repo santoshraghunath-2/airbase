@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Plus, Trash2, Sparkles, Save, Send,
-  CheckCircle2, XCircle, ArrowRight, Loader2,
+  CheckCircle2, XCircle, ArrowRight, Loader2, AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -253,11 +253,15 @@ export default function EstimateBuilderPage() {
   const navigate = useNavigate();
 
   const isNew = !estimateId || estimateId === "new";
+  const isRemodel = tenant?.trade === "remodel";
 
   // ── Metadata state ──
   const [loading, setLoading]     = useState(!isNew);
   const [saving,  setSaving]      = useState(false);
-  const [mode,    setMode]        = useState<EstimatePresentationMode>("good_better_best");
+  // Remodel tenants default to good_better_best; can still switch to single
+  const [mode,    setMode]        = useState<EstimatePresentationMode>(
+    isRemodel ? "good_better_best" : "good_better_best",
+  );
   const [title,   setTitle]       = useState("Estimate");
   const [notes,   setNotes]       = useState("");
   const [validDays, setValidDays] = useState("30");
@@ -281,6 +285,21 @@ export default function EstimateBuilderPage() {
   const [suggestions,   setSuggestions]   = useState<AiSuggestion[]>([]);
   const [aiLoading,     setAiLoading]     = useState(false);
   const [aiJobType,     setAiJobType]     = useState("");
+
+  // ── Remodel: approval gate ──
+  // Any line without a pricebook_item_id (off-book) or any discount line requires owner approval.
+  const needsApproval = isRemodel && items.some(
+    (i) => i.description.trim() && (!i.pricebook_item_id || i.unit_price_cents < 0),
+  );
+
+  // ── Remodel: commitment date preview (uses package's commitment_days if available) ──
+  // Simple estimate: total commitment_days is the max across all packages in the selected option.
+  // Actual value comes from package_components; default shown here is informational.
+  const commitmentDaysByOption = useCallback((_opt: typeof options[0]) => {
+    // TODO Phase 3: query package_components for the selected pricebook items
+    // For now surface the placeholder value from the pricebook item name
+    return null as number | null;
+  }, []);
 
   // ────────────────────────────────────────────────────────────────────────────
 
@@ -433,6 +452,13 @@ export default function EstimateBuilderPage() {
         const validUntil = new Date();
         validUntil.setDate(validUntil.getDate() + parseInt(validDays || "30", 10));
 
+        // If off-book lines exist for remodel, downgrade to needs_approval before sending
+        const resolvedStatus = (() => {
+          const target = nextStatus ?? status;
+          if (isRemodel && needsApproval && target === "sent") return "needs_approval" as typeof status;
+          return target;
+        })();
+
         const payload = {
           tenant_id: tenant.id,
           customer_id: customer.id,
@@ -440,10 +466,10 @@ export default function EstimateBuilderPage() {
           presentation_mode: mode,
           notes: notes || null,
           valid_until: validUntil.toISOString().split("T")[0],
-          status: nextStatus ?? status,
+          status: resolvedStatus,
           ai_upsell_suggestions: suggestions,
-          ...(nextStatus === "sent" ? { sent_at: new Date().toISOString() } : {}),
-          ...(nextStatus === "accepted" ? { accepted_at: new Date().toISOString() } : {}),
+          ...(resolvedStatus === "sent" ? { sent_at: new Date().toISOString() } : {}),
+          ...(resolvedStatus === "accepted" ? { accepted_at: new Date().toISOString() } : {}),
           ...(nextStatus === "declined" ? { declined_at: new Date().toISOString() } : {}),
         };
 
@@ -476,8 +502,12 @@ export default function EstimateBuilderPage() {
           );
         }
 
-        if (nextStatus) setStatus(nextStatus);
-        toast.success(nextStatus === "sent" ? "Estimate sent!" : "Estimate saved.");
+        if (resolvedStatus) setStatus(resolvedStatus);
+        if (isRemodel && needsApproval && nextStatus === "sent") {
+          toast.warning("Off-book line items require owner approval before this estimate can be sent.");
+        } else {
+          toast.success(resolvedStatus === "sent" ? "Estimate sent!" : "Estimate saved.");
+        }
         if (isNew) navigate(`/${tenantSlug}/estimates/${estId}`, { replace: true });
         return estId;
       } catch (e) {
@@ -703,7 +733,23 @@ export default function EstimateBuilderPage() {
               </>
             )}
 
-            {(status === "accepted" || status === "converted") && (
+            {/* Remodel: "Accept → contract" replaces the job conversion flow */}
+            {isRemodel && status === "sent" && (
+              <button
+                onClick={async () => {
+                  const estId = await save("accepted");
+                  if (!estId) return;
+                  navigate(`/${tenantSlug}/contracts/new?estimate_id=${estId}`);
+                }}
+                disabled={saving}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-confirmed-border bg-confirmed-bg text-confirmed-text text-xs font-medium hover:opacity-80 transition-opacity disabled:opacity-50"
+              >
+                <CheckCircle2 className="h-3 w-3" />
+                Accept → contract
+              </button>
+            )}
+
+            {!isRemodel && (status === "accepted" || status === "converted") && (
               <button
                 onClick={() => navigate(`/${tenantSlug}/jobs`)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line text-ink text-xs font-medium hover:bg-raised transition-colors"
@@ -712,8 +758,32 @@ export default function EstimateBuilderPage() {
                 View jobs
               </button>
             )}
+
+            {isRemodel && (status === "accepted" || status === "converted") && (
+              <button
+                onClick={() => navigate(`/${tenantSlug}/contracts`)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line text-ink text-xs font-medium hover:bg-raised transition-colors"
+              >
+                <ArrowRight className="h-3 w-3" />
+                View contracts
+              </button>
+            )}
           </div>
         </div>
+
+        {/* Remodel: needs-approval banner */}
+        {isRemodel && needsApproval && (
+          <div className="mb-4 flex items-start gap-2 rounded-xl border border-warned-border bg-warned-bg px-4 py-3">
+            <AlertTriangle className="h-4 w-4 text-warned-text mt-0.5 shrink-0" />
+            <div>
+              <p className="text-xs font-semibold text-warned-text">Owner approval required</p>
+              <p className="text-xs text-warned-text/80 mt-0.5">
+                This estimate contains off-pricebook lines or discounts. It cannot be sent to the
+                customer until an owner approves it.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Columns */}
         <div className="flex gap-4 mb-6">

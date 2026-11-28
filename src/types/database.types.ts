@@ -53,7 +53,7 @@ export type InvoiceStatus =
 
 export type AfterHoursMode = "message" | "emergency" | "anytime";
 export type ModelTier = "balanced" | "capable" | "fast";
-export type MembershipStatus = "pending" | "active" | "lapsed" | "cancelled";
+export type MembershipStatus = "pending" | "active" | "lapsed" | "cancelled" | "payment_failed";
 export type BillingCycle = "monthly" | "annual";
 export type EstimateStatus = "draft" | "sent" | "accepted" | "declined" | "expired" | "converted";
 export type EstimatePresentationMode = "single" | "good_better_best";
